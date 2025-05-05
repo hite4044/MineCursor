@@ -1,0 +1,290 @@
+from typing import cast
+
+import wx
+from PIL.Image import Resampling
+
+from lib.data import CursorProject
+from lib.ui_interface import ui_class
+from ui.widget.center_text import CenteredText
+from ui.widget.data_entry import IntEntry, FloatEntry, DataEntry, StringEntry, BoolEntry
+from ui.widget.font import ft
+from ui.widget.no_tab_notebook import NoTabNotebook
+
+ID_POS = 0
+ID_RECT = 1
+ID_CANVAS = 2
+ID_NONE = 3
+ID_SCALE = 4
+
+
+class CursorEditorUI(wx.Panel):
+    def __init__(self, parent: wx.Window, project: CursorProject):
+        super().__init__(parent)
+
+        self.elements_lc = ui_class(ElementListCtrlUI)(self, project)
+        self.canvas = ui_class(ElementCanvasUI)(self, project)
+        self.info_editor = ui_class(InfoEditorUI)(self, project)
+        self.bar = wx.StatusBar(self)
+        self.bar.SetFieldsCount(5)
+        self.bar.SetStatusWidths([100, 100, 120, -1, 120])
+        self.bar.SetStatusText("位置: 0, 0", ID_POS)
+        self.bar.SetStatusText("大小: 0 x 0", ID_RECT)
+        self.bar.SetStatusText("画布: 16 x 16", ID_CANVAS)
+        self.bar.SetStatusText("", ID_NONE)
+        self.bar.SetStatusText("缩放: 100%", ID_SCALE)
+
+        self._cursor_pos: tuple[int, int] | None = None
+        self._rect_size: tuple[int, int] | None = None
+        self._canvas_size: tuple[int, int] | None = None
+        self._scale: float | None = None
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        hor_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        hor_sizer.AddMany([
+            (self.elements_lc, 0, wx.EXPAND),
+            (self.canvas, 2, wx.EXPAND),
+            (self.info_editor, 1, wx.EXPAND | wx.FIXED_MINSIZE)
+        ])
+        sizer.AddMany([
+            (hor_sizer, 1, wx.EXPAND),
+            (self.bar, 0, wx.EXPAND)
+        ])
+        self.SetSizer(sizer)
+
+    @property
+    def b_cursor_pos(self):
+        return self._cursor_pos
+
+    @b_cursor_pos.setter
+    def b_cursor_pos(self, value: tuple[int, int] | None):
+        self._cursor_pos = value
+        if value is None:
+            self.bar.SetStatusText("位置: ", ID_POS)
+        else:
+            self.bar.SetStatusText(f"位置: {value[0]}, {value[1]}", ID_POS)
+
+    @property
+    def b_rect_size(self):
+        return self._rect_size
+
+    @b_rect_size.setter
+    def b_rect_size(self, value: tuple[int, int] | None):
+        self._rect_size = value
+        if value is None:
+            self.bar.SetStatusText("大小: ", ID_RECT)
+        else:
+            self.bar.SetStatusText(f"大小: {value[0]} x {value[1]}", ID_RECT)
+
+    @property
+    def b_canvas_size(self):
+        return self._canvas_size
+
+    @b_canvas_size.setter
+    def b_canvas_size(self, value: tuple[int, int]):
+        self._canvas_size = value
+        self.bar.SetStatusText(f"画布: {value[0]} x {value[1]}", ID_CANVAS)
+
+    @property
+    def b_scale(self):
+        return self._scale
+
+    @b_scale.setter
+    def b_scale(self, value: float):
+        self._scale = value
+        self.bar.SetStatusText(f"缩放: {value * 100:.1f}%", ID_SCALE)
+
+
+class ElementListCtrlUI(wx.ListCtrl):
+    def __init__(self, parent: wx.Window, project: CursorProject):
+        super().__init__(parent, style=wx.LC_REPORT)
+        self.project = project
+        self.image_list = wx.ImageList(16, 16)
+        self.AppendColumn("", wx.LIST_FORMAT_CENTER, width=28)
+        self.AppendColumn("名称", width=200)
+        self.AssignImageList(self.image_list, wx.IMAGE_LIST_SMALL)
+
+
+class ElementCanvasUI(wx.Window):
+    def __init__(self, parent: wx.Window, project: CursorProject):
+        super().__init__(parent)
+        self.project = project
+
+
+class InfoEditorUI(NoTabNotebook):
+    def __init__(self, parent: wx.Window, project: CursorProject):
+        super().__init__(parent)
+        self.proj_editor = ui_class(ProjectInfoEditorUI)(self, project)
+        self.element_editor = ui_class(ElementInfoEditorUI)(self)
+        self.add_page(self.proj_editor)
+        self.add_page(self.element_editor)
+        self.switch_page(0)
+
+
+GroupData = tuple[tuple[str, bool], tuple[tuple[type, str], ...]]
+RESAMPLE_MAP = {
+    Resampling.NEAREST: "最近邻",
+    Resampling.BILINEAR: "BiLinear",
+    Resampling.HAMMING: "汉明",
+    Resampling.BICUBIC: "双三次",
+    Resampling.LANCZOS: "Lanczos"
+}
+
+
+#  加载定义数据, 并返回组件列表
+def load_group_raw(defines: GroupData, sizer: wx.Sizer, parent: wx.Window):
+    label, is_collapse = defines[0]
+    panel = wx.CollapsiblePane(parent, label=label, style=wx.CP_NO_TLW_RESIZE | wx.CP_DEFAULT_STYLE)
+    panel.Collapse(is_collapse)
+    sizer_out = wx.BoxSizer(wx.HORIZONTAL)
+    collapse_sizer = wx.FlexGridSizer(len(defines[1]), 2, 5, 5)
+    collapse_sizer.AddGrowableCol(1, 1)
+    entries = []
+    for index in range(len(defines[1])):
+        entry_type = defines[1][index][0]
+        args = defines[1][index][1:]
+        entry: DataEntry = entry_type(panel.GetPane(), *args)
+        entries.append(entry)
+        collapse_sizer.Add(entry.label, 0, wx.EXPAND)
+        collapse_sizer.Add(entry.entry, 1, wx.EXPAND)
+    sizer_out.AddSpacer(15)
+    sizer_out.Add(collapse_sizer, 1, wx.EXPAND | wx.BOTTOM, 5)
+    sizer_out.AddSpacer(5)
+    panel.GetPane().SetSizer(sizer_out)
+    sizer.Add(panel, 0, wx.EXPAND)
+    return entries
+
+
+class ElementInfoEditorUI(wx.ScrolledWindow):
+    def __init__(self, parent: wx.Window):
+        super().__init__(parent, size=(200, -1))
+        widget_groups: list[tuple[tuple[str, bool], tuple[tuple[type, str], ...]]] = [
+            (("位置", False), ((IntEntry, "X"), (IntEntry, "Y"))),
+            (("缩放", False), ((FloatEntry, "X"), (FloatEntry, "Y"))),
+            (("裁剪", True), ((IntEntry, "上"), (IntEntry, "下"), (IntEntry, "左"), (IntEntry, "右"))),
+            (("翻转", True), ((BoolEntry, "左右翻转"), (BoolEntry, "上下翻转"))),
+            (("动画", True), ((IntEntry, "动画开始"), (IntEntry, "动画帧数")))
+        ]
+        sizer = wx.BoxSizer(wx.VERTICAL)
+
+        def load_group(defines: GroupData):
+            return load_group_raw(defines, sizer, self)
+
+        title = CenteredText(self, label="元素信息")
+        title.SetFont(ft(16))
+        sizer.Add(title, 0, wx.EXPAND | wx.ALL, 5)
+
+        self.name: StringEntry = StringEntry(self, "名称", use_sizer=True)
+        sizer.Add(self.name, 0, wx.EXPAND | wx.ALL, 5)
+
+        ret = load_group(widget_groups[0])
+        self.pos_x: IntEntry = ret[0]
+        self.pos_y: IntEntry = ret[1]
+
+        self.rotation = FloatEntry(self, "旋转角度", use_sizer=True)
+        sizer.Add(self.rotation, 0, wx.EXPAND | wx.ALL, 5)
+
+        ret = load_group(widget_groups[1])
+        self.scale_x: FloatEntry = ret[0]
+        self.scale_y: FloatEntry = ret[1]
+
+        ret = load_group(widget_groups[2])
+        self.crop_up: IntEntry = ret[0]
+        self.crop_down: IntEntry = ret[1]
+        self.crop_left: IntEntry = ret[2]
+        self.crop_right: IntEntry = ret[3]
+
+        ret = load_group(widget_groups[3])
+        self.reverse_x: BoolEntry = ret[0]
+        self.reverse_y: BoolEntry = ret[1]
+
+        ret = load_group(widget_groups[4])
+        self.animation_panel: wx.CollapsiblePane = cast(wx.CollapsiblePane, sizer.GetChildren()[-1].Window)
+        self.animation_start: IntEntry = ret[0]
+        self.animation_length: IntEntry = ret[1]
+
+        self.resample_map = RESAMPLE_MAP
+        self.res_panel = wx.BoxSizer(wx.HORIZONTAL)
+        self.resample_type = wx.Choice(self, choices=list(self.resample_map.values()))
+        self.resample_type.SetSelection(0)
+        self.res_panel.Add(CenteredText(self, label="缩放方法: "), 0, wx.EXPAND)
+        self.res_panel.AddSpacer(5)
+        self.res_panel.Add(self.resample_type, 1, wx.EXPAND)
+        sizer.Add(self.res_panel, 0, wx.EXPAND | wx.ALL, 5)
+
+        self.SetSizer(sizer)
+        self.SetScrollRate(0, 30)
+
+        self.Bind(wx.EVT_COLLAPSIBLEPANE_CHANGED, self.on_collapse)
+        self.Bind(wx.EVT_SIZE, self.on_size)
+
+    def on_collapse(self, event: wx.CollapsiblePaneEvent):
+        self.on_size(None)
+        self.Sizer.Layout()
+        self.on_size(None)
+        event.Skip()
+
+    def on_size(self, _):
+        size = self.Sizer.ComputeFittingWindowSize(self)
+        self.SetVirtualSize((cast(tuple, self.GetSize())[0] - 17, size[1]))
+
+
+class ProjectInfoEditorUI(wx.Panel):
+    def __init__(self, parent: wx.Window, project: CursorProject):
+        super().__init__(parent)
+        self.project = project
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        widget_groups: list[tuple[tuple[str, bool], tuple[tuple[type, str], ...]]] = [
+            (("中心", False), ((IntEntry, "X"), (IntEntry, "Y"))),
+        ]
+
+        self.title = CenteredText(self, label="项目信息")
+        self.title.SetFont(ft(16))
+        sizer.Add(self.title, 0, wx.EXPAND | wx.ALL, 5)
+
+        def load_group(defines: GroupData):
+            return load_group_raw(defines, sizer, self)
+
+        self.name: StringEntry = StringEntry(self, "名称")
+        self.name.set_value(project.name)
+
+        ret = load_group(widget_groups[0])
+        self.center_x: IntEntry = ret[0]
+        self.center_y: IntEntry = ret[1]
+        self.center_x.set_value(project.center_pos.x)
+        self.center_y.set_value(project.center_pos.y)
+
+        self.scale: FloatEntry = FloatEntry(self, "缩放")
+        self.scale.set_value(project.scale)
+
+        if project.frame_count != -1:
+            self.frame_count: IntEntry = IntEntry(self, "帧数")
+            self.frame_count.set_value(project.frame_count)
+
+            self.ani_rate: IntEntry = IntEntry(self, "帧间隔")
+            self.ani_rate.set_value(project.ani_rate)
+
+        self.resample_map = RESAMPLE_MAP
+        self.resample_type = wx.Choice(self, choices=list(self.resample_map.values()))
+        self.resample_type.SetSelection(0)
+
+        grid_sizer = wx.FlexGridSizer(3 if project.frame_count == -1 else 5, 2, 5, 5)
+        grid_sizer.AddGrowableCol(1, 1)
+        grid_sizer.Add(self.name.label, 0, wx.EXPAND)
+        grid_sizer.Add(self.name.entry, 1, wx.EXPAND)
+        grid_sizer.Add(self.scale.label, 0, wx.EXPAND)
+        grid_sizer.Add(self.scale.entry, 1, wx.EXPAND)
+        if project.frame_count != -1:
+            grid_sizer.Add(self.frame_count.label, 0, wx.EXPAND)
+            grid_sizer.Add(self.frame_count.entry, 1, wx.EXPAND)
+            grid_sizer.Add(self.ani_rate.label, 0, wx.EXPAND)
+            grid_sizer.Add(self.ani_rate.entry, 1, wx.EXPAND)
+        grid_sizer.Add(CenteredText(self, label="缩放方法: "), 0, wx.EXPAND)
+        grid_sizer.Add(self.resample_type, 0, wx.EXPAND)
+        sizer.Add(grid_sizer, 1, wx.EXPAND | wx.ALL, 5)
+        self.SetSizer(sizer)
+
+        self.Bind(wx.EVT_COLLAPSIBLEPANE_CHANGED, self.on_collapse)
+
+    def on_collapse(self, event: wx.CollapsiblePaneEvent):
+        self.Layout()
+        event.Skip()

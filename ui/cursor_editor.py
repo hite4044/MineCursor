@@ -17,9 +17,10 @@ ID_NONE = 3
 ID_SCALE = 4
 
 
-class CursorEditorUI(wx.Panel):
+class CursorEditorUI(wx.Frame):
     def __init__(self, parent: wx.Window, project: CursorProject):
-        super().__init__(parent)
+        super().__init__(parent, title=f"光标项目编辑器 - {project.name}", size=(1130, 660))
+        self.SetFont(ft(11))
 
         self.elements_lc = ui_class(ElementListCtrlUI)(self, project)
         self.canvas = ui_class(ElementCanvasUI)(self, project)
@@ -43,7 +44,7 @@ class CursorEditorUI(wx.Panel):
         hor_sizer.AddMany([
             (self.elements_lc, 0, wx.EXPAND),
             (self.canvas, 2, wx.EXPAND),
-            (self.info_editor, 1, wx.EXPAND | wx.FIXED_MINSIZE)
+            (self.info_editor, 0, wx.EXPAND)
         ])
         sizer.AddMany([
             (hor_sizer, 1, wx.EXPAND),
@@ -90,8 +91,11 @@ class CursorEditorUI(wx.Panel):
 
     @b_scale.setter
     def b_scale(self, value: float):
+        if int(value * 100) == value * 100:
+            self.bar.SetStatusText(f"缩放: {int(value * 100)}%", ID_SCALE)
+        else:
+            self.bar.SetStatusText(f"缩放: {value * 100:.1f}%", ID_SCALE)
         self._scale = value
-        self.bar.SetStatusText(f"缩放: {value * 100:.1f}%", ID_SCALE)
 
 
 class ElementListCtrlUI(wx.ListCtrl):
@@ -113,6 +117,7 @@ class ElementCanvasUI(wx.Window):
 class InfoEditorUI(NoTabNotebook):
     def __init__(self, parent: wx.Window, project: CursorProject):
         super().__init__(parent)
+        self.SetMinSize((300, -1))
         self.proj_editor = ui_class(ProjectInfoEditorUI)(self, project)
         self.element_editor = ui_class(ElementInfoEditorUI)(self)
         self.add_page(self.proj_editor)
@@ -162,7 +167,7 @@ class ElementInfoEditorUI(wx.ScrolledWindow):
             (("缩放", False), ((FloatEntry, "X"), (FloatEntry, "Y"))),
             (("裁剪", True), ((IntEntry, "上"), (IntEntry, "下"), (IntEntry, "左"), (IntEntry, "右"))),
             (("翻转", True), ((BoolEntry, "左右翻转"), (BoolEntry, "上下翻转"))),
-            (("动画", True), ((IntEntry, "动画开始"), (IntEntry, "动画帧数")))
+            (("动画", True), ((IntEntry, "动画开始"), (IntEntry, "动画帧数"), (StringEntry, "总帧数-只读")))
         ]
         sizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -201,6 +206,7 @@ class ElementInfoEditorUI(wx.ScrolledWindow):
         self.animation_panel: wx.CollapsiblePane = cast(wx.CollapsiblePane, sizer.GetChildren()[-1].Window)
         self.animation_start: IntEntry = ret[0]
         self.animation_length: IntEntry = ret[1]
+        self.animation_frames_count: StringEntry = ret[2]
 
         self.resample_map = RESAMPLE_MAP
         self.res_panel = wx.BoxSizer(wx.HORIZONTAL)

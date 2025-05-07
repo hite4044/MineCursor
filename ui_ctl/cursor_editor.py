@@ -9,6 +9,8 @@ from lib.render import render_project_frame
 from ui.cursor_editor import CursorEditorUI, InfoEditorUI, ElementInfoEditorUI, ElementCanvasUI, ProjectInfoEditorUI, \
     ElementListCtrlUI
 from ui.widget.data_entry import DataEntryEvent, DataEntry, EVT_DATA_UPDATE
+from ui.widget.font import ft
+from ui_ctl.element_add_dialog import ElementAddDialog
 
 mcEVT_ELEMENT_SELECTED = wx.NewEventType()
 EVT_ELEMENT_SELECTED = wx.PyEventBinder(mcEVT_ELEMENT_SELECTED, 1)
@@ -29,7 +31,6 @@ class ProjectUpdatedEvent(wx.PyCommandEvent):
         super().__init__(mcEVT_PROJECT_UPDATED)
 
 
-
 class ScaleUpdatedEvent(wx.PyCommandEvent):
     def __init__(self, scale: float):
         super().__init__(mcEVT_SCALE_UPDATED)
@@ -41,10 +42,11 @@ class CursorEditor(CursorEditorUI):
     canvas: 'ElementCanvas'
     info_editor: 'InfoEditor'
 
-    def __init__(self, parent: wx.Window, project: CursorProject):
+    def __init__(self, parent: wx.Window | None, project: CursorProject):
         super().__init__(parent, project)
         self.project = project
-        self.b_canvas_size = self.project.canvas_size
+        self.b_canvas_size = self.project.raw_canvas_size
+        self.b_scale = self.canvas.scale
 
         self.canvas.Bind(wx.EVT_MOTION, self.on_mouse_move)
         self.canvas.Bind(wx.EVT_LEAVE_WINDOW, self.on_mouse_leave)
@@ -65,11 +67,17 @@ class CursorEditor(CursorEditorUI):
         self.canvas.set_element(event.element)
         if not self.elements_lc.select_processing:
             self.elements_lc.set_element(event.element)
+        if event.element:
+            self.b_rect_size = event.element.final_rect[2:]
+        else:
+            self.b_rect_size = None
 
     def on_project_updated(self, _):
+        self.elements_lc.project_updated()
         self.canvas.project_updated()
         if self.canvas.active_element is None:
             self.info_editor.set_element(None)
+        self.SetTitle(f"光标项目编辑器 - {self.project.name}")
 
     def on_scale_updated(self, event: ScaleUpdatedEvent):
         self.b_scale = event.scale
@@ -82,18 +90,29 @@ class ElementListCtrl(ElementListCtrlUI):
         self.line_mapping = {}
         self.select_processing = False
         self.set_processing = False
+        self.menu_call = None
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_select)
-        self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_menu)
+        self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_menu)
+        self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu)
         for element in project.elements:
             self.add_element(element)
 
-    def on_menu(self, event: wx.ListEvent):
+    def project_updated(self):
+        for i, element in enumerate(self.project.elements):
+            if element.name != self.GetItemText(i, 1):
+                self.SetItem(i, 1, element.name)
+
+    def on_item_menu(self, event: wx.ListEvent):
+        if self.menu_call:
+            self.menu_call.Stop()
         line = event.GetIndex()
         menu = wx.Menu()
+
         def ect_binder(name: str, func: Callable, *args):
             item = menu.Append(wx.ID_ANY, name)
             menu.Bind(wx.EVT_MENU, lambda _: func(*args), id=item.GetId())
-        ect_binder("添加", lambda: None)
+
+        ect_binder("添加", self.on_add_element)
         menu.AppendSeparator()
         ect_binder("上移一层", self.move_element, line, -1)
         ect_binder("下移一层", self.move_element, line, 1)
@@ -101,6 +120,51 @@ class ElementListCtrl(ElementListCtrlUI):
         ect_binder("删除", self.remove_element, line)
 
         self.PopupMenu(menu)
+
+    def on_menu(self, event: wx.MouseEvent):
+        event.Skip()
+        self.menu_call = wx.CallLater(100, self.on_menu_delay)
+
+    def on_menu_delay(self):
+        menu = wx.Menu()
+
+        def ect_binder(name: str, func: Callable, *args):
+            item = menu.Append(wx.ID_ANY, name)
+            menu.Bind(wx.EVT_MENU, lambda _: func(*args), id=item.GetId())
+
+        ect_binder("添加", self.on_add_element)
+        menu.AppendSeparator()
+        ect_binder("清空", self.on_remove_all_elements)
+        ect_binder("导出", self.output_file)
+        self.PopupMenu(menu)
+
+    def on_add_element(self):
+        dialog = ElementAddDialog(self)
+        if dialog.ShowModal() != wx.ID_OK:
+            return
+        if not dialog.element:
+            return
+        self.project.add_element(dialog.element)
+        self.rebuild_control()
+        self.send_project_updated()
+
+    def output_file(self):
+        wildcard = "静态光标 (*.cur)|.cur" if self.project.frame_count == -1 else "动态光标 (*.ani)|.ani"
+        dialog = wx.FileDialog(self, "选择保存路径", defaultFile=self.project.name, wildcard=wildcard)
+        if dialog.ShowModal() == wx.ID_OK:
+            from lib.cursor_writer import write_cursor
+            from lib.render import render_project
+            path = dialog.GetPath()
+            frames = render_project(self.project)
+            write_cursor(path, frames, self.project.center_pos, self.project.ani_rate)
+            wx.MessageBox("保存成功")
+        dialog.Destroy()
+
+    def on_remove_all_elements(self):
+        if wx.MessageBox("确定要清空所有元素吗？", "提示", wx.YES_NO | wx.ICON_QUESTION) == wx.ID_YES:
+            self.project.elements.clear()
+            self.rebuild_control()
+            self.send_project_updated()
 
     def send_project_updated(self):
         event = ProjectUpdatedEvent()
@@ -130,10 +194,10 @@ class ElementListCtrl(ElementListCtrlUI):
         self.send_project_updated()
 
     def move_element(self, line: int, delta: int):
-        if not 0 <= line+delta < len(self.project.elements):
+        if not 0 <= line + delta < len(self.project.elements):
             return
-        old_element = self.project.elements[line+delta]
-        self.project.elements[line+delta] = self.project.elements[line]
+        old_element = self.project.elements[line + delta]
+        self.project.elements[line + delta] = self.project.elements[line]
         self.project.elements[line] = old_element
         self.rebuild_control()
         self.send_project_updated()
@@ -185,6 +249,8 @@ EC_SCALE_LEVEL = [
     2.0,
     3.0,
     4.0,
+    5.0,
+    6.0,
     8.0,
     10.0,
     16.0,
@@ -465,6 +531,7 @@ class ElementInfoEditor(ElementInfoEditorUI):
         if len(element.frames) > 1:
             self.animation_start.set_value(element.animation_start)
             self.animation_length.set_value(element.animation_length)
+            self.animation_frames_count.set_value(str(len(element.frames)))
             self.animation_panel.Enable()
         else:
             self.animation_panel.Disable()

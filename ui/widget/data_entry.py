@@ -28,6 +28,8 @@ class DataEntry(wx.Panel):
         self.label = CenteredText(parent, label=label, x_center=False)
         if data_type in [str, int, float]:
             self.entry = wx.TextCtrl(parent, style=wx.TE_PROCESS_ENTER)
+            if data_type == str:
+                self.entry.Bind(wx.EVT_TEXT, lambda e: wx.PostEvent(self.entry, DataEntryEvent(self.entry.GetValue())))
         elif data_type == bool:
             self.entry = wx.CheckBox(parent)
         else:

@@ -1,6 +1,7 @@
 import random
 from collections import namedtuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from enum import Enum
 
 from PIL import Image
 
@@ -24,9 +25,9 @@ class Margins(_Margins):
 @dataclass
 class CursorElement:
     name: str
-    source_path: str
-    source_name: str
     frames: list[Image.Image]
+    source_id: str = ""
+    source_paths: list[str] = field(default_factory=list)
     position: Position = Position(0, 0)
     scale: Scale2D = Scale2D(1.0, 1.0)
     rotation: float = 0
@@ -69,3 +70,23 @@ class CursorProject:
 
     def add_element(self, element: CursorElement):
         self.elements.insert(0, element)
+
+@dataclass
+class AssetSource:
+    name: str
+    id: str
+    recommend_file: str
+    textures_zip: str
+
+
+
+class AssetSources(Enum):
+    MINECRAFT_1_21_5 = AssetSource("Minecraft 1.21.5",
+                                   "minecraft-textures-1.12.5",
+                                   r"assets/sources/1.21.5/recommend.json",
+                                   r"assets/sources/1.21.5/textures.zip")
+
+@dataclass
+class AssetInfo:
+    frames: list[tuple[Image.Image, str]]
+    source_id: str

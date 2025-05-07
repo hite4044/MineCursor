@@ -1,15 +1,15 @@
 import json
 import re
-from enum import Enum
 from io import BytesIO
+from typing import Optional
 
 import wx
 from PIL import Image, UnidentifiedImageError
 from PIL.Image import Resampling
 
-from typing import Optional
+from lib.cursor_setter import CursorKind
+from lib.data import CursorElement, AssetSources, AssetInfo
 from lib.image_pil2wx import PilImg2WxImg
-from lib.setter import CursorKind
 from lib.ui_interface import ui_class
 from ui.element_add_dialog import ElementSelectListUI, ElementAddDialogUI, AssetSource
 
@@ -24,19 +24,31 @@ ROOT_IMAGES = {
 }
 
 
-class AssetSources(Enum):
-    MINECRAFT_1_21_5 = AssetSource("Minecraft 1.21.5",
-                                   r"assets/sources/1.21.5/recommend.json",
-                                   r"assets/sources/1.21.5/textures.zip")
-
-
 class ElementAddDialog(ElementAddDialogUI):
     def __init__(self, parent: wx.Window):
         super().__init__(parent)
+        self.element: CursorElement | None = None
         source: AssetSource
         for source in map(lambda n: n.value, AssetSources.__members__.values()):
             selector = ui_class(ElementSelectListUI)(self.sources_notebook, source, CursorKind.ARROW)
             self.sources_notebook.AddPage(selector, source.name)
+        self.ok.Bind(wx.EVT_BUTTON, self.on_ok)
+        self.cancel.Bind(wx.EVT_BUTTON, self.on_close)
+
+    def on_ok(self, _):
+        active_selector: ElementSelectList = self.sources_notebook.GetCurrentPage()
+        info = active_selector.get_element_info()
+        if info is None:
+            wx.MessageBox("请选择一个元素", "错误")
+            return
+        element_name = info.frames[0][1].split("/")[-1].split(".")[0].replace("_", " ").title()
+        frames = [f for f, p in info.frames]
+        frame_paths = [p for f, p in info.frames]
+        self.element = CursorElement(element_name, frames, info.source_id, frame_paths)
+        self.EndModal(wx.ID_OK)
+
+    def on_close(self, _):
+        self.EndModal(wx.ID_CANCEL)
 
 
 def translate_image(image: Image.Image) -> Image.Image:
@@ -108,10 +120,8 @@ class ElementSelectList(ElementSelectListUI):
                         ani_root = self.assets_tree.AppendItem(root, no_num_path.split("/")[-1])
                         animation_root_map[no_num_path] = (ani_root, int(number))
                         assets_map[ani_root] = full_path
-                        print(f"Create Root: {no_num_path.split('/')[-1]}, {ani_root.ID}")
                     else:
                         ani_root = animation_root_map[no_num_path][0]
-                        print(f"Add Animation: {number}, {ani_root.ID}")
                         animation_root_map[no_num_path] = (ani_root, int(number))
                     item = self.assets_tree.AppendItem(ani_root, number)
                     assets_map[item] = full_path
@@ -211,17 +221,20 @@ class ElementSelectList(ElementSelectListUI):
         pil_image = image.resize((image.width * mutil, image.height * mutil), Resampling.NEAREST)
         self.asset_shower.SetBitmap(PilImg2WxImg(pil_image))
 
-    def get_element_info(self) -> Optional[list[tuple[Image.Image, str]]]:
+    def get_element_info(self) -> Optional[AssetInfo]:
+        if self.showing_item is None:
+            return None
         if self.showing_item.IsOk():
             if self.assets_tree.ItemHasChildren(self.showing_item):
                 children = get_item_children(self.assets_tree, self.showing_item)
-                return [(Image.open(BytesIO(self.zip_file.read(self.assets_map[child]))), self.assets_map[child])
-                       for child in children]
+                return AssetInfo([(Image.open(BytesIO(self.zip_file.read(self.assets_map[child]))).convert("RGBA"),
+                                   self.assets_map[child])
+                                  for child in children], self.source.id)
             zip_path = self.assets_map[self.showing_item]
             image_io = BytesIO(self.zip_file.read(zip_path))
-            return [(Image.open(image_io), zip_path)]
+            return AssetInfo([(Image.open(image_io).convert("RGBA"), zip_path)], self.source.id)
         else:
-            return []
+            return None
 
 
 if __name__ == "__main__":

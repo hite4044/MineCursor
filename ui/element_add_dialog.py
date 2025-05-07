@@ -2,21 +2,16 @@ from dataclasses import dataclass
 
 import wx
 
-from lib.setter import CursorKind
+from lib.cursor_setter import CursorKind
+from lib.data import AssetSource
 from ui.widget.font import ft
 from ui.widget.no_tab_notebook import NoTabNotebook
 
 
-@dataclass
-class AssetSource:
-    name: str
-    recommend_file: str
-    textures_zip: str
-
 
 class ElementAddDialogUI(wx.Dialog):
     def __init__(self, parent: wx.Window):
-        super().__init__(parent, size=(1200, 800), title="素材选择器", style=wx.DEFAULT_FRAME_STYLE)
+        super().__init__(parent, size=(1200, 800), title="添加素材", style=wx.DEFAULT_FRAME_STYLE)
         self.SetFont(parent.GetFont())
         self.sources_notebook = wx.Notebook(self)
         self.ok = wx.Button(self, label="确定")

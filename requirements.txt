@@ -1,0 +1,3 @@
+wxPython==4.2.3
+pillow==11.2.1
+ani_file==0.1.3

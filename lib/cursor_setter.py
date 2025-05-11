@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from win32con import IMAGE_CURSOR, LR_LOADFROMFILE, OCR_NORMAL, OCR_APPSTARTING, OCR_WAIT, OCR_CROSS, OCR_IBEAM, OCR_NO, \
-    OCR_SIZENS, OCR_SIZEWE, OCR_SIZENWSE, OCR_SIZENESW, OCR_UP, OCR_HAND
+    OCR_SIZENS, OCR_SIZEWE, OCR_SIZENWSE, OCR_SIZENESW, OCR_UP, OCR_HAND, OCR_SIZEALL
 from win32gui import LoadImage
 
 OCR_HELP = 32651
@@ -13,13 +13,16 @@ OCR_PERSON = 32672
 SetSystemCursor = windll.user32.SetSystemCursor
 SYS_CUR_ROOT = r"%SystemRoot%\cursors\aero_"
 
+
 @dataclass
 class RegPath:
     h_key: int
     path: str
 
 
-SYSTEM_SCHEMES = RegPath(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Control Panel\Cursors")
+SYSTEM_SCHEMES = RegPath(winreg.HKEY_LOCAL_MACHINE,
+                         r"SOFTWARE\Microsoft\Windows\CurrentVersion\Control Panel\Cursors\Default")
+
 USER_SCHEMES = RegPath(winreg.HKEY_CURRENT_USER, r"Control Panel\Cursors")
 
 
@@ -41,10 +44,51 @@ class CursorKind(Enum):
     SIZE_WE = "SizeWE"
     SIZE_NW_SE = "SizeNWSE"
     SIZE_NE_SW = "SizeNESW"
+    SIZE_ALL = "SizeAll"
     UP_ARROW = "UpArrow"
     HAND = "Hand"
     PIN = "Pin"
     PERSON = "Person"
+
+
+CURSOR_KIND_NAME_OFFICIAL: dict[CursorKind, str] = {
+    CursorKind.ARROW: "正常选择",
+    CursorKind.HELP: "帮助选择",
+    CursorKind.APP_STARTING: "后台运行",
+    CursorKind.WAIT: "忙",
+    CursorKind.CROSS_HAIR: "精确选择",
+    CursorKind.TEXT: "文本选择",
+    CursorKind.PEN: "手写",
+    CursorKind.NO: "不可用",
+    CursorKind.SIZE_SN: "垂直调整大小",
+    CursorKind.SIZE_WE: "水平调整大小",
+    CursorKind.SIZE_NW_SE: "沿对角线调整大小 1",
+    CursorKind.SIZE_NE_SW: "沿对角线调整大小 2",
+    CursorKind.SIZE_ALL: "移动",
+    CursorKind.UP_ARROW: "候选",
+    CursorKind.HAND: "链接选择",
+    CursorKind.PIN: "位置选择",
+    CursorKind.PERSON: "个人选择"
+}
+CURSOR_KIND_NAME_CUTE: dict[CursorKind, str] = {
+    CursorKind.ARROW: "正常",
+    CursorKind.HELP: "帮助",
+    CursorKind.APP_STARTING: "悄悄运行",
+    CursorKind.WAIT: "卡了",
+    CursorKind.CROSS_HAIR: "盯帧选择",
+    CursorKind.TEXT: "请输入文本",
+    CursorKind.PEN: "不用手的手写",
+    CursorKind.NO: "哒咩",
+    CursorKind.SIZE_SN: "变高",
+    CursorKind.SIZE_WE: "变长",
+    CursorKind.SIZE_NW_SE: "↖向左变大变高",
+    CursorKind.SIZE_NE_SW: "↗向右变大变高",
+    CursorKind.SIZE_ALL: "瞬移",
+    CursorKind.UP_ARROW: "举起手来！",
+    CursorKind.HAND: "戳一下",
+    CursorKind.PIN: "在哪里?",
+    CursorKind.PERSON: "你自己"
+}
 
 
 class CursorData:
@@ -58,7 +102,6 @@ class CursorData:
 
     def set_path(self, path: str):
         self.cursor_path = path
-
 
 
 @dataclass
@@ -75,6 +118,7 @@ class CursorPaths:
     size_we: CursorData = CursorData("ew.cur", CursorKind.SIZE_WE, OCR_SIZEWE)
     size_nw_se: CursorData = CursorData("nwse.cur", CursorKind.SIZE_NW_SE, OCR_SIZENWSE)
     size_ne_sw: CursorData = CursorData("nesw.cur", CursorKind.SIZE_NE_SW, OCR_SIZENESW)
+    size_all: CursorData = CursorData("move.cur", CursorKind.SIZE_ALL, OCR_SIZEALL)
     up_arrow: CursorData = CursorData("up.cur", CursorKind.UP_ARROW, OCR_UP)
     hand: CursorData = CursorData("link.cur", CursorKind.HAND, OCR_HAND)  # 链接选择
     pin: CursorData = CursorData("pin.cur", CursorKind.PIN, OCR_PIN)  # 位置选择

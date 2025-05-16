@@ -4,7 +4,8 @@ from PIL import Image
 from lib.image_pil2wx import PilImg2WxImg
 
 
-def set_multi_size_icon(frame: wx.TopLevelWindow, icon_path: str, resampling: Image.Resampling = Image.Resampling.NEAREST):
+def set_multi_size_icon(frame: wx.TopLevelWindow, icon_path: str,
+                        resampling: Image.Resampling = Image.Resampling.NEAREST):
     image = Image.open(icon_path)
     size_list = [16, 24, 32, 64, 128, 256, 512]
     bundle = wx.IconBundle()

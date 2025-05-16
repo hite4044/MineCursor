@@ -84,7 +84,7 @@ class DataEntry(wx.Panel):
         if self.entry.GetValue() != self.last_value:
             wx.PostEvent(self.entry, DataEntryEvent(self.entry.GetValue()))
 
-    def finish_edit(self, _ = None):
+    def finish_edit(self, _=None):
         if isinstance(self.entry, wx.Choice):
             data = self.entry.GetSelection()
             assert data != -1
@@ -114,7 +114,7 @@ class DataEntry(wx.Panel):
         event = DataEntryEvent(data)
         wx.PostEvent(self.entry, event)
 
-    def set_value(self, value: str | int | float | bool| Enum):
+    def set_value(self, value: str | int | float | bool | Enum):
         self.data = value
         self.last_value = value
         if self.data_type in [int, float]:
@@ -151,3 +151,8 @@ class FloatEntry(DataEntry):
 class BoolEntry(DataEntry):
     def __init__(self, parent: wx.Window, label: str, use_sizer=False):
         super().__init__(parent, label, bool, use_sizer=use_sizer)
+
+
+class EnumEntry(DataEntry):
+    def __init__(self, parent: wx.Window, label: str, enum_names: dict[Enum, str], use_sizer=False):
+        super().__init__(parent, label, Enum, enum_names=enum_names, use_sizer=use_sizer)

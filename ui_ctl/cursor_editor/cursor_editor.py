@@ -3,7 +3,9 @@ from PIL import Image
 
 from lib.data import CursorProject, CursorElement, Position, Scale2D
 from lib.log import logger
+from lib.perf import Counter
 from ui.cursor_editor import CursorEditorUI
+from ui.widget.win_icon import set_multi_size_icon
 from ui_ctl.cursor_editor.element_canvas import ElementCanvas
 from ui_ctl.cursor_editor.element_list_ctrl import ElementListCtrl
 from ui_ctl.cursor_editor.events import EVT_PROJECT_UPDATED, EVT_ELEMENT_SELECTED, EVT_SCALE_UPDATED, \
@@ -17,7 +19,9 @@ class CursorEditor(CursorEditorUI):
     info_editor: 'InfoEditor'
 
     def __init__(self, parent: wx.Window | None, project: CursorProject):
+        timer = Counter(create_start=True)
         super().__init__(parent, project)
+        set_multi_size_icon(self, "assets\icons\cursor_editor.png")
         self.project = project
         self.b_canvas_size = self.project.raw_canvas_size
         self.b_output_size = self.project.canvas_size
@@ -28,6 +32,7 @@ class CursorEditor(CursorEditorUI):
         self.Bind(EVT_ELEMENT_SELECTED, self.on_element_selected)
         self.Bind(EVT_PROJECT_UPDATED, self.on_project_updated)
         self.Bind(EVT_SCALE_UPDATED, self.on_scale_updated)
+        logger.info(f"项目编辑器初始化用时: {timer.endT()}, 项目: {project}")
 
     def on_mouse_move(self, event: wx.MouseEvent):
         event.Skip()
@@ -49,7 +54,7 @@ class CursorEditor(CursorEditorUI):
             self.b_rect_size = None
 
     def on_project_updated(self, _):
-        logger.info("项目数据已更新")
+        logger.debug("项目数据已更新")
         self.elements_lc.project_updated()
         self.canvas.project_updated()
         if self.canvas.active_element is None:

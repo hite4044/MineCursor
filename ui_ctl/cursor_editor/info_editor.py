@@ -49,7 +49,7 @@ def create_cfg_bind(widget: DataEntry,
             else:
                 setattr(obj, cfg_path, event.data)
         cbk(event)
-        logger.debug(f"更新对象 {obj} 的 {cfg_path} 属性")
+        logger.info(f"更新对象 {obj} 的 {cfg_path} 属性")
         event = ProjectUpdatedEvent()
         wx.PostEvent(widget.entry, event)
 
@@ -135,16 +135,15 @@ class ProjectInfoEditor(ProjectInfoEditorUI):
     def __init__(self, parent: wx.Window, project: CursorProject):
         super().__init__(parent, project)
         create_cfg_bind(self.name, project, "name")
-        create_cfg_bind(self.external_name, project, "external_name")
+        create_cfg_bind(self.external_name, project, "external_name", checking_none=True)
+        create_cfg_bind(self.kind, project, "kind")
         create_cfg_bind(self.center_x, project, "center_pos.x")
         create_cfg_bind(self.center_y, project, "center_pos.y")
         create_cfg_bind(self.scale, project, "scale")
         create_cfg_bind(self.is_ani_cursor, project, "is_ani_cursor")
+        create_cfg_bind(self.frame_count, project, "frame_count")
+        create_cfg_bind(self.ani_rate, project, "ani_rate")
         self.is_ani_cursor.entry.Bind(EVT_DATA_UPDATE, self.on_is_ani_cursor_switch)
-        if project.is_ani_cursor:
-            create_cfg_bind(self.frame_count, project, "frame_count")
-            create_cfg_bind(self.ani_rate, project, "ani_rate")
-        self.resample_type.Unbind(wx.EVT_CHOICE)
 
         def on_choice(event: wx.CommandEvent):
             event.Skip()

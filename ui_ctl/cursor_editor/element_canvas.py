@@ -2,6 +2,7 @@ from typing import cast
 
 import wx
 from PIL import Image
+from PIL.Image import Resampling
 
 from lib.data import CursorProject, CursorElement, Position
 from lib.image_pil2wx import PilImg2WxImg
@@ -188,7 +189,7 @@ class ElementCanvas(ElementCanvasUI):
             current_frame = self.frames[self.frame_index]
             current_frame = current_frame.resize(
                 (int(current_frame.width * self.scale), int(current_frame.height * self.scale)),
-                resample=self.project.resample
+                resample=Resampling.BOX
             )
             image = PilImg2WxImg(current_frame)
             bitmap = image.ConvertToBitmap()

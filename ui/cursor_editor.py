@@ -3,10 +3,11 @@ from typing import cast
 import wx
 from PIL.Image import Resampling
 
+from lib.cursor_setter import CURSOR_KIND_NAME_OFFICIAL
 from lib.data import CursorProject
 from lib.ui_interface import ui_class
 from ui.widget.center_text import CenteredText
-from ui.widget.data_entry import IntEntry, FloatEntry, DataEntry, StringEntry, BoolEntry
+from ui.widget.data_entry import IntEntry, FloatEntry, DataEntry, StringEntry, BoolEntry, EnumEntry
 from ui.widget.font import ft
 from ui.widget.no_tab_notebook import NoTabNotebook
 
@@ -180,7 +181,9 @@ class ElementInfoEditorUI(wx.ScrolledWindow):
             (("缩放", False), ((FloatEntry, "X"), (FloatEntry, "Y"))),
             (("裁剪", True), ((IntEntry, "上"), (IntEntry, "下"), (IntEntry, "左"), (IntEntry, "右"))),
             (("翻转", True), ((BoolEntry, "左右翻转"), (BoolEntry, "上下翻转"))),
-            (("动画", True), ((BoolEntry, "启用关键字动画编辑"), (IntEntry, "动画开始"), (IntEntry, "帧间隔"), (IntEntry, "动画帧数"), (StringEntry, "总帧数-只读")))
+            (("动画", True),
+             ((BoolEntry, "启用关键字动画编辑"), (IntEntry, "动画开始"), (IntEntry, "帧间隔"), (IntEntry, "动画帧数"),
+              (StringEntry, "总帧数-只读")))
         ]
         sizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -269,6 +272,8 @@ class ProjectInfoEditorUI(wx.Panel):
         self.name.set_value(project.name)
         self.external_name: StringEntry = StringEntry(self, "外部名称")
         self.external_name.set_value(str(project.external_name))
+        self.kind: EnumEntry = EnumEntry(self, "指针类型", CURSOR_KIND_NAME_OFFICIAL)
+        self.kind.set_value(project.kind)
 
         ret = load_group(widget_groups[0])
         self.center_x: IntEntry = ret[0]
@@ -282,23 +287,24 @@ class ProjectInfoEditorUI(wx.Panel):
         self.is_ani_cursor: BoolEntry = BoolEntry(self, "动画光标")
         self.is_ani_cursor.set_value(project.is_ani_cursor)
 
-        if project.is_ani_cursor:
-            self.frame_count: IntEntry = IntEntry(self, "帧数")
-            self.frame_count.set_value(project.frame_count)
+        self.frame_count: IntEntry = IntEntry(self, "帧数")
+        self.frame_count.set_value(project.frame_count)
 
-            self.ani_rate: IntEntry = IntEntry(self, "帧间隔")
-            self.ani_rate.set_value(project.ani_rate)
+        self.ani_rate: IntEntry = IntEntry(self, "帧间隔")
+        self.ani_rate.set_value(project.ani_rate)
 
         self.resample_map = RESAMPLE_MAP
         self.resample_type = wx.Choice(self, choices=list(self.resample_map.values()))
         self.resample_type.SetSelection(0)
 
-        grid_sizer = wx.FlexGridSizer(7, 2, 5, 5)
+        grid_sizer = wx.FlexGridSizer(8, 2, 5, 5)
         grid_sizer.AddGrowableCol(1, 1)
         grid_sizer.Add(self.name.label, 0, wx.EXPAND)
         grid_sizer.Add(self.name.entry, 1, wx.EXPAND)
         grid_sizer.Add(self.external_name.label, 0, wx.EXPAND)
         grid_sizer.Add(self.external_name.entry, 1, wx.EXPAND)
+        grid_sizer.Add(self.kind.label, 0, wx.EXPAND)
+        grid_sizer.Add(self.kind.entry, 1, wx.EXPAND)
         grid_sizer.Add(self.scale.label, 0, wx.EXPAND)
         grid_sizer.Add(self.scale.entry, 1, wx.EXPAND)
         grid_sizer.Add(self.is_ani_cursor.label, 0, wx.EXPAND)

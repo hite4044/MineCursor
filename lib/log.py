@@ -32,10 +32,11 @@ class CustomFormatter(logging.Formatter):
         raw_msg = f"{head}{(20 - len(head)) * ' '} [{record.levelname}] : {record.msg}"
         return self.COLOR_MAP.get(record.levelno) + raw_msg + AnsiColorCodes.RESET
 
+LEVEL = logging.INFO
 
 logger = logging.getLogger("MineCursorLogger")
-logger.setLevel(logging.DEBUG)
+logger.setLevel(LEVEL)
 console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.DEBUG)
+console_handler.setLevel(LEVEL)
 console_handler.setFormatter(CustomFormatter())
 logger.addHandler(console_handler)

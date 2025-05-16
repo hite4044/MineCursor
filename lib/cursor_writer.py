@@ -27,10 +27,10 @@ def write_ani(path: str, frames: list[Image.Image], hotspot: tuple[int, int], ra
         file_path = join(project_dir, f"{i}.png")
         frame.save(file_path)
         files.append(file_path)
-        yield "保存帧至cur文件", i
+        yield "写入帧", i
     ani_path = join(project_dir, "ani_file.ani")
     ani = ani_file.open(ani_path, "w")
-    yield "合并帧至ani文件", -1
+    yield "合并帧", -1
     ani.setframespath(files, xy=hotspot)
     ani.setrate([rate for _ in range(len(frames))])
     ani.close()
@@ -46,8 +46,14 @@ def write_cur(frame: Image.Image, hotspot: tuple[int, int], path: str):
     cur.save_file(path)
 
 
-def write_cursor(path: str, frames: list[Image.Image], hotspot: tuple[int, int], rate: int):
+def write_cursor_progress(path: str, frames: list[Image.Image], hotspot: tuple[int, int], rate: int):
     if path.endswith(".cur"):
+        yield "保存至cur文件", -1
         write_cur(frames[0], hotspot, path)
     else:
-        write_ani(path, frames, hotspot, rate)
+        gen = write_ani(path, frames, hotspot, rate)
+        while True:
+            try:
+                yield next(gen)
+            except StopIteration:
+                break

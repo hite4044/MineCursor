@@ -74,5 +74,5 @@ def render_project_frame(project: CursorProject, frame: int) -> Image.Image:
         element.final_rect = (element.position[0] - x_off, element.position[1] - y_off, item.width, item.height)
         canvas.paste(item, (element.position[0] - x_off, element.position[1] - y_off), item.getchannel("A"))
     scaled_canvas = canvas.resize(project.canvas_size, project.resample)
-    logger.info(f"渲染第{str(frame).zfill(2)}帧耗时: {timer.endT()}")
+    logger.debug(f"渲染第{str(frame).zfill(2)}帧耗时: {timer.endT()}")
     return scaled_canvas

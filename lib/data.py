@@ -1,7 +1,10 @@
+import os.path
 import random
 from dataclasses import dataclass, field
 from enum import Enum
 from io import BytesIO
+from os import makedirs
+from os.path import expandvars, join
 from typing import Any
 from zipfile import ZipFile
 
@@ -10,22 +13,62 @@ from PIL import Image
 from lib.cursor_setter import CursorKind
 
 
+def generate_id(length: int = 4):
+    return hex(int.from_bytes(random.randbytes(length), "big"))[2:]
+
+
 class DataClassSaveLoadMixin:
-    def save(self) -> list[Any]:
+    def save(self, use_dict: bool = False) -> list[Any] | dict[str, Any]:
         field_names = getattr(self, "__dataclass_fields__").keys()
-        fields = []
-        for field_name in field_names:
-            fields.append(getattr(self, field_name))
+        if use_dict:
+            fields = {}
+            for field_name in field_names:
+                attr_value = getattr(self, field_name)
+                fields[field_name] = attr_value
+        else:
+            fields = []
+            for field_name in field_names:
+                fields.append(getattr(self, field_name))
         return fields
 
     # noinspection PyArgumentList
     @classmethod
-    def load(cls, data: list[Any]):
-        return cls(*data)
+    def load(cls, data: list[Any] | dict[str, Any]):
+        if isinstance(data, dict):
+            return cls(**data)
+        else:
+            return cls(*data)
 
     def __getitem__(self, item):
         field_names = list(getattr(self, "__dataclass_fields__").keys())
         return getattr(self, field_names[item])
+
+
+class SourceLoadManager:
+    def __init__(self):
+        self.zips: dict[str, ZipFile] = {}
+
+    def load_zip(self, source_id: str):
+        if source_id not in self.zips:
+            source = AssetSources.get_source_by_id(source_id)
+            with open(source.textures_zip, "rb") as f:
+                bytes_io = BytesIO(f.read())
+            self.zips[source_id] = ZipFile(bytes_io)
+
+        return self.zips[source_id]
+
+
+class WorkFileManager:
+    def __init__(self, path: str):
+        app_data_roaming = expandvars("%APPDATA%")
+        app_data, _ = os.path.split(app_data_roaming)
+        self.work_dir = join(app_data, path)
+        makedirs(self.work_dir, exist_ok=True)
+
+    def make_work_dir(self, name: str) -> str:
+        makedirs(join(self.work_dir, name))
+        return join(self.work_dir, name)
+
 
 
 @dataclass
@@ -59,7 +102,7 @@ class AssetSourceInfo:
                  source_path: str,
 
                  size: tuple[int, int] | None = None,
-                 color: tuple[int, int, int] | tuple[float, float, float] | None = None, ):
+                 color: tuple[int, int, int] | tuple[int, int, int, int] | None = None, ):
         self.type: AssetType = type_
         self.source_id: str = source_id
         self.source_path: str = source_path
@@ -83,6 +126,17 @@ class AssetSourceInfo:
             source_path=data["source_path"],
             **({"size": data["size"], "color": data["color"]} if "size" in data else {})
         )
+
+    def load_frame(self) -> Image.Image:
+        if self.type == AssetType.ZIP_FILE:
+            zip_file = source_load_manager.load_zip(self.source_id)
+            return Image.open(zip_file.open(self.source_path)).convert("RGBA")
+        elif self.type == AssetType.RECT:
+            if len(self.color) == 3:
+                return Image.new("RGBA", self.size, (*self.color, 255))
+            elif len(self.color) == 4:
+                return Image.new("RGBA", self.size, self.color)
+        raise NotImplementedError
 
 
 class ProcessStep(Enum):
@@ -114,10 +168,10 @@ class CursorElement:
                  name: str,
                  frames: list[Image.Image],
                  source_infos: list[AssetSourceInfo] = None,
-                 position: Position = Position(0, 0),
-                 scale: Scale2D = Scale2D(1.0, 1.0),
+                 position: Position = None,
+                 scale: Scale2D = None,
                  rotation: float = 0,
-                 crop_margins: Margins = Margins(0, 0, 0, 0),
+                 crop_margins: Margins = None,
                  reverse_x: bool = False,
                  reverse_y: bool = False,
                  resample: Image.Resampling = Image.Resampling.NEAREST):
@@ -126,10 +180,10 @@ class CursorElement:
         self.name: str = name
         self.frames: list[Image.Image] = frames
         self.source_infos: list[AssetSourceInfo] = source_infos
-        self.position: Position = position
-        self.scale: Scale2D = scale
+        self.position: Position = position if position else Position(0, 0)
+        self.scale: Scale2D = scale if scale else Scale2D(1.0, 1.0)
         self.rotation: float = rotation
-        self.crop_margins: Margins = crop_margins
+        self.crop_margins: Margins = crop_margins if crop_margins else Margins(0, 0, 0, 0)
         self.reverse_x: bool = reverse_x
         self.reverse_y: bool = reverse_y
         self.resample: Image.Resampling = resample
@@ -179,7 +233,7 @@ class CursorElement:
         }
 
     @staticmethod
-    def from_dict(data: dict):
+    def from_dict(data: dict) -> 'CursorElement':
         element = CursorElement(
             name=data["name"],
             frames=[],
@@ -196,23 +250,8 @@ class CursorElement:
         element.animation_data = [AnimationFrameData.load(data) for data in data["animation_data"]]
         element.proc_step = [ProcessStep(step) for step in data["proc_step"]]
 
-        active_sources: dict[str, ZipFile] = {}
-        print(element.source_infos)
         for source_info in element.source_infos:
-            if source_info.type == AssetType.ZIP_FILE:
-                if source_info.source_id not in active_sources:
-                    source = AssetSources.get_source_by_id(source_info.source_id)
-                    active_sources[source_info.source_id] = ZipFile(source.textures_zip)
-                current_source = active_sources[source_info.source_id]
-                image_bytes = current_source.read(source_info.source_path)
-                image_io = BytesIO(image_bytes)
-                frame = Image.open(image_io)
-
-            elif source_info.type == AssetType.RECT:
-                frame = Image.new("RGBA", source_info.size, source_info.color)
-
-            else:
-                raise NotImplementedError
+            frame = source_info.load_frame()
             element.frames.append(frame)
 
         element.build_animation_index()
@@ -239,6 +278,8 @@ class CursorProject:
         self.frame_count = 20
         self.ani_rate: int = 50
 
+        self.id: str = generate_id(2)
+
     @property
     def canvas_size(self):
         return int(self.raw_canvas_size[0] * self.scale), int(self.raw_canvas_size[1] * self.scale)
@@ -247,7 +288,39 @@ class CursorProject:
         self.elements.insert(0, element)
 
     def __str__(self):
-        return f"<Project:{self.name}>"
+        return f"<Project:[{self.name}]>"
+
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "raw_canvas_size": self.raw_canvas_size,
+            "external_name": self.external_name,
+            "kind": self.kind.value,
+            "elements": [element.to_dict() for element in self.elements],
+            "center_pos": self.center_pos.save(),
+            "scale": self.scale,
+            "resample": self.resample.value,
+            "is_ani_cursor": self.is_ani_cursor,
+            "frame_count": self.frame_count,
+            "ani_rate": self.ani_rate,
+        }
+
+    @staticmethod
+    def from_dict(data: dict) -> 'CursorProject':
+        project = CursorProject(
+            name=data["name"],
+            canvas_size=data["raw_canvas_size"],
+        )
+        project.external_name = data["external_name"]
+        project.kind = CursorKind(data["kind"])
+        project.elements = [CursorElement.from_dict(element) for element in data["elements"]]
+        project.center_pos = Position.load(data["center_pos"])
+        project.scale = data["scale"]
+        project.resample = Image.Resampling(data["resample"])
+        project.is_ani_cursor = data["is_ani_cursor"]
+        project.frame_count = data["frame_count"]
+        project.ani_rate = data["ani_rate"]
+        return project
 
 
 @dataclass()
@@ -258,10 +331,34 @@ class CursorTheme:
     description: str = "None"
     projects: list[CursorProject] = field(default_factory=list)
 
-    rt_id: str = field(default_factory=lambda: int.from_bytes(random.randbytes(4), "big"))
+    id: str = field(default_factory=generate_id)
 
     def __hash__(self):
-        return self.rt_id
+        return hash(self.id)
+
+    def __str__(self):
+        return f"<Theme:[{self.name}],{self.base_size}px,{len(self.projects)}-cursors>"
+
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "id": self.id,
+            "base_size": self.base_size,
+            "author": self.author,
+            "description": self.description,
+            "projects": [project.to_dict() for project in self.projects],
+        }
+
+    @staticmethod
+    def from_dict(data: dict) -> 'CursorTheme':
+        return CursorTheme(
+            name=data["name"],
+            id=data["id"],
+            base_size=data["base_size"],
+            author=data["author"],
+            description=data["description"],
+            projects=[CursorProject.from_dict(project) for project in data["projects"]],
+        )
 
 
 @dataclass
@@ -291,3 +388,8 @@ class AssetSources(Enum):
 class AssetsChoicerAssetInfo:
     frames: list[tuple[Image.Image, str]]
     source_id: str
+
+
+source_load_manager = SourceLoadManager()
+cursors_file_manager = WorkFileManager(r"Mine Cursor\Theme Cursors")
+data_file_manager = WorkFileManager(r"Mine Cursor\Theme Data")

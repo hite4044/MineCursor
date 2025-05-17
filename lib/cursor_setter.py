@@ -178,8 +178,8 @@ def set_cursors_progress(cursors_info: CursorsInfo, scheme_type: SchemesType, sc
     full_name = f"&MineCursor_{scheme_id}_{scheme_name}"
     try:
         global_set = winreg.OpenKey(cursor_root.h_key, cursor_root.path, 0, winreg.KEY_READ | winreg.KEY_WRITE)
-        schemes_set = winreg.OpenKey(cursor_root.h_key, cursor_root.path + r"\Schemes", 0,
-                                     winreg.KEY_READ | winreg.KEY_WRITE)
+        schemes_set = winreg.CreateKeyEx(cursor_root.h_key, cursor_root.path + r"\Schemes", 0,
+                                         winreg.KEY_READ | winreg.KEY_WRITE)
 
         now_schemes = get_schemes(schemes_set)
         if scheme_id in now_schemes:

@@ -199,7 +199,7 @@ def set_cursors_progress(cursors_info: CursorsInfo, scheme_type: SchemesType, sc
 
         # 设置鼠标大小
         winreg.SetValueEx(global_set, "CursorBaseSize", 0, winreg.REG_DWORD, cursor_size)
-        winreg.SetValueEx(global_set, "Scheme Source", 0, winreg.REG_DWORD, 0)
+        winreg.SetValueEx(global_set, "Scheme Source", 0, winreg.REG_DWORD, 1)
 
         for i, cursor_data in enumerate(cursor_datas):
             yield f"设置指针 [{cursor_data.kind.name}]", i

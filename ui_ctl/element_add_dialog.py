@@ -11,7 +11,7 @@ from lib.cursor_setter import CursorKind
 from lib.data import CursorElement, AssetSources, AssetsChoicerAssetInfo, AssetSourceInfo, AssetType
 from lib.image_pil2wx import PilImg2WxImg
 from lib.ui_interface import ui_class
-from ui.element_add_dialog import ElementSelectListUI, ElementAddDialogUI, AssetSource
+from ui.element_add_dialog import ElementSelectListUI, ElementAddDialogUI, AssetSource, RectElementSourceUI
 
 ROOT_IMAGES = {
     "推荐": "assets/resource_type_icons/Recommend.png",
@@ -32,10 +32,22 @@ class ElementAddDialog(ElementAddDialogUI):
         for source in map(lambda n: n.value, AssetSources.__members__.values()):
             selector = ui_class(ElementSelectListUI)(self.sources_notebook, source, CursorKind.ARROW)
             self.sources_notebook.AddPage(selector, source.name)
+        self.rect_element_source = RectElementSource(self.sources_notebook)
+        self.sources_notebook.AddPage(self.rect_element_source, "矩形")
         self.ok.Bind(wx.EVT_BUTTON, self.on_ok)
         self.cancel.Bind(wx.EVT_BUTTON, self.on_close)
 
     def on_ok(self, _):
+        if self.sources_notebook.GetCurrentPage() is self.rect_element_source:
+            self.proc_rect_page()
+        else:
+            self.proc_source_page()
+        self.EndModal(wx.ID_OK)
+
+    def proc_rect_page(self):
+        self.element = self.rect_element_source.get_element()
+
+    def proc_source_page(self):
         active_selector: ElementSelectList = self.sources_notebook.GetCurrentPage()
         info = active_selector.get_element_info()
         if info is None:
@@ -48,10 +60,36 @@ class ElementAddDialog(ElementAddDialogUI):
         self.element = CursorElement(element_name, frames, source_infos)
         if len(frames) > 1:
             self.element.animation_length = len(frames)
-        self.EndModal(wx.ID_OK)
 
     def on_close(self, _):
         self.EndModal(wx.ID_CANCEL)
+
+
+class RectElementSource(RectElementSourceUI):
+    def __init__(self, parent: wx.Window):
+        super().__init__(parent)
+        self.name.set_value("矩形")
+        self.size_width.set_value(16)
+        self.size_height.set_value(16)
+        self.color_r.set_value(255)
+        self.color_g.set_value(255)
+        self.color_b.set_value(255)
+        self.color_a.set_value(255)
+        self.picker.SetColour(wx.Colour(255, 255, 255))
+        self.picker.Bind(wx.EVT_COLOURPICKER_CHANGED, self.on_pick_color)
+
+    def on_pick_color(self, event: wx.Event):
+        event.Skip()
+        color = self.picker.GetColour()
+        self.color_r.set_value(color.Red())
+        self.color_g.set_value(color.Green())
+        self.color_b.set_value(color.Blue())
+
+    def get_element(self):
+        size = (self.size_width.data, self.size_height.data)
+        color = (self.color_r.data, self.color_g.data, self.color_b.data, self.color_a.data)
+        frame = Image.new("RGBA", size, color)
+        return CursorElement(self.name.data, [frame], [AssetSourceInfo(AssetType.RECT, size=size, color=color)])
 
 
 def translate_image(image: Image.Image) -> Image.Image:
@@ -230,9 +268,10 @@ class ElementSelectList(ElementSelectListUI):
         if self.showing_item.IsOk():
             if self.assets_tree.ItemHasChildren(self.showing_item):
                 children = get_item_children(self.assets_tree, self.showing_item)
-                return AssetsChoicerAssetInfo([(Image.open(BytesIO(self.zip_file.read(self.assets_map[child]))).convert("RGBA"),
-                                                self.assets_map[child])
-                                               for child in children], self.source.id)
+                return AssetsChoicerAssetInfo(
+                    [(Image.open(BytesIO(self.zip_file.read(self.assets_map[child]))).convert("RGBA"),
+                      self.assets_map[child])
+                     for child in children], self.source.id)
             zip_path = self.assets_map[self.showing_item]
             image_io = BytesIO(self.zip_file.read(zip_path))
             return AssetsChoicerAssetInfo([(Image.open(image_io).convert("RGBA"), zip_path)], self.source.id)
@@ -241,7 +280,7 @@ class ElementSelectList(ElementSelectListUI):
 
 
 if __name__ == "__main__":
-    from ui.widget.font import ft
+    from widget.font import ft
 
     app = wx.App()
     win = wx.Frame(None)

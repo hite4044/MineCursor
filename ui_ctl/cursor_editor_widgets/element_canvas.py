@@ -1,4 +1,5 @@
 from typing import cast
+from typing import cast as type_cast
 
 import wx
 from PIL import Image
@@ -9,7 +10,7 @@ from lib.image_pil2wx import PilImg2WxImg
 from lib.log import logger
 from lib.render import render_project_frame
 from ui.cursor_editor import ElementCanvasUI
-from ui_ctl.cursor_editor.events import ElementSelectedEvent, ScaleUpdatedEvent, ProjectUpdatedEvent
+from ui_ctl.cursor_editor_widgets.events import ElementSelectedEvent, ScaleUpdatedEvent, ProjectUpdatedEvent
 
 EC_HOTSPOT_LEN = 5
 EC_SCALE_LEVEL = [
@@ -35,8 +36,8 @@ class ElementCanvas(ElementCanvasUI):
     def __init__(self, parent: wx.Window, project: CursorProject):
         super().__init__(parent, project)
         self.active_element: CursorElement | None = None
-        self.scale = 8.0
-        self.scale_index: int = 8
+        self.scale = 10.0
+        self.scale_index: int = EC_SCALE_LEVEL.index(self.scale)
         self.x_offset: float = 0.5
         self.y_offset: float = 0.5
         self.frame_index = -1
@@ -45,6 +46,7 @@ class ElementCanvas(ElementCanvasUI):
         self.last_point = None
         self.last_index = 0
         self.drag_offset: tuple[int, int] | None = None
+        self.cvs_drag_offset: tuple[int, int] | None = None
         self.animation_timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, lambda _: self.update_frame())
 
@@ -52,8 +54,8 @@ class ElementCanvas(ElementCanvasUI):
 
         self.Bind(wx.EVT_PAINT, self.on_paint)
         self.Bind(wx.EVT_SIZE, self.on_size)
-        self.Bind(wx.EVT_LEFT_DOWN, self.on_click)
         self.Bind(wx.EVT_MOUSE_EVENTS, self.on_dragging)
+        self.Bind(wx.EVT_LEFT_DOWN, self.on_click)
         self.Bind(wx.EVT_MOUSEWHEEL, self.on_scroll)
 
         if project.is_ani_cursor:
@@ -116,28 +118,49 @@ class ElementCanvas(ElementCanvasUI):
 
     def on_dragging(self, event: wx.MouseEvent):
         event.Skip()
-        if event.LeftUp() and self.drag_offset:
-            logger.debug("拖动结束")
-            self.drag_offset = None
-            wx.PostEvent(self.GetParent(), ProjectUpdatedEvent())
-            self.post_element_selected(self.active_element)
-        if not event.Dragging():
-            return
-        if not self.active_element:
-            return
-        pos = self.translate_mouse_position(cast(tuple[int, int], event.GetPosition()), check_border=False)
-        if pos is None:
-            return
-        if self.drag_offset is None:
-            ele_pos = self.active_element.position
-            self.drag_offset = (pos[0] - ele_pos.x, pos[1] - ele_pos.y)
-            logger.debug(f"拖动开始 -> {self.active_element}")
-            return
-        new_pos = Position(pos[0] - self.drag_offset[0], pos[1] - self.drag_offset[1])
-        if self.active_element.position != new_pos:
-            self.active_element.position = new_pos
-            logger.debug(f"元素位置更新 -> {self.active_element}")
-            self.clear_frame_cache()
+        if event.LeftUp():
+            if self.drag_offset:
+                logger.debug("拖动结束")
+                self.drag_offset = None
+                wx.PostEvent(self.GetParent(), ProjectUpdatedEvent())
+                self.post_element_selected(self.active_element)
+            if self.cvs_drag_offset:
+                logger.debug("画布拖动结束")
+                self.cvs_drag_offset = None
+        if event.LeftDown():
+            pos = self.translate_mouse_position(cast(tuple[int, int], event.GetPosition()))
+            if pos is None:  # 启动画布的拖动
+                cvs_x, cvs_y = self.get_canvas_position()
+                canvas_size = self.get_canvas_size()
+                x_offset = event.GetX() - cvs_x - canvas_size[0] // 2
+                y_offset = event.GetY() - cvs_y - canvas_size[1] // 2
+                self.cvs_drag_offset = x_offset, y_offset
+                logger.debug(f"画布拖动开始")
+        if event.Dragging():
+            pos = self.translate_mouse_position(cast(tuple[int, int], event.GetPosition()), check_border=False)
+            if self.drag_offset:  # 元素的拖动
+                new_pos = Position(pos[0] - self.drag_offset[0], pos[1] - self.drag_offset[1])
+                if self.active_element.position == new_pos:
+                    return
+                self.active_element.position = new_pos
+                logger.debug(f"元素位置更新 -> {self.active_element}")
+                self.clear_frame_cache()
+            elif self.cvs_drag_offset:  # 画布的拖动
+                canvas_size = self.get_canvas_size()
+                win_size = type_cast(tuple[int, int], self.GetClientSize())
+                self.x_offset = (event.GetX() - self.cvs_drag_offset[0]) / win_size[0]
+                self.y_offset = (event.GetY() - self.cvs_drag_offset[1]) / win_size[1]
+                canvas_pad_x = max(0, canvas_size[0] - 40) / 2 / win_size[0]
+                canvas_pad_y = max(0, canvas_size[1] - 40) / 2 / win_size[1]
+                self.x_offset = max(0 - canvas_pad_x, min(1 + canvas_pad_x, self.x_offset))
+                self.y_offset = max(0 - canvas_pad_y, min(1 + canvas_pad_y, self.y_offset))
+                logger.debug(f"画布偏移更新 -> {self.x_offset}, {self.y_offset}")
+            elif self.active_element: # 启动元素的拖动
+                ele_pos = self.active_element.position
+                self.drag_offset = (pos[0] - ele_pos.x, pos[1] - ele_pos.y)
+                logger.debug(f"元素拖动开始 -> {self.active_element}")
+            else:
+                return
             self.Refresh()
 
     def post_element_selected(self, element: CursorElement | None):
@@ -242,24 +265,33 @@ class ElementCanvas(ElementCanvasUI):
         if not self.scaled_frame_cache:
             return None
         bitmap: wx.Bitmap = next(iter(self.scaled_frame_cache.values()))
-        cvs_x, cvs_y = self.get_canvas_draw_position()
+        cvs_x, cvs_y = self.get_canvas_position()
         canvas_rect = wx.Rect(cvs_x, cvs_y, bitmap.GetWidth(), bitmap.GetHeight())
         if not canvas_rect.Contains(position[0], position[1]) and check_border:
             return None
         return (int((position[0] - cvs_x) / bitmap.GetWidth() * self.project.raw_canvas_size[0]),
                 int((position[1] - cvs_y) / bitmap.GetHeight() * self.project.raw_canvas_size[1]))
 
-    def get_canvas_draw_position(self) -> tuple[int, int]:
+    def get_canvas_size(self) -> tuple[int, int]:
+        if self.frames:
+            frame = next(iter(self.frames.values()))
+        else:
+            frame = render_project_frame(self.project, 0)
+            self.frames[0] = frame
+        scaled_size = (int(frame.width * self.scale), int(frame.height * self.scale))
+        return scaled_size
+
+    def get_canvas_position(self) -> tuple[int, int]:
         if not self.scaled_frame_cache:
             return 0, 0
         size = self.GetClientSize()
-        bitmap: wx.Bitmap = next(iter(self.scaled_frame_cache.values()))
-        cvs_x = int(size.width * self.x_offset - bitmap.GetWidth() / 2)
-        cvs_y = int(size.height * self.y_offset - bitmap.GetHeight() / 2)
+        canvas_size = self.get_canvas_size()
+        cvs_x = int(size.width * self.x_offset - canvas_size[0] / 2)
+        cvs_y = int(size.height * self.y_offset - canvas_size[1] / 2)
         return cvs_x, cvs_y
 
     def translate_canvas_position(self, x: int, y: int):
-        cvs_x, cvs_y = self.get_canvas_draw_position()
+        cvs_x, cvs_y = self.get_canvas_position()
         x *= self.scale * self.project.scale
         y *= self.scale * self.project.scale
         x += cvs_x

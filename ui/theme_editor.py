@@ -1,7 +1,7 @@
 import wx
 
 from lib.ui_interface import ui_class
-from ui.widget.font import ft
+from widget.font import ft
 
 
 class ThemeEditorUI(wx.Frame):

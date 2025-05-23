@@ -5,8 +5,8 @@ import wx
 from lib.data import CursorProject, CursorElement
 from lib.log import logger
 from ui.cursor_editor import InfoEditorUI, ElementInfoEditorUI, ProjectInfoEditorUI
-from ui.widget.data_entry import DataEntryEvent, DataEntry, EVT_DATA_UPDATE, BoolEntry
-from ui_ctl.cursor_editor.events import ProjectUpdatedEvent
+from widget.data_entry import DataEntryEvent, DataEntry, EVT_DATA_UPDATE, BoolEntry
+from ui_ctl.cursor_editor_widgets.events import ProjectUpdatedEvent
 
 
 class InfoEditor(InfoEditorUI):

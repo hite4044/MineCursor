@@ -4,7 +4,7 @@ from typing import Union, Type
 
 import wx
 
-from ui.widget.data_entry import DataEntry
+from widget.data_entry import DataEntry
 
 
 class DataLineType(Enum):

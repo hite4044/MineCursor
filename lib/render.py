@@ -32,14 +32,13 @@ def render_project_frame(project: CursorProject, frame: int) -> Image.Image:
     timer = Counter(create_start=True)
     canvas = Image.new("RGBA", project.raw_canvas_size, (255, 255, 255, 0))
     for element in project.elements[::-1]:
-        if len(element.frames) == 1:
+        element_frames = len(element.frames)
+        if element_frames == 1:
             frame_index = 0
         else:
             if frame < element.animation_start_offset:
                 continue
-            animation_index = element.animation_data_index
-            index = (frame - element.animation_start_offset) % len(animation_index)
-            frame_index = max(0, min(len(animation_index), animation_index[index]))
+            frame_index = element.get_frame_index(frame) % (element_frames - 1)
 
         item = element.frames[frame_index]
         left_step = copy(list(element.proc_step))
@@ -72,7 +71,8 @@ def render_project_frame(project: CursorProject, frame: int) -> Image.Image:
                 x_off, y_off = (item.width - size[0]) // 2, (item.height - size[1]) // 2
 
         element.final_rect = (element.position[0] - x_off, element.position[1] - y_off, item.width, item.height)
-        canvas.paste(item, (element.position[0] - x_off, element.position[1] - y_off), item.getchannel("A"))
+        mask = element.mask if element.mask and element.mask.size == item.size else item.getchannel("A")
+        canvas.paste(item, (element.position[0] - x_off, element.position[1] - y_off), mask)
     scaled_canvas = canvas.resize(project.canvas_size, project.resample)
     logger.debug(f"渲染第{str(frame).zfill(2)}帧耗时: {timer.endT()}")
     return scaled_canvas

@@ -5,12 +5,12 @@ from lib.data import CursorProject, CursorElement, Position, Scale2D
 from lib.log import logger
 from lib.perf import Counter
 from ui.cursor_editor import CursorEditorUI
-from ui.widget.win_icon import set_multi_size_icon
-from ui_ctl.cursor_editor.element_canvas import ElementCanvas
-from ui_ctl.cursor_editor.element_list_ctrl import ElementListCtrl
-from ui_ctl.cursor_editor.events import EVT_PROJECT_UPDATED, EVT_ELEMENT_SELECTED, EVT_SCALE_UPDATED, \
+from widget.win_icon import set_multi_size_icon
+from ui_ctl.cursor_editor_widgets.element_canvas import ElementCanvas
+from ui_ctl.cursor_editor_widgets.element_list_ctrl import ElementListCtrl
+from ui_ctl.cursor_editor_widgets.events import EVT_PROJECT_UPDATED, EVT_ELEMENT_SELECTED, EVT_SCALE_UPDATED, \
     ElementSelectedEvent, ScaleUpdatedEvent
-from ui_ctl.cursor_editor.info_editor import InfoEditor
+from ui_ctl.cursor_editor_widgets.info_editor import InfoEditor
 
 
 class CursorEditor(CursorEditorUI):

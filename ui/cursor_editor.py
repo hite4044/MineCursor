@@ -6,10 +6,10 @@ from PIL.Image import Resampling
 from lib.cursor_setter import CURSOR_KIND_NAME_OFFICIAL
 from lib.data import CursorProject
 from lib.ui_interface import ui_class
-from ui.widget.center_text import CenteredText
-from ui.widget.data_entry import IntEntry, FloatEntry, DataEntry, StringEntry, BoolEntry, EnumEntry
-from ui.widget.font import ft
-from ui.widget.no_tab_notebook import NoTabNotebook
+from widget.center_text import CenteredText
+from widget.data_entry import IntEntry, FloatEntry, DataEntry, StringEntry, BoolEntry, EnumEntry
+from widget.font import ft
+from widget.no_tab_notebook import NoTabNotebook
 
 ID_POS = 0
 ID_RECT = 1
@@ -21,7 +21,7 @@ ID_SCALE = 5
 
 class CursorEditorUI(wx.Frame):
     def __init__(self, parent: wx.Window, project: CursorProject):
-        super().__init__(parent, title=f"指针项目编辑器 - {project.name}", size=(1130, 660))
+        super().__init__(parent, title=f"指针项目编辑器 - {project.name}", size=(1320, 720))
         self.SetFont(ft(11))
 
         self.elements_lc = ui_class(ElementListCtrlUI)(self, project)

@@ -19,11 +19,11 @@ from lib.log import logger
 from lib.render import render_project_frame, render_project
 from lib.theme_manager import theme_manager, ThemeAction
 from ui.theme_editor import ThemeEditorUI, ThemeCursorListUI, ThemeSelectorUI
-from ui.widget.adv_progress_dialog import AdvancedProgressDialog
-from ui.widget.data_dialog import DataDialog, DataLineParam, DataLineType
-from ui.widget.ect_menu import EtcMenu
-from ui.widget.win_icon import set_multi_size_icon
-from ui_ctl.cursor_editor.cursor_editor import CursorEditor
+from ui_ctl.cursor_editor import CursorEditor
+from widget.adv_progress_dialog import AdvancedProgressDialog
+from widget.data_dialog import DataDialog, DataLineParam, DataLineType
+from widget.ect_menu import EtcMenu
+from widget.win_icon import set_multi_size_icon
 
 
 def get_user_name() -> str:
@@ -94,6 +94,21 @@ class ProjectDataDialog(DataDialog):
             datas["name"] = CURSOR_KIND_NAME_OFFICIAL[cast(CursorKind, datas["kind"])]
         result = (datas["name"], datas["external_name"] if datas["external_name"] else None, size, datas["kind"])
         return cast(tuple[str, str | None, int | tuple[int, int], CursorKind], result)
+
+
+class MutilProjectDataDialog(DataDialog):
+    def __init__(self, parent: wx.Window | None,
+                 size: int | tuple[int, int] = 32):
+        self.params = [
+            DataLineParam("size_width", "画布宽", DataLineType.INT, size[0]),
+            DataLineParam("size_height", "画布高", DataLineType.INT, size[1]),
+        ]
+        super().__init__(parent, "添加指针项目", *self.params)
+        set_multi_size_icon(self, r"assets/icons/add_project.png")
+
+    def get_result(self) -> tuple[int, int]:
+        datas = self.datas
+        return datas["size_width"], datas["size_height"]
 
 
 class ThemeDataDialog(DataDialog):
@@ -286,22 +301,6 @@ def apply_theme(theme: CursorTheme, target: SchemesType, lost_type: CursorLostTy
         wx.MessageBox("设置注册表失败", "主题应用错误", wx.ICON_ERROR)
 
 
-def get_icon_size(base_size: int):
-    target = 100
-    multi = 0.125
-    while True:
-        if multi < 1:
-            multi *= 2
-            if multi * base_size > target:
-                break
-        else:
-            multi += 1
-            if multi * base_size > target:
-                multi -= 1
-                break
-    return int(multi * base_size)
-
-
 class ThemeCursorList(ThemeCursorListUI):
     def __init__(self, parent: wx.Window):
         super().__init__(parent)
@@ -309,10 +308,10 @@ class ThemeCursorList(ThemeCursorListUI):
         self.image_list = wx.ImageList()
         self.use_cute_name: bool = True
         theme_manager.register_theme_change_callback(ThemeAction.DELETE, self.on_delete_theme)
-        self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_menu)
-        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_item_activated)
+        self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_menu, self)
+        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_item_activated, self)
         self.apply_theme_btn.Bind(wx.EVT_BUTTON, self.on_apply_theme)
-        self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu)
+        self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu, self)
 
     def on_apply_theme(self, _):
         if self.active_theme is None:
@@ -352,7 +351,7 @@ class ThemeCursorList(ThemeCursorListUI):
         self.active_theme = theme
         self.image_list.RemoveAll()
         self.image_list.Destroy()
-        size = get_icon_size(theme.base_size) if theme is not None else 100
+        size = 96
         self.image_list = wx.ImageList(size, size)
         self.AssignImageList(self.image_list, wx.IMAGE_LIST_NORMAL)
         self.DeleteAllItems()
@@ -391,12 +390,14 @@ class ThemeCursorList(ThemeCursorListUI):
         menu.AppendSeparator()
         text = "编辑项目" if len(projects) == 1 else f"编辑项目 ({len(projects)})"
         menu.Append(text, self.menu_edit_projects, projects)
+        text = "编辑项目信息" if len(projects) == 1 else f"编辑项目信息 ({len(projects)})"
+        menu.Append(text, self.menu_edit_project_info, projects, active_project)
         if len(projects) == 1:
-            menu.Append("编辑项目信息", self.menu_edit_project_info, active_project)
             menu.AppendSeparator()
             menu.Append("复制项目", self.menu_copy_project, active_project)
         menu.AppendSeparator()
-        menu.Append("删除", self.menu_delete_projects, projects)
+        text = "删除" if len(projects) == 1 else f"删除 ({len(projects)})"
+        menu.Append(text, self.menu_delete_projects, projects)
         self.PopupMenu(menu)
 
     def on_menu(self, event: wx.MouseEvent):
@@ -450,18 +451,27 @@ class ThemeCursorList(ThemeCursorListUI):
             self.active_theme.projects.append(project)
             self.load_theme(self.active_theme)
 
-    def menu_edit_project_info(self, project: CursorProject):
+    def menu_edit_project_info(self, projects: list[CursorProject], active_project: CursorProject | None = None):
         if not self.check_active_theme():
             return
-        dialog = ProjectDataDialog(self, False, project.name, project.external_name, project.raw_canvas_size,
-                                   project.kind)
-        if dialog.ShowModal() == wx.ID_OK:
-            name, external_name, size, kind = dialog.get_result()
-            project.name = name
-            project.external_name = external_name
-            project.raw_canvas_size = size
-            project.kind = kind
-            self.load_theme(self.active_theme)
+        if len(projects) == 1:
+            project = projects[0]
+            dialog = ProjectDataDialog(self, False, project.name, project.external_name, project.raw_canvas_size,
+                                       project.kind)
+            if dialog.ShowModal() == wx.ID_OK:
+                name, external_name, size, kind = dialog.get_result()
+                project.name = name
+                project.external_name = external_name
+                project.raw_canvas_size = size
+                project.kind = kind
+                self.load_theme(self.active_theme)
+        else:
+            dialog = MutilProjectDataDialog(self, active_project.raw_canvas_size)
+            if dialog.ShowModal() == wx.ID_OK:
+                size = dialog.get_result()
+                for project in projects:
+                    project.raw_canvas_size = size
+                self.load_theme(self.active_theme)
 
     def menu_delete_projects(self, projects: list[CursorProject]):
         if not self.check_active_theme():

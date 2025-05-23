@@ -4,7 +4,7 @@ from typing import Type
 import wx
 
 from lib.log import logger
-from ui.widget.center_text import CenteredText
+from widget.center_text import CenteredText
 
 INT32_MAX = 2 ** 31 - 1
 mcEVT_DATA_UPDATE = wx.NewEventType()
@@ -101,7 +101,6 @@ class DataEntry(wx.Panel):
             assert isinstance(self.entry, wx.TextCtrl)
             self.entry.SetValue(str(data))
         if self.data_type in [int, float] and self.limits is not None:
-            assert isinstance(self.entry, wx.SpinCtrl) or isinstance(self.entry, wx.SpinCtrlDouble)
             limited_data = max(self.limits[0], min(self.limits[1], data))
             if data != limited_data:
                 self.entry.SetValue(str(limited_data))

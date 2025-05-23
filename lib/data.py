@@ -70,7 +70,6 @@ class WorkFileManager:
         return join(self.work_dir, name)
 
 
-
 @dataclass
 class Position(DataClassSaveLoadMixin):
     x: int
@@ -98,8 +97,8 @@ class AssetType(Enum):
 
 class AssetSourceInfo:
     def __init__(self, type_: AssetType,
-                 source_id: str,
-                 source_path: str,
+                 source_id: str | None = None,
+                 source_path: str | None = None,
 
                  size: tuple[int, int] | None = None,
                  color: tuple[int, int, int] | tuple[int, int, int, int] | None = None, ):
@@ -187,14 +186,15 @@ class CursorElement:
         self.reverse_x: bool = reverse_x
         self.reverse_y: bool = reverse_y
         self.resample: Image.Resampling = resample
+        self.mask: Image.Image | None = None
 
         self.enable_key_ani: bool = False
         self.animation_key_data: AnimationKeyData = AnimationKeyData()
-        self.animation_start_offset: int = 0
+        self.animation_start_offset: int = 0  # 元素在XX帧开始显示并播放播放
         self.animation_data: list[AnimationFrameData] = [AnimationFrameData() for _ in range(len(frames))]
         self.animation_data_index: list[int] = []
         self.proc_step = DEFAULT_PROC_ORDER
-        self.final_rect = (0, 0, 0, 0)
+        self.final_rect = (0, 0, 16, 16)
         self.id = int.from_bytes(random.randbytes(4), "big")
 
         self.animation_key_data.frame_length = len(self.frames)
@@ -215,8 +215,28 @@ class CursorElement:
                 self.animation_data_index.append(index)
             index += data.index_increment
 
+    def get_frame_index(self, target_frame: int) -> int:
+        timer_frame = 0
+        frame = 0
+        if target_frame == 0:
+            return 0
+        index = 0
+        last_frame = 0
+        while True:
+            data = self.animation_data[index]
+            timer_frame += data.frame_delay
+            index += 1
+            if index >= len(self.animation_data):
+                index = 0
+                if frame == last_frame:
+                    raise RuntimeError("不对劲, 动画无限循环了")
+                last_frame = frame
+            if timer_frame > target_frame:
+                return frame
+            frame += data.index_increment
+
     def to_dict(self):
-        return {
+        data = {
             "name": self.name,
             "source_infos": [source_info.to_dict() for source_info in self.source_infos],
             "position": self.position.save(),
@@ -231,6 +251,9 @@ class CursorElement:
             "animation_data": [data.save() for data in self.animation_data],
             "proc_step": [step.value for step in self.proc_step],
         }
+        if self.mask:
+            data["mask"] = (self.mask.size, self.mask.tobytes())
+        return data
 
     @staticmethod
     def from_dict(data: dict) -> 'CursorElement':
@@ -246,6 +269,8 @@ class CursorElement:
             reverse_y=data["reverse_y"],
             resample=Image.Resampling(data["resample"])
         )
+        if "mask" in data:
+            element.mask = Image.frombytes("L", data["mask"][0], data["mask"][1])
         element.animation_key_data = AnimationKeyData.load(data["animation_key_data"])
         element.animation_data = [AnimationFrameData.load(data) for data in data["animation_data"]]
         element.proc_step = [ProcessStep(step) for step in data["proc_step"]]

@@ -1,14 +1,16 @@
-from typing import Callable
+from typing import Callable, cast as type_cast
 
 import wx
+from PIL import Image
 
 from lib.cursor_writer import write_cur, write_ani
 from lib.data import CursorProject, CursorElement
 from lib.image_pil2wx import PilImg2WxImg
 from lib.render import render_project_gen
 from ui.cursor_editor import ElementListCtrlUI
-from ui_ctl.cursor_editor.events import ProjectUpdatedEvent, ElementSelectedEvent
+from ui_ctl.cursor_editor_widgets.events import ProjectUpdatedEvent, ElementSelectedEvent
 from ui_ctl.element_add_dialog import ElementAddDialog
+from widget.mask_editor import MaskEditor
 
 
 class ElementListCtrl(ElementListCtrlUI):
@@ -18,7 +20,6 @@ class ElementListCtrl(ElementListCtrlUI):
         self.line_mapping = {}
         self.select_processing = False
         self.set_processing = False
-        self.menu_call = None
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_select)
         self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_menu)
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu)
@@ -31,8 +32,6 @@ class ElementListCtrl(ElementListCtrlUI):
                 self.SetItem(i, 1, element.name)
 
     def on_item_menu(self, event: wx.ListEvent):
-        if self.menu_call:
-            self.menu_call.Stop()
         line = event.GetIndex()
         menu = wx.Menu()
 
@@ -44,16 +43,16 @@ class ElementListCtrl(ElementListCtrlUI):
         menu.AppendSeparator()
         ect_binder("上移一层", self.move_element, line, -1)
         ect_binder("下移一层", self.move_element, line, 1)
+        ect_binder("编辑遮罩", self.on_edit_mask, line)
         menu.AppendSeparator()
         ect_binder("删除", self.remove_element, line)
 
         self.PopupMenu(menu)
 
     def on_menu(self, event: wx.MouseEvent):
-        event.Skip()
-        self.menu_call = wx.CallLater(100, self.on_menu_delay)
-
-    def on_menu_delay(self):
+        if type_cast(tuple[int, int], self.HitTest(event.GetPosition()))[0] != -1:
+            event.Skip()
+            return
         menu = wx.Menu()
 
         def ect_binder(name: str, func: Callable, *args):
@@ -63,6 +62,7 @@ class ElementListCtrl(ElementListCtrlUI):
         ect_binder("添加", self.on_add_element)
         menu.AppendSeparator()
         ect_binder("清空", self.on_remove_all_elements)
+        menu.AppendSeparator()
         ect_binder("导出", self.output_file)
         self.PopupMenu(menu)
 
@@ -75,6 +75,17 @@ class ElementListCtrl(ElementListCtrlUI):
         self.project.add_element(dialog.element)
         self.rebuild_control()
         self.send_project_updated()
+
+    def on_edit_mask(self, index: int):
+        element = self.get_element_by_index(index)
+        mask = element.mask if element.mask else element.frames[0].getchannel("A").resize(element.final_rect[2:],
+                                                                                          Image.Resampling.NEAREST)
+        background = element.frames[0].resize(mask.size, Image.Resampling.NEAREST)
+        dialog = MaskEditor(self, mask, background)
+        if dialog.ShowModal() == wx.ID_OK:
+            element.mask = dialog.get_mask()
+            self.rebuild_control()
+            self.send_project_updated()
 
     def output_file(self):
         wildcard = "动态光标 (*.ani)|*.ani" if self.project.is_ani_cursor else "静态光标 (*.cur)|*.cur"
@@ -139,7 +150,7 @@ class ElementListCtrl(ElementListCtrlUI):
             self.add_element(element)
 
     def get_element_by_index(self, index: int):
-        element_id = self.line_mapping.pop(index)
+        element_id = self.line_mapping[index]
         for element in self.project.elements:
             if element.id == element_id:
                 break

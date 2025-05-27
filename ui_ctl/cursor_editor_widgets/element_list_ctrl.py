@@ -78,9 +78,11 @@ class ElementListCtrl(ElementListCtrlUI):
 
     def on_edit_mask(self, index: int):
         element = self.get_element_by_index(index)
-        mask = element.mask if element.mask else element.frames[0].getchannel("A").resize(element.final_rect[2:],
-                                                                                          Image.Resampling.NEAREST)
-        background = element.frames[0].resize(mask.size, Image.Resampling.NEAREST)
+        background = element.final_image
+        if element.mask:
+            mask = element.mask.resize(background.size, Image.Resampling.NEAREST)
+        else:
+            mask = background.getchannel("A")
         dialog = MaskEditor(self, mask, background)
         if dialog.ShowModal() == wx.ID_OK:
             element.mask = dialog.get_mask()

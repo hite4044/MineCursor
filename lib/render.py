@@ -71,6 +71,7 @@ def render_project_frame(project: CursorProject, frame: int) -> Image.Image:
                 x_off, y_off = (item.width - size[0]) // 2, (item.height - size[1]) // 2
 
         element.final_rect = (element.position[0] - x_off, element.position[1] - y_off, item.width, item.height)
+        element.final_image = item
         mask = element.mask if element.mask and element.mask.size == item.size else item.getchannel("A")
         canvas.paste(item, (element.position[0] - x_off, element.position[1] - y_off), mask)
     scaled_canvas = canvas.resize(project.canvas_size, project.resample)

@@ -98,17 +98,21 @@ class ProjectDataDialog(DataDialog):
 
 class MutilProjectDataDialog(DataDialog):
     def __init__(self, parent: wx.Window | None,
-                 size: int | tuple[int, int] = 32):
+                 size: int | tuple[int, int] = 32,
+                 scale: float = 1.0):
         self.params = [
+            DataLineParam("edit_size", "编辑画布大小", DataLineType.BOOL, False),
             DataLineParam("size_width", "画布宽", DataLineType.INT, size[0]),
             DataLineParam("size_height", "画布高", DataLineType.INT, size[1]),
+            DataLineParam("edit_scale", "编辑缩放", DataLineType.BOOL, False),
+            DataLineParam("scale", "缩放", DataLineType.FLOAT, scale)
         ]
         super().__init__(parent, "添加指针项目", *self.params)
         set_multi_size_icon(self, r"assets/icons/add_project.png")
 
-    def get_result(self) -> tuple[int, int]:
+    def get_result(self) -> tuple[tuple[bool, int, int], tuple[bool, float]]:
         datas = self.datas
-        return datas["size_width"], datas["size_height"]
+        return (datas["edit_size"], datas["size_width"], datas["size_height"]), (datas["edit_scale"], datas["scale"])
 
 
 class ThemeDataDialog(DataDialog):
@@ -427,7 +431,7 @@ class ThemeCursorList(ThemeCursorListUI):
         if new_project.external_name is not None:
             new_project.external_name += " (New)"
         self.active_theme.projects.append(new_project)
-        self.load_theme(self.active_theme)
+        self.reload_theme()
 
     def menu_edit_projects(self, projects: list[CursorProject]):
         for project in projects:
@@ -449,7 +453,7 @@ class ThemeCursorList(ThemeCursorListUI):
             project.kind = kind
             project.external_name = external_name
             self.active_theme.projects.append(project)
-            self.load_theme(self.active_theme)
+            self.reload_theme()
 
     def menu_edit_project_info(self, projects: list[CursorProject], active_project: CursorProject | None = None):
         if not self.check_active_theme():
@@ -464,21 +468,25 @@ class ThemeCursorList(ThemeCursorListUI):
                 project.external_name = external_name
                 project.raw_canvas_size = size
                 project.kind = kind
-                self.load_theme(self.active_theme)
+                self.reload_theme()
         else:
             dialog = MutilProjectDataDialog(self, active_project.raw_canvas_size)
             if dialog.ShowModal() == wx.ID_OK:
-                size = dialog.get_result()
-                for project in projects:
-                    project.raw_canvas_size = size
-                self.load_theme(self.active_theme)
+                (enable_size, size_w, size_h), (enable_scale, scale) = dialog.get_result()
+                if enable_size:
+                    for project in projects:
+                        project.raw_canvas_size = (size_w, size_h)
+                if enable_scale:
+                    for project in projects:
+                        project.scale = scale
+                self.reload_theme()
 
     def menu_delete_projects(self, projects: list[CursorProject]):
         if not self.check_active_theme():
             return
         for project in projects:
             self.active_theme.projects.remove(project)
-        self.load_theme(self.active_theme)
+        self.reload_theme()
 
     def menu_clear_all_projects(self):
         if not self.check_active_theme():
@@ -487,6 +495,9 @@ class ThemeCursorList(ThemeCursorListUI):
         if ret != wx.YES:
             return
         self.active_theme.projects.clear()
+        self.reload_theme()
+
+    def reload_theme(self):
         self.load_theme(self.active_theme)
 
 

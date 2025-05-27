@@ -195,6 +195,7 @@ class CursorElement:
         self.animation_data_index: list[int] = []
         self.proc_step = DEFAULT_PROC_ORDER
         self.final_rect = (0, 0, 16, 16)
+        self.final_image = None
         self.id = int.from_bytes(random.randbytes(4), "big")
 
         self.animation_key_data.frame_length = len(self.frames)
@@ -362,7 +363,7 @@ class CursorTheme:
         return hash(self.id)
 
     def __str__(self):
-        return f"<Theme:[{self.name}],{self.base_size}px,{len(self.projects)}-cursors>"
+        return f"<Theme:[{self.name}],{self.base_size}px,{len(self.projects)}-curs>"
 
     def to_dict(self):
         return {

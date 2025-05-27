@@ -160,9 +160,11 @@ ME_SCALE_LEVEL = [
 def get_alpha_back(size: tuple[int, int]) -> Image.Image:
     image = Image.new("RGBA", size, (255, 255, 255, 255))
     draw = ImageDraw.ImageDraw(image)
-    for y in range(0, size[1], 8):
-        for x in range(0, size[0], 8):
-            draw.rectangle(((x, y), (x + 8, y + 8)), (200, 200, 200, 255), width=0)
+    RT = 4
+    for y in range(0, size[1], RT):
+        for x in range(0, size[0], RT):
+            if int((x + y) / RT) % 2 == 0:
+                draw.rectangle(((x, y), (x + RT - 1, y + RT - 1)), (200, 200, 200, 255), outline=None)
     return image
 
 
@@ -310,7 +312,7 @@ class MaskEditorPanel(wx.Window):
         image = self.alpha_back.copy()
         image.putalpha(int(255 * 0.35))
         image.paste(self.background, (0, 0), self.background)
-        image.paste(self.mask, (0, 0), self.mask)
+        image.paste(ImageOps.invert(self.mask), (0, 0), self.mask)
         image = image.resize((int(image.width * scale), int(image.height * scale)), Image.Resampling.NEAREST)
         return PilImg2WxImg(image).ConvertToBitmap()
 

@@ -1,7 +1,7 @@
 import os
 from copy import deepcopy
 from enum import Enum
-from os.path import join
+from os.path import join, isfile
 from shutil import rmtree
 from threading import Thread
 from typing import cast
@@ -13,7 +13,7 @@ from lib.cursor_setter import CURSOR_KIND_NAME_OFFICIAL, CURSOR_KIND_NAME_CUTE, 
     set_cursors_progress, \
     SchemesType, CR_INFO_FIELD_MAP, CursorData
 from lib.cursor_writer import write_cursor_progress
-from lib.data import CursorTheme, CursorProject, cursors_file_manager
+from lib.data import CursorTheme, CursorProject, cursors_file_manager, data_file_manager
 from lib.image_pil2wx import PilImg2WxImg
 from lib.log import logger
 from lib.render import render_project_frame, render_project
@@ -151,6 +151,17 @@ class ThemeEditor(ThemeEditorUI):
         event.Skip()
 
 
+class ThemeFileDropTarget(wx.FileDropTarget):
+    def __init__(self):
+        super().__init__()
+        self.on_drop_theme = None
+
+    def OnDropFiles(self, x: int, y: int, filenames: list[str]):
+        if self.on_drop_theme:
+            self.on_drop_theme(x, y, filenames)
+        return True
+
+
 class ThemeSelector(ThemeSelectorUI):
     def __init__(self, parent: wx.Window):
         super().__init__(parent)
@@ -160,6 +171,9 @@ class ThemeSelector(ThemeSelectorUI):
         self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_menu)
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu)
         self.load_all_theme()
+        target = ThemeFileDropTarget()
+        target.on_drop_theme = self.on_drop_theme
+        self.SetDropTarget(target)
 
     def load_all_theme(self):
         for theme in theme_manager.themes:
@@ -176,8 +190,10 @@ class ThemeSelector(ThemeSelectorUI):
         menu.Append("添加", self.on_add_theme)
         menu.AppendSeparator()
         menu.Append("编辑主题信息", self.on_edit_theme, theme)
-        menu.AppendSeparator()
         menu.Append("删除", self.on_delete_theme, theme)
+        menu.AppendSeparator()
+        menu.Append("导入主题", self.on_import_theme)
+        menu.Append("导出主题", self.on_export_theme, theme)
         self.PopupMenu(menu)
 
     def on_menu(self, event: wx.MouseEvent):
@@ -188,6 +204,9 @@ class ThemeSelector(ThemeSelectorUI):
 
         menu = EtcMenu()
         menu.Append("添加", self.on_add_theme)
+        menu.AppendSeparator()
+        menu.Append("导入主题", self.on_import_theme)
+        menu.Append("打开主题文件夹", self.on_open_theme_folder)
         menu.AppendSeparator()
         menu.Append("清空所有主题", self.on_clear_all_theme)
         self.PopupMenu(menu)
@@ -215,6 +234,32 @@ class ThemeSelector(ThemeSelectorUI):
         logger.info(f"删除主题: {theme}")
         theme_manager.remove_theme(theme)
         self.reload_themes()
+
+    def on_drop_theme(self, _, __, filenames: list[str]):
+        for file_path in filenames:
+            if isfile(file_path):
+                theme_manager.load_theme_file(file_path)
+        self.reload_themes()
+
+    def on_export_theme(self, theme: CursorTheme):
+        dialog = wx.FileDialog(self, "导出主题", wildcard="MineCursor 主题文件 (*.mctheme)|*.mctheme", style=wx.FD_SAVE)
+        if dialog.ShowModal() == wx.ID_OK:
+            file_path = dialog.GetPath()
+            theme_manager.save_theme_file(file_path, theme)
+
+    def on_import_theme(self):
+        dialog = wx.FileDialog(self, "导入主题",
+                               wildcard="MineCursor 主题文件 (*.mctheme)|*.mctheme|所有文件 (*.*)|*.*",
+                               style=wx.FD_OPEN)
+        if dialog.ShowModal() == wx.ID_OK:
+            file_path = dialog.GetPath()
+            theme_manager.load_theme_file(file_path)
+            self.reload_themes()
+
+    @staticmethod
+    def on_open_theme_folder():
+        dir_path = data_file_manager.work_dir
+        wx.LaunchDefaultApplication(dir_path)
 
     def on_clear_all_theme(self):
         logger.info(f"清空所有主题")

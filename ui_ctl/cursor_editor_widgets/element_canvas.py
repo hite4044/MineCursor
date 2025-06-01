@@ -139,6 +139,8 @@ class ElementCanvas(ElementCanvasUI):
         if event.Dragging():
             pos = self.translate_mouse_position(cast(tuple[int, int], event.GetPosition()), check_border=False)
             if self.drag_offset:  # 元素的拖动
+                if not pos:
+                    return
                 new_pos = Position(pos[0] - self.drag_offset[0], pos[1] - self.drag_offset[1])
                 if self.active_element.position == new_pos:
                     return

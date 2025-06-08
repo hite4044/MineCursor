@@ -145,6 +145,12 @@ class ProcessStep(Enum):
     ROTATE = 4
 
 
+class ReverseWay(Enum):
+    X_FIRST = 0
+    Y_FIRST = 1
+    BOTH = 2
+
+
 @dataclass
 class AnimationKeyData(DataClassSaveLoadMixin):
     frame_start: int = 0
@@ -185,6 +191,7 @@ class CursorElement:
         self.crop_margins: Margins = crop_margins if crop_margins else Margins(0, 0, 0, 0)
         self.reverse_x: bool = reverse_x
         self.reverse_y: bool = reverse_y
+        self.reverse_way: ReverseWay = ReverseWay.BOTH
         self.resample: Image.Resampling = resample
         self.mask: Image.Image | None = None
 
@@ -246,6 +253,7 @@ class CursorElement:
             "crop_margins": self.crop_margins.save(),
             "reverse_x": self.reverse_x,
             "reverse_y": self.reverse_y,
+            "reverse_way": self.reverse_way.value,
             "resample": self.resample.value,
             "animation_start_offset": self.animation_start_offset,
             "animation_key_data": self.animation_key_data.save(),
@@ -275,6 +283,7 @@ class CursorElement:
         element.animation_key_data = AnimationKeyData.load(data["animation_key_data"])
         element.animation_data = [AnimationFrameData.load(data) for data in data["animation_data"]]
         element.proc_step = [ProcessStep(step) for step in data["proc_step"]]
+        element.reverse_way = ReverseWay(data.get("reverse_way", ReverseWay.BOTH.value))
 
         for source_info in element.source_infos:
             frame = source_info.load_frame()

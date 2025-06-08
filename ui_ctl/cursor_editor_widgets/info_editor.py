@@ -83,6 +83,7 @@ class ElementInfoEditor(ElementInfoEditorUI):
         create_cfg_bind(self.crop_right, element, "crop_margins.right")
         create_cfg_bind(self.reverse_x, element, "reverse_x")
         create_cfg_bind(self.reverse_y, element, "reverse_y")
+        create_cfg_bind(self.reverse_way, element, "reverse_way")
         create_cfg_bind(self.enable_key_ani, element, "enable_key_ani")
         if len(element.frames) > 1:
             def update_ani_data(_):
@@ -113,6 +114,7 @@ class ElementInfoEditor(ElementInfoEditorUI):
         self.crop_right.set_value(element.crop_margins.right)
         self.reverse_x.set_value(element.reverse_x)
         self.reverse_y.set_value(element.reverse_y)
+        self.reverse_way.set_value(element.reverse_way)
         self.enable_key_ani.set_value(element.enable_key_ani)
         if len(element.frames) > 1:
             self.frame_start.set_value(element.animation_key_data.frame_start)

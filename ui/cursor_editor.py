@@ -4,7 +4,7 @@ import wx
 from PIL.Image import Resampling
 
 from lib.cursor_setter import CURSOR_KIND_NAME_OFFICIAL
-from lib.data import CursorProject
+from lib.data import CursorProject, ReverseWay
 from lib.ui_interface import ui_class
 from widget.center_text import CenteredText
 from widget.data_entry import IntEntry, FloatEntry, DataEntry, StringEntry, BoolEntry, EnumEntry
@@ -138,7 +138,8 @@ class InfoEditorUI(NoTabNotebook):
         self.switch_page(0)
 
 
-GroupData = tuple[tuple[str, bool], tuple[tuple[type, str], ...]]
+GroupData = tuple[tuple[str, bool], tuple[tuple, ...]]
+EntryType = DataEntry | IntEntry | FloatEntry | StringEntry | BoolEntry | EnumEntry
 RESAMPLE_MAP = {
     Resampling.NEAREST: "最近邻",
     Resampling.BILINEAR: "BiLinear",
@@ -149,7 +150,7 @@ RESAMPLE_MAP = {
 
 
 #  加载定义数据, 并返回组件列表
-def load_group_raw(defines: GroupData, sizer: wx.Sizer, parent: wx.Window):
+def load_group_raw(defines: GroupData, sizer: wx.Sizer, parent: wx.Window) -> list[EntryType]:
     label, is_collapse = defines[0]
     panel = wx.CollapsiblePane(parent, label=label, style=wx.CP_NO_TLW_RESIZE | wx.CP_DEFAULT_STYLE)
     panel.SetDoubleBuffered(True)
@@ -176,18 +177,22 @@ def load_group_raw(defines: GroupData, sizer: wx.Sizer, parent: wx.Window):
 class ElementInfoEditorUI(wx.ScrolledWindow):
     def __init__(self, parent: wx.Window):
         super().__init__(parent, size=(200, -1))
-        widget_groups: list[tuple[tuple[str, bool], tuple[tuple[type, str], ...]]] = [
+        widget_groups: list[GroupData] = [
             (("位置", False), ((IntEntry, "X"), (IntEntry, "Y"))),
             (("缩放", False), ((FloatEntry, "X"), (FloatEntry, "Y"))),
             (("裁剪", True), ((IntEntry, "上"), (IntEntry, "下"), (IntEntry, "左"), (IntEntry, "右"))),
-            (("翻转", True), ((BoolEntry, "左右翻转"), (BoolEntry, "上下翻转"))),
+            (("翻转", True), ((BoolEntry, "左右翻转"), (BoolEntry, "上下翻转"), (EnumEntry, "翻转顺序", {
+                ReverseWay.X_FIRST: "先翻转X轴",
+                ReverseWay.Y_FIRST: "先翻转Y轴",
+                ReverseWay.BOTH: "同时翻转"
+            }))),
             (("动画", True),
              ((BoolEntry, "启用关键字动画编辑"), (IntEntry, "动画开始"), (IntEntry, "帧间隔"), (IntEntry, "动画帧数"),
               (StringEntry, "总帧数-只读")))
         ]
         sizer = wx.BoxSizer(wx.VERTICAL)
 
-        def load_group(defines: GroupData):
+        def load_group(defines: GroupData) -> list[EntryType]:
             return load_group_raw(defines, sizer, self)
 
         title = CenteredText(self, label="元素信息")
@@ -217,6 +222,7 @@ class ElementInfoEditorUI(wx.ScrolledWindow):
         ret = load_group(widget_groups[3])
         self.reverse_x: BoolEntry = ret[0]
         self.reverse_y: BoolEntry = ret[1]
+        self.reverse_way: EnumEntry = ret[2]
 
         ret = load_group(widget_groups[4])
         self.animation_panel: wx.CollapsiblePane = cast(wx.CollapsiblePane, sizer.GetChildren()[-1].Window)

@@ -3,7 +3,7 @@ from copy import copy
 from PIL import Image
 from PIL.Image import Transpose, Resampling
 
-from lib.data import CursorProject, ProcessStep, Margins, Scale2D
+from lib.data import CursorProject, ProcessStep, Margins, Scale2D, ReverseWay
 from lib.log import logger
 from lib.perf import Counter
 
@@ -46,12 +46,17 @@ def render_project_frame(project: CursorProject, frame: int) -> Image.Image:
         while len(left_step) != 0:
             step = left_step.pop(0)
             if step == ProcessStep.TRANSPOSE and (element.reverse_x or element.reverse_y):
-                if element.reverse_x and element.reverse_y:
+                if element.reverse_way == ReverseWay.BOTH and element.reverse_x and element.reverse_y:
                     item = item.transpose(Transpose.TRANSPOSE)
-                elif element.reverse_x:
+                    continue
+                if element.reverse_way != ReverseWay.Y_FIRST and element.reverse_x:
                     item = item.transpose(Transpose.FLIP_LEFT_RIGHT)
-                elif element.reverse_y:
+                    if element.reverse_y:
+                        item = item.transpose(Transpose.FLIP_TOP_BOTTOM)
+                if element.reverse_way != ReverseWay.X_FIRST and element.reverse_y:
                     item = item.transpose(Transpose.FLIP_TOP_BOTTOM)
+                    if element.reverse_x:
+                        item = item.transpose(Transpose.FLIP_LEFT_RIGHT)
 
             elif step == ProcessStep.CROP and element.crop_margins != NONE_MARGINS:
                 mrg = element.crop_margins

@@ -214,7 +214,7 @@ def set_cursors_progress(cursors_info: CursorsInfo, scheme_type: SchemesType, sc
                 cursor = LoadImage(None, cursor_data.cursor_path, IMAGE_CURSOR, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE)
                 path = cursor_data.cursor_path
             winreg.SetValueEx(global_set, cursor_data.kind.value, 0, winreg.REG_EXPAND_SZ, path)
-            print(cursor)
+            logger.debug(f"指针句柄: {cursor}")
             ret = SetSystemCursor(cursor, cursor_data.ocr_con)
             if ret == 0:
                 logger.error(f"设置 {cursor_data.kind.value} 失败")

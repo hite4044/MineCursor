@@ -50,10 +50,12 @@ class MaskEditor(wx.Dialog):
         self.bar.SetStatusText("画布: -1 x -1", ID_CANVAS)
         self.bar.SetStatusText("", ID_NONE)
         self.bar.SetStatusText("缩放: 800%", ID_SCALE)
+        self.reset = wx.Button(self.editor, label="重置")
         self.ok = wx.Button(self.editor, label="确定")
         self.cancel = wx.Button(self.editor, label="取消")
 
         btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        btn_sizer.Add(self.reset, 0)
         btn_sizer.AddStretchSpacer()
         btn_sizer.Add(self.ok, 0)
         btn_sizer.AddSpacer(5)
@@ -67,6 +69,7 @@ class MaskEditor(wx.Dialog):
         sizer.Add(self.bar, 0, wx.EXPAND)
         self.SetSizer(sizer)
 
+        self.reset.Bind(wx.EVT_BUTTON, self.on_reset)
         self.ok.Bind(wx.EVT_BUTTON, self.on_ok)
         self.cancel.Bind(wx.EVT_BUTTON, self.on_cancel)
         self.Bind(EVT_POSITION_UPDATED, self.on_position_updated)
@@ -79,6 +82,14 @@ class MaskEditor(wx.Dialog):
 
     def on_scale_updated(self, event: ScaleUpdatedEvent):
         self.b_scale = event.scale
+
+    def on_reset(self, _):
+        ret = wx.MessageBox("确定要重置吗？", "重置", wx.YES_NO)
+        if ret == wx.YES:
+            self.mask = self.editor.mask = ImageOps.invert(self.background.getchannel("A"))
+            self.editor.mask_draw = ImageDraw.ImageDraw(self.editor.mask)
+            self.editor.clear_cache()
+            self.editor.Refresh()
 
     def on_ok(self, _):
         self.EndModal(wx.ID_OK)

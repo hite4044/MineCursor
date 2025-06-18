@@ -1,6 +1,7 @@
 import os
 import re
 from enum import Enum
+from os import rename
 from os.path import join, basename, isfile
 from typing import Callable
 
@@ -75,10 +76,19 @@ class ThemeManager:
     def remove_theme(self, theme: CursorTheme):
         self.call_callback(ThemeAction.DELETE, theme)
         self.themes.remove(theme)
-        if theme in self.theme_file_mapping :
+        if theme in self.theme_file_mapping:
             if isfile(self.theme_file_mapping[theme]):
                 os.remove(self.theme_file_mapping[theme])
             del self.theme_file_mapping[theme]
+
+    def renew_theme(self, theme: CursorTheme):
+        if theme not in self.theme_file_mapping:
+            return
+        raw_path = self.theme_file_mapping.pop(theme)
+        self.theme_file_mapping[theme] = join(data_file_manager.work_dir,
+                                              f"MineCursor Theme_{theme.id}_{theme.name}.mctheme")
+        if isfile(raw_path):
+            rename(raw_path, self.theme_file_mapping[theme])
 
     def clear_all_theme(self):
         self.themes.clear()

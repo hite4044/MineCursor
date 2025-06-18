@@ -3,6 +3,7 @@ from copy import deepcopy
 from enum import Enum
 from os import makedirs
 from os.path import join, isfile
+from os.path import join as path_join
 from shutil import rmtree
 from threading import Thread
 from typing import cast
@@ -25,7 +26,6 @@ from widget.adv_progress_dialog import AdvancedProgressDialog
 from widget.data_dialog import DataDialog, DataLineParam, DataLineType
 from widget.ect_menu import EtcMenu
 from widget.win_icon import set_multi_size_icon
-from os.path import join as path_join
 
 
 def get_user_name() -> str:
@@ -233,6 +233,7 @@ class ThemeSelector(ThemeSelectorUI):
             theme.author = author
             theme.description = description
             self.reload_themes()
+            theme_manager.renew_theme(theme)
 
     def on_delete_theme(self, theme: CursorTheme):
         logger.info(f"删除主题: {theme}")
@@ -260,7 +261,6 @@ class ThemeSelector(ThemeSelectorUI):
                 fp = path_join(dir_path, f"{project.name}_{project.id}" + (".ani" if project.is_ani_cursor else ".cur"))
                 frames = render_project(project)
                 list(write_cursor_progress(fp, frames, project.center_pos, project.ani_rate))
-
 
     def on_import_theme(self):
         dialog = wx.FileDialog(self, "导入主题",

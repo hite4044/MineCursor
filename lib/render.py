@@ -73,7 +73,10 @@ def render_project_frame(project: CursorProject, frame: int) -> Image.Image:
                 if rotate_resample not in (Resampling.NEAREST, Resampling.BILINEAR, Resampling.BICUBIC):
                     rotate_resample = Resampling.NEAREST
                 item = item.rotate(element.rotation, rotate_resample, expand=True, center=(size[0] // 2, size[1] // 2))
-                x_off, y_off = (item.width - size[0]) // 2, (item.height - size[1]) // 2
+                if element.rotation % 90 == 0:
+                    x_off = y_off = 0
+                else:
+                    x_off, y_off = (item.width - size[0]) // 2, (item.height - size[1]) // 2
 
         element.final_rect = (element.position[0] - x_off, element.position[1] - y_off, item.width, item.height)
         element.final_image = item

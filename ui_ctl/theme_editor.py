@@ -1,6 +1,7 @@
 import os
 from copy import deepcopy
 from enum import Enum
+from os import makedirs
 from os.path import join, isfile
 from shutil import rmtree
 from threading import Thread
@@ -24,6 +25,7 @@ from widget.adv_progress_dialog import AdvancedProgressDialog
 from widget.data_dialog import DataDialog, DataLineParam, DataLineType
 from widget.ect_menu import EtcMenu
 from widget.win_icon import set_multi_size_icon
+from os.path import join as path_join
 
 
 def get_user_name() -> str:
@@ -189,11 +191,13 @@ class ThemeSelector(ThemeSelectorUI):
         menu = EtcMenu()
         menu.Append("添加", self.on_add_theme)
         menu.AppendSeparator()
+        menu.Append("导入主题", self.on_import_theme)
+        menu.AppendSeparator()
         menu.Append("编辑主题信息", self.on_edit_theme, theme)
         menu.Append("删除", self.on_delete_theme, theme)
         menu.AppendSeparator()
-        menu.Append("导入主题", self.on_import_theme)
         menu.Append("导出主题", self.on_export_theme, theme)
+        menu.Append("导出指针", self.on_export_theme_cursors, theme)
         self.PopupMenu(menu)
 
     def on_menu(self, event: wx.MouseEvent):
@@ -246,6 +250,17 @@ class ThemeSelector(ThemeSelectorUI):
         if dialog.ShowModal() == wx.ID_OK:
             file_path = dialog.GetPath()
             theme_manager.save_theme_file(file_path, theme)
+
+    def on_export_theme_cursors(self, theme: CursorTheme):
+        dialog = wx.DirDialog(self, "导出主题指针", defaultPath=theme.name)
+        if dialog.ShowModal() == wx.ID_OK:
+            dir_path = dialog.GetPath()
+            makedirs(dir_path, exist_ok=True)
+            for project in theme.projects:
+                fp = path_join(dir_path, f"{project.name}_{project.id}" + (".ani" if project.is_ani_cursor else ".cur"))
+                frames = render_project(project)
+                list(write_cursor_progress(fp, frames, project.center_pos, project.ani_rate))
+
 
     def on_import_theme(self):
         dialog = wx.FileDialog(self, "导入主题",

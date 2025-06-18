@@ -49,7 +49,7 @@ def create_cfg_bind(widget: DataEntry,
             else:
                 setattr(obj, cfg_path, event.data)
         cbk(event)
-        logger.info(f"更新对象 {obj} 的 {cfg_path} 属性")
+        logger.debug(f"更新对象 {obj} 的 {cfg_path} 属性")
         event = ProjectUpdatedEvent()
         wx.PostEvent(widget.entry, event)
 

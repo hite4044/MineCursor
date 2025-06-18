@@ -283,7 +283,7 @@ class ThemeSelector(ThemeSelectorUI):
 
     def on_item_selected(self, event: wx.ListEvent):
         theme = self.line_theme_mapping[event.GetIndex()]
-        logger.info(f"主题被选择: {theme}")
+        logger.debug(f"主题被选择: {theme}")
         wx.PostEvent(self, ThemeSelectedEvent(theme))
 
     def append_theme(self, theme: CursorTheme):

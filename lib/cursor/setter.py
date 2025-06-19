@@ -52,7 +52,7 @@ class CursorKind(Enum):
     SIZE_NE_SW = "SizeNESW"
     SIZE_ALL = "SizeAll"
     UP_ARROW = "UpArrow"
-    HAND = "Hand"
+    LINK = "Hand"
     PIN = "Pin"
     PERSON = "Person"
 
@@ -72,7 +72,7 @@ CURSOR_KIND_NAME_OFFICIAL: dict[CursorKind, str] = {
     CursorKind.SIZE_NE_SW: "沿对角线调整大小 2",
     CursorKind.SIZE_ALL: "移动",
     CursorKind.UP_ARROW: "候选",
-    CursorKind.HAND: "链接选择",
+    CursorKind.LINK: "链接选择",
     CursorKind.PIN: "位置选择",
     CursorKind.PERSON: "个人选择"
 }
@@ -91,7 +91,7 @@ CURSOR_KIND_NAME_CUTE: dict[CursorKind, str] = {
     CursorKind.SIZE_NE_SW: "↗向右变大变高",
     CursorKind.SIZE_ALL: "瞬移",
     CursorKind.UP_ARROW: "举起手来！",
-    CursorKind.HAND: "戳一下",
+    CursorKind.LINK: "戳一下",
     CursorKind.PIN: "在哪里?",
     CursorKind.PERSON: "你自己"
 }
@@ -109,7 +109,7 @@ CURSOR_IDC_MAP: dict[CursorKind, int] = {
     CursorKind.SIZE_NE_SW: IDC_SIZENESW,
     CursorKind.SIZE_ALL: IDC_SIZEALL,
     CursorKind.UP_ARROW: IDC_UPARROW,
-    CursorKind.HAND: IDC_HAND,
+    CursorKind.LINK: IDC_HAND,
 }
 
 
@@ -146,7 +146,7 @@ class CursorsInfo:
     size_ne_sw: CursorData = CursorData("nesw.cur", CursorKind.SIZE_NE_SW, OCR_SIZENESW)
     size_all: CursorData = CursorData("move.cur", CursorKind.SIZE_ALL, OCR_SIZEALL)
     up_arrow: CursorData = CursorData("up.cur", CursorKind.UP_ARROW, OCR_UP)
-    hand: CursorData = CursorData("link.cur", CursorKind.HAND, OCR_HAND)  # 链接选择
+    hand: CursorData = CursorData("link.cur", CursorKind.LINK, OCR_HAND)  # 链接选择
     pin: CursorData = CursorData("pin.cur", CursorKind.PIN, OCR_PIN)  # 位置选择
     person: CursorData = CursorData("person.cur", CursorKind.PERSON, OCR_PERSON)  # 个人选择
 
@@ -166,7 +166,7 @@ CR_INFO_FIELD_MAP = {
     CursorKind.SIZE_NE_SW: "size_ne_sw",
     CursorKind.SIZE_ALL: "size_all",
     CursorKind.UP_ARROW: "up_arrow",
-    CursorKind.HAND: "hand",
+    CursorKind.LINK: "hand",
     CursorKind.PIN: "pin",
     CursorKind.PERSON: "person",
 }

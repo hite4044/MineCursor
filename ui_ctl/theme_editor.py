@@ -11,10 +11,11 @@ from typing import cast
 import wx
 from PIL.Image import Resampling
 
-from lib.cursor_setter import CURSOR_KIND_NAME_OFFICIAL, CURSOR_KIND_NAME_CUTE, CursorKind, CursorsInfo, \
+from lib.cursor.inst_ini_gen import CursorInstINIGenerator
+from lib.cursor.setter import CURSOR_KIND_NAME_OFFICIAL, CURSOR_KIND_NAME_CUTE, CursorKind, CursorsInfo, \
     set_cursors_progress, \
     SchemesType, CR_INFO_FIELD_MAP, CursorData
-from lib.cursor_writer import write_cursor_progress
+from lib.cursor.writer import write_cursor_progress
 from lib.data import CursorTheme, CursorProject, cursors_file_manager, data_file_manager
 from lib.image_pil2wx import PilImg2WxImg
 from lib.log import logger
@@ -257,11 +258,17 @@ class ThemeSelector(ThemeSelectorUI):
         if dialog.ShowModal() == wx.ID_OK:
             dir_path = dialog.GetPath()
             makedirs(dir_path, exist_ok=True)
+            file_map: dict[CursorKind, str] = {}
             for project in theme.projects:
-                fp = path_join(dir_path, f"{CURSOR_KIND_NAME_OFFICIAL[project.kind]}" + (
-                    ".ani" if project.is_ani_cursor else ".cur"))
+                file_name = f"{CURSOR_KIND_NAME_OFFICIAL[project.kind]}" + (".ani" if project.is_ani_cursor else ".cur")
+                fp = path_join(dir_path, file_name)
                 frames = render_project(project)
                 list(write_cursor_progress(fp, frames, project.center_pos, project.ani_rate))
+                file_map[project.kind] = file_name
+            ini = CursorInstINIGenerator.generate(theme, file_map)
+            with open(path_join(dir_path, "右键安装.inf"), "w", encoding="gbk") as f:
+                f.write(ini)
+
 
     def on_import_theme(self):
         dialog = wx.FileDialog(self, "导入主题",

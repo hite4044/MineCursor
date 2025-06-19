@@ -10,7 +10,7 @@ from zipfile import ZipFile
 
 from PIL import Image
 
-from lib.cursor_setter import CursorKind
+from lib.cursor.setter import CursorKind
 
 
 def generate_id(length: int = 4):

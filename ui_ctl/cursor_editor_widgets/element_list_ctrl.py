@@ -3,7 +3,7 @@ from typing import Callable, cast as type_cast
 import wx
 from PIL import Image
 
-from lib.cursor_writer import write_cur, write_ani
+from lib.cursor.writer import write_cur, write_ani
 from lib.data import CursorProject, CursorElement
 from lib.image_pil2wx import PilImg2WxImg
 from lib.render import render_project_gen

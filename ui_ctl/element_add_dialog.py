@@ -7,7 +7,7 @@ import wx
 from PIL import Image, UnidentifiedImageError
 from PIL.Image import Resampling
 
-from lib.cursor_setter import CursorKind
+from lib.cursor.setter import CursorKind
 from lib.data import CursorElement, AssetSources, AssetsChoicerAssetInfo, AssetSourceInfo, AssetType
 from lib.image_pil2wx import PilImg2WxImg
 from lib.ui_interface import ui_class

@@ -3,7 +3,7 @@ from typing import cast
 import wx
 from PIL.Image import Resampling
 
-from lib.cursor_setter import CURSOR_KIND_NAME_OFFICIAL
+from lib.cursor.setter import CURSOR_KIND_NAME_OFFICIAL
 from lib.data import CursorProject, ReverseWay
 from lib.ui_interface import ui_class
 from widget.center_text import CenteredText

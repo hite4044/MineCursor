@@ -1,6 +1,6 @@
 import wx
 
-from lib.cursor_setter import CursorKind
+from lib.cursor.setter import CursorKind
 from lib.data import AssetSource
 from widget.center_text import CenteredText
 from widget.data_entry import StringEntry, IntEntry

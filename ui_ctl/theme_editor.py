@@ -258,7 +258,8 @@ class ThemeSelector(ThemeSelectorUI):
             dir_path = dialog.GetPath()
             makedirs(dir_path, exist_ok=True)
             for project in theme.projects:
-                fp = path_join(dir_path, f"{project.name}_{project.id}" + (".ani" if project.is_ani_cursor else ".cur"))
+                fp = path_join(dir_path, f"{CURSOR_KIND_NAME_OFFICIAL[project.kind]}" + (
+                    ".ani" if project.is_ani_cursor else ".cur"))
                 frames = render_project(project)
                 list(write_cursor_progress(fp, frames, project.center_pos, project.ani_rate))
 

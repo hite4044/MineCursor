@@ -316,7 +316,11 @@ class CursorProject:
         self.id: str = generate_id(2)
 
     @property
-    def canvas_size(self):
+    def frame_delay(self) -> int:
+        return self.ani_rate * 1000 // 60
+
+    @property
+    def canvas_size(self) -> tuple[int, int]:
         return int(self.raw_canvas_size[0] * self.scale), int(self.raw_canvas_size[1] * self.scale)
 
     def add_element(self, element: CursorElement):

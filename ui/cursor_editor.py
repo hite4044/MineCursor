@@ -297,6 +297,7 @@ class ProjectInfoEditorUI(wx.Panel):
         self.frame_count.set_value(project.frame_count)
 
         self.ani_rate: IntEntry = IntEntry(self, "帧间隔")
+        self.ani_rate.label.SetToolTip("实际帧间隔为 [n * (1/60)] ms")
         self.ani_rate.set_value(project.ani_rate)
 
         self.resample_map = RESAMPLE_MAP

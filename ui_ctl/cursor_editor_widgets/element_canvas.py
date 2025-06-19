@@ -59,7 +59,7 @@ class ElementCanvas(ElementCanvasUI):
         self.Bind(wx.EVT_MOUSEWHEEL, self.on_scroll)
 
         if project.is_ani_cursor:
-            self.animation_timer.Start(self.project.ani_rate)
+            self.animation_timer.Start(self.project.frame_delay)
 
     def set_element(self, element: CursorElement | None):
         self.active_element = element
@@ -72,10 +72,10 @@ class ElementCanvas(ElementCanvasUI):
         self.Refresh()
         if self.project.is_ani_cursor:
             if not self.animation_timer.IsRunning():
-                self.animation_timer.Start(self.project.ani_rate)
-            elif self.animation_timer.GetInterval() != self.project.ani_rate:
+                self.animation_timer.Start(self.project.frame_delay)
+            elif self.animation_timer.GetInterval() != self.project.frame_delay:
                 self.animation_timer.Stop()
-                self.animation_timer.Start(self.project.ani_rate)
+                self.animation_timer.Start(self.project.frame_delay)
         else:
             if self.animation_timer.IsRunning():
                 self.animation_timer.Stop()

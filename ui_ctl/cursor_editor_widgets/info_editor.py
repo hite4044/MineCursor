@@ -144,7 +144,8 @@ class ProjectInfoEditor(ProjectInfoEditorUI):
         create_cfg_bind(self.scale, project, "scale")
         create_cfg_bind(self.is_ani_cursor, project, "is_ani_cursor")
         create_cfg_bind(self.frame_count, project, "frame_count")
-        create_cfg_bind(self.ani_rate, project, "ani_rate")
+        create_cfg_bind(self.ani_rate, project, "ani_rate", cbk=self.update_ani_rate_tooltip)
+        self.update_ani_rate_tooltip(None)
         self.is_ani_cursor.entry.Bind(EVT_DATA_UPDATE, self.on_is_ani_cursor_switch)
 
         def on_choice(event: wx.CommandEvent):
@@ -154,6 +155,15 @@ class ProjectInfoEditor(ProjectInfoEditorUI):
             wx.PostEvent(self.resample_type, event)
 
         self.resample_type.Bind(wx.EVT_CHOICE, on_choice)
+
+    def update_ani_rate_tooltip(self, event: DataEntryEvent | None):
+        if event:
+            data = event.data
+        else:
+            data = self.ani_rate.data
+        self.ani_rate.label.SetToolTip("实际帧间隔为 [n * (1/60)] ms\n"
+                                       f"实际间隔: {data / 60 * 1000:.2f}ms  "
+                                       f"{1 / data * 60:.2f} FPS")
 
     def on_is_ani_cursor_switch(self, event: DataEntryEvent):
         event.Skip()

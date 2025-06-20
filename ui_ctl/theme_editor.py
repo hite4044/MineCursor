@@ -266,7 +266,7 @@ class ThemeSelector(ThemeSelectorUI):
                 list(write_cursor_progress(fp, frames, project.center_pos, project.ani_rate))
                 file_map[project.kind] = file_name
             ini = CursorInstINIGenerator.generate(theme, file_map)
-            with open(path_join(dir_path, "右键安装.inf"), "w", encoding="gbk") as f:
+            with open(path_join(dir_path, "~右键安装.inf"), "w", encoding="gbk") as f:
                 f.write(ini)
 
 

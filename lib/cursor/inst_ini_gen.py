@@ -60,13 +60,19 @@ class PartDestinationDirs(INIPart):
 class PartSchemeReg(INIPart):
     @staticmethod
     def get_text(available_kinds: list[CursorKind]):
+        scheme_paths = []
+        for kind in CursorKind:
+            if kind in available_kinds:
+                scheme_paths.append(f"%10%\%CUR_DIR%\%{VAR_NAME_MAP[kind]}%")
+            else:
+                scheme_paths.append('')
         return "\n".join(
             [
                 '[Scheme.Reg]',
                 'HKCU,"Control Panel\Cursors\Schemes","%SCHEME_NAME%",,' + \
-                ('"' + (",".join(f"%10%\%CUR_DIR%\%{VAR_NAME_MAP[kind]}%" for kind in available_kinds)) + '"'),
+                ('"' + (",".join(scheme_paths)) + '"'),
 
-                'HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Runonce\Setup\","",,"rundll32.exe shell32.dll,Control_RunDLL main.cpl,,1"'
+                r'HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Runonce\Setup\","",,"rundll32.exe shell32.dll,Control_RunDLL main.cpl,,1"'
             ]
         )
 

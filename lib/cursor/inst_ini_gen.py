@@ -28,6 +28,29 @@ class INIPart:
         pass
 
 
+class PartInfo(INIPart):
+    @staticmethod
+    def get_text(theme: CursorTheme) -> str:
+        return "\n".join([
+            "; Install Script generate by MineCursor",
+            "; Theme Info: ",
+            f"; - Theme ID: {theme.id}",
+            f"; - Theme Name: {theme.name}",
+            f"; - Theme Anchor: {theme.author}",
+            f"; - Theme Description: {theme.description}",
+            f"; - Theme Base Size: {theme.base_size}",
+            f"; Projects: ",
+            *["\n".join([
+                f"; - {CURSOR_KIND_NAME_OFFICIAL[project.kind]}",
+                f"; - - Name: {project.name}",
+                *([f"; - - External Name: {project.external_name}"] if project.external_name else []),
+                f"; - - Hotspot: {project.center_pos}",
+                f"; - - Size: {project.canvas_size}",
+                *([f"; - - Animation Cursor"] if project.is_ani_cursor else [])
+            ]) for project in theme.projects]
+        ])
+
+
 class PartVersion(INIPart):
     @staticmethod
     def get_text() -> str:
@@ -76,6 +99,7 @@ class PartSchemeReg(INIPart):
             ]
         )
 
+
 class PartSchemeCur(INIPart):
     @staticmethod
     def get_text(file_map: dict[CursorKind, str]):
@@ -92,13 +116,16 @@ class PartString(INIPart):
             '[Strings]',
             rf'CUR_DIR = "Cursors\{theme.name}"',
             f"SCHEME_NAME = {theme.name}",
-            *[f'{VAR_NAME_MAP[kind]} = "{filename}"     ; {CURSOR_KIND_NAME_OFFICIAL[kind]}' for kind, filename in file_map.items()]
+            *[f'{VAR_NAME_MAP[kind]} = "{filename}"     ; {CURSOR_KIND_NAME_OFFICIAL[kind]}' for kind, filename in
+              file_map.items()]
         ])
+
 
 class CursorInstINIGenerator:
     @staticmethod
     def generate(theme: CursorTheme, file_map: dict[CursorKind, str]):
         return "\n\n".join([
+            PartInfo.get_text(theme),
             PartVersion.get_text(),
             PartDefaultInstall.get_text(),
             PartDestinationDirs.get_text(),
@@ -106,4 +133,3 @@ class CursorInstINIGenerator:
             PartSchemeCur.get_text(file_map),
             PartString.get_text(theme, file_map)
         ])
-

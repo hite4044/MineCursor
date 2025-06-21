@@ -6,6 +6,8 @@ from shutil import copy as copy_file, rmtree
 from PIL import Image
 from PIL.Image import Resampling
 
+from lib.data import CursorTheme, CursorProject
+
 Image.ANTIALIAS = Resampling.LANCZOS
 from ani_file import ani_file
 from win_cur import Cursor
@@ -40,13 +42,16 @@ def write_ani(path: str, frames: list[Image.Image], hotspot: tuple[int, int], ra
     rmtree(project_dir)
 
 
-def write_cur(frame: Image.Image, hotspot: tuple[int, int], path: str):
+def write_cur(frame: Image.Image, project: CursorProject, path: str):
+    hotspot = (int(project.center_pos[0] * project.scale), int(project.center_pos[1] * project.scale))
     cur = Cursor()
     cur.add_cursor(frame.width, frame.height, hotspot[0], hotspot[1], frame.tobytes())
     cur.save_file(path)
 
 
-def write_cursor_progress(path: str, frames: list[Image.Image], hotspot: tuple[int, int], rate: int):
+def write_cursor_progress(path: str, frames: list[Image.Image], project: CursorProject):
+    hotspot = (int(project.center_pos[0] * project.scale), int(project.center_pos[1] * project.scale))
+    rate = project.ani_rate
     if path.endswith(".cur"):
         yield "保存至cur文件", -1
         write_cur(frames[0], hotspot, path)

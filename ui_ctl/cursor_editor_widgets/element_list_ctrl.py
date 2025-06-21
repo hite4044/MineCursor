@@ -116,7 +116,7 @@ class ElementListCtrl(ElementListCtrlUI):
         if not self.project.is_ani_cursor:
             progress_dialog.SetRange(1)
             progress_dialog.Update(0, "写入cur文件...")
-            write_cur(frames[0], self.project.center_pos, path)
+            write_cur(frames[0], self.project, path)
             progress_dialog.Update(1)
         else:
             gen = write_ani(path, frames, self.project.center_pos, self.project.ani_rate)

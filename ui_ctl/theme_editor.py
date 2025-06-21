@@ -263,7 +263,7 @@ class ThemeSelector(ThemeSelectorUI):
                 file_name = f"{CURSOR_KIND_NAME_OFFICIAL[project.kind]}" + (".ani" if project.is_ani_cursor else ".cur")
                 fp = path_join(dir_path, file_name)
                 frames = render_project(project)
-                list(write_cursor_progress(fp, frames, project.center_pos, project.ani_rate))
+                list(write_cursor_progress(fp, frames, project))
                 file_map[project.kind] = file_name
             ini = CursorInstINIGenerator.generate(theme, file_map)
             with open(path_join(dir_path, "~右键安装.inf"), "w", encoding="gbk") as f:
@@ -353,7 +353,7 @@ def apply_theme(theme: CursorTheme, target: SchemesType, lost_type: CursorLostTy
         logger.info(f"渲染指针项目: {project}")
         frames_num = len(frames)
         dialog.update(1, 0, f"写入帧 (0/{frames_num})", frames_num)
-        gen = write_cursor_progress(file_path, frames, project.center_pos, project.ani_rate)
+        gen = write_cursor_progress(file_path, frames, project)
         for msg, index in gen:
             real_msg = f"{msg} ({index}/{frames_num})" if index != -1 else msg
             dialog.update(1, index, real_msg)

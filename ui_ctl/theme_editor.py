@@ -514,7 +514,7 @@ class ThemeCursorList(ThemeCursorListUI):
     def menu_add_project(self):
         if not self.check_active_theme():
             return
-        dialog = ProjectDataDialog(self)
+        dialog = ProjectDataDialog(self, size=self.active_theme.base_size)
         if dialog.ShowModal() == wx.ID_OK:
             name, external_name, size, kind = dialog.get_result()
             project = CursorProject(name, (size, size))

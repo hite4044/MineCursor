@@ -131,24 +131,45 @@ class CursorData:
 # noinspection SpellCheckingInspection
 @dataclass
 class CursorsInfo:
-    use_aero: bool = True
-    arrow: CursorData = CursorData("arrow.cur", CursorKind.ARROW, OCR_NORMAL)
-    help: CursorData = CursorData("helpsel.cur", CursorKind.HELP, OCR_HELP)
-    app_starting: CursorData = CursorData("working.ani", CursorKind.APP_STARTING, OCR_APPSTARTING)
-    wait: CursorData = CursorData("busy.ani", CursorKind.WAIT, OCR_WAIT)
-    cross_hair: CursorData = CursorData("", CursorKind.CROSS_HAIR, OCR_CROSS)
-    text: CursorData = CursorData("", CursorKind.TEXT, OCR_IBEAM)  # 注册表名称: IBeam
-    pen: CursorData = CursorData("pen.cur", CursorKind.PEN, -1)
-    no: CursorData = CursorData("unavail.cur", CursorKind.NO, OCR_NO)
-    size_sn: CursorData = CursorData("ns.cur", CursorKind.SIZE_SN, OCR_SIZENS)
-    size_we: CursorData = CursorData("ew.cur", CursorKind.SIZE_WE, OCR_SIZEWE)
-    size_nw_se: CursorData = CursorData("nwse.cur", CursorKind.SIZE_NW_SE, OCR_SIZENWSE)
-    size_ne_sw: CursorData = CursorData("nesw.cur", CursorKind.SIZE_NE_SW, OCR_SIZENESW)
-    size_all: CursorData = CursorData("move.cur", CursorKind.SIZE_ALL, OCR_SIZEALL)
-    up_arrow: CursorData = CursorData("up.cur", CursorKind.UP_ARROW, OCR_UP)
-    hand: CursorData = CursorData("link.cur", CursorKind.LINK, OCR_HAND)  # 链接选择
-    pin: CursorData = CursorData("pin.cur", CursorKind.PIN, OCR_PIN)  # 位置选择
-    person: CursorData = CursorData("person.cur", CursorKind.PERSON, OCR_PERSON)  # 个人选择
+    def __init__(self, use_aero: bool = True):
+        self.use_aero = use_aero
+
+        self.arrow: CursorData = CursorData("arrow.cur", CursorKind.ARROW, OCR_NORMAL)
+        self.help: CursorData = CursorData("helpsel.cur", CursorKind.HELP, OCR_HELP)
+        self.app_starting: CursorData = CursorData("working.ani", CursorKind.APP_STARTING, OCR_APPSTARTING)
+        self.wait: CursorData = CursorData("busy.ani", CursorKind.WAIT, OCR_WAIT)
+        self.cross_hair: CursorData = CursorData("", CursorKind.CROSS_HAIR, OCR_CROSS)
+        self.text: CursorData = CursorData("", CursorKind.TEXT, OCR_IBEAM)  # 注册表名称: IBeam
+        self.pen: CursorData = CursorData("pen.cur", CursorKind.PEN, -1)
+        self.no: CursorData = CursorData("unavail.cur", CursorKind.NO, OCR_NO)
+        self.size_sn: CursorData = CursorData("ns.cur", CursorKind.SIZE_SN, OCR_SIZENS)
+        self.size_we: CursorData = CursorData("ew.cur", CursorKind.SIZE_WE, OCR_SIZEWE)
+        self.size_nw_se: CursorData = CursorData("nwse.cur", CursorKind.SIZE_NW_SE, OCR_SIZENWSE)
+        self.size_ne_sw: CursorData = CursorData("nesw.cur", CursorKind.SIZE_NE_SW, OCR_SIZENESW)
+        self.size_all: CursorData = CursorData("move.cur", CursorKind.SIZE_ALL, OCR_SIZEALL)
+        self.up_arrow: CursorData = CursorData("up.cur", CursorKind.UP_ARROW, OCR_UP)
+        self.hand: CursorData = CursorData("link.cur", CursorKind.LINK, OCR_HAND)  # 链接选择
+        self.pin: CursorData = CursorData("pin.cur", CursorKind.PIN, OCR_PIN)  # 位置选择
+        self.person: CursorData = CursorData("person.cur", CursorKind.PERSON, OCR_PERSON)  # 个人选择
+        self.field_names = [
+            "arrow",
+            "help",
+            "app_starting",
+            "wait",
+            "cross_hair",
+            "text",
+            "pen",
+            "no",
+            "size_sn",
+            "size_we",
+            "size_nw_se",
+            "size_ne_sw",
+            "size_all",
+            "up_arrow",
+            "hand",
+            "pin",
+            "person",
+        ]
 
 
 CR_INFO_FIELD_MAP = {
@@ -186,9 +207,7 @@ def set_cursors_progress(cursors_info: CursorsInfo, scheme_type: SchemesType, sc
             winreg.DeleteValue(schemes_set, now_schemes[scheme_id])
 
         # 设置 鼠标指针文件 的路径
-        field_names = list(getattr(cursors_info, "__dataclass_fields__").keys())
-        field_names.remove("use_aero")
-        cursor_datas: list[CursorData] = [getattr(cursors_info, field_name) for field_name in field_names]
+        cursor_datas: list[CursorData] = [getattr(cursors_info, field_name) for field_name in cursors_info.field_names]
 
         # 设置 鼠标主题 包含的鼠标指针 的路径
         path_text = ",".join([data.cursor_path for data in cursor_datas])

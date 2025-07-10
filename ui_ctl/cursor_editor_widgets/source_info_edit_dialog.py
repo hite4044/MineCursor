@@ -101,6 +101,8 @@ class SourceInfoEditDialog(wx.Dialog):
     def on_add(self):
         dialog = ElementAddDialog(self)
         dialog.ShowModal()
+        if not dialog.element:
+            return
         if len(dialog.element.source_infos) > 1:
             ret = wx.MessageBox("真的要添加多个源信息吗?\n听一听 Kittens Express - Tenkitsune 吧, 很好听的",
                                 "添加源信息", wx.ICON_QUESTION | wx.YES_NO)

@@ -38,7 +38,7 @@ def render_project_frame(project: CursorProject, frame: int) -> Image.Image:
         else:
             if frame < element.animation_start_offset:
                 continue
-            frame_index = element.get_frame_index(frame) % (element_frames - 1)
+            frame_index = element.get_frame_index(frame) % element_frames
 
         item = element.frames[frame_index]
         left_step = copy(list(element.proc_step))

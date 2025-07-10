@@ -98,7 +98,8 @@ class MaskEditor(wx.Dialog):
         self.EndModal(wx.ID_CANCEL)
 
     def get_mask(self):
-        return ImageOps.invert(self.mask)
+        mask = ImageOps.invert(self.mask)
+        return mask if mask != self.background.getchannel("A") else None
 
     @property
     def b_position(self):

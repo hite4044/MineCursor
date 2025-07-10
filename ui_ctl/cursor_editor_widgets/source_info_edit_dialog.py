@@ -47,12 +47,15 @@ class SourceInfoEditDialog(wx.Dialog):
         self.SetSizer(sizer)
 
         self.source_lc.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_select_source)
+        self.source_lc.Bind(wx.EVT_CONTEXT_MENU, self.on_menu)
         self.Bind(wx.EVT_BUTTON, self.on_apply, self.apply_btn)
 
     def on_menu(self, _):
         menu = EtcMenu()
         menu.Append("添加", self.on_add)
         menu.Append("删除", self.on_delete)
+        self.PopupMenu(menu)
+
     def on_apply(self, _):
         source_win = self.notebook.now_window
         if source_win is self.mc_source:

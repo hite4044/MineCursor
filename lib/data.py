@@ -311,7 +311,7 @@ class CursorProject:
         self.resample: Image.Resampling = Image.Resampling.NEAREST
         self.is_ani_cursor = False
         self.frame_count = 20
-        self.ani_rate: int = 50
+        self.ani_rate: int = 6
 
         self.id: str = generate_id(2)
 

@@ -92,7 +92,7 @@ class RectElementSource(RectElementSourceUI):
         return CursorElement(self.name.data, [frame], [AssetSourceInfo(AssetType.RECT, size=size, color=color)])
 
 
-def translate_image(image: Image.Image) -> Image.Image:
+def translate_item_icon(image: Image.Image) -> Image.Image:
     image = image.convert("RGBA")
     if image.size == (16, 16):
         return image
@@ -136,6 +136,9 @@ class ElementSelectList(ElementSelectListUI):
         self.assets_tree.Bind(wx.EVT_LEFT_DOWN, self.on_click)
 
     def load_source(self):
+        self.tree_image_list.RemoveAll()
+        self.assets_tree.DeleteAllItems()
+
         from zipfile import ZipFile
         file = ZipFile(self.source.textures_zip)
         root_map: dict[str, wx.TreeItemId] = {}
@@ -177,7 +180,7 @@ class ElementSelectList(ElementSelectListUI):
             recommend_list = json.loads(recommend_file.read())[self.kind.value]
             for recommend_path in recommend_list:
                 image_io = BytesIO(file.read(recommend_path))
-                pil_image = translate_image(Image.open(image_io))
+                pil_image = translate_item_icon(Image.open(image_io))
                 image = self.tree_image_list.Add(PilImg2WxImg(pil_image).ConvertToBitmap())
                 item = self.assets_tree.AppendItem(recommend_root, recommend_path.split("/")[-1], image)
                 assets_map[item] = recommend_path
@@ -198,7 +201,7 @@ class ElementSelectList(ElementSelectListUI):
             if path.startswith(root_path + "/"):
                 image_io = BytesIO(self.zip_file.read(path))
                 try:
-                    pil_image = translate_image(Image.open(image_io))
+                    pil_image = translate_item_icon(Image.open(image_io))
                 except UnidentifiedImageError:
                     continue
                 image = self.tree_image_list.Add(PilImg2WxImg(pil_image).ConvertToBitmap())

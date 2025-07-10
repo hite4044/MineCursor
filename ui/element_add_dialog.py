@@ -64,6 +64,10 @@ class RectElementSourceUI(wx.Panel):
         self.SetSizer(sizer)
 
 
+class ImageElementSourceUI(wx.Panel):
+    pass
+
+
 class ElementSelectListUI(wx.SplitterWindow):
     def __init__(self, parent: wx.Window, source: AssetSource, kind: CursorKind):
         super().__init__(parent)

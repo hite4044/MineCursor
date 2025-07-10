@@ -9,6 +9,7 @@ from lib.image_pil2wx import PilImg2WxImg
 from lib.render import render_project_gen
 from ui.cursor_editor import ElementListCtrlUI
 from ui_ctl.cursor_editor_widgets.events import ProjectUpdatedEvent, ElementSelectedEvent
+from ui_ctl.cursor_editor_widgets.source_info_edit_dialog import SourceInfoEditDialog
 from ui_ctl.element_add_dialog import ElementAddDialog
 from widget.mask_editor import MaskEditor
 
@@ -44,6 +45,7 @@ class ElementListCtrl(ElementListCtrlUI):
         ect_binder("上移一层", self.move_element, line, -1)
         ect_binder("下移一层", self.move_element, line, 1)
         ect_binder("编辑遮罩", self.on_edit_mask, line)
+        ect_binder("编辑源信息", self.on_edit_source, line)
         menu.AppendSeparator()
         ect_binder("删除", self.remove_element, line)
 
@@ -73,6 +75,13 @@ class ElementListCtrl(ElementListCtrlUI):
         if not dialog.element:
             return
         self.project.add_element(dialog.element)
+        self.rebuild_control()
+        self.send_project_updated()
+
+    def on_edit_source(self, index: int):
+        element = self.get_element_by_index(index)
+        dialog = SourceInfoEditDialog(self, element)
+        dialog.ShowModal()
         self.rebuild_control()
         self.send_project_updated()
 
@@ -116,7 +125,7 @@ class ElementListCtrl(ElementListCtrlUI):
         if not self.project.is_ani_cursor:
             progress_dialog.SetRange(1)
             progress_dialog.Update(0, "写入cur文件...")
-            write_cur(frames[0], self.project, path)
+            write_cur(frames[0], self.project.center_pos, path)
             progress_dialog.Update(1)
         else:
             gen = write_ani(path, frames, self.project.center_pos, self.project.ani_rate)

@@ -8,7 +8,7 @@ from winreg import HKEYType
 from win32con import IMAGE_CURSOR, LR_LOADFROMFILE, OCR_NORMAL, OCR_APPSTARTING, OCR_WAIT, OCR_CROSS, OCR_IBEAM, OCR_NO, \
     OCR_SIZENS, OCR_SIZEWE, OCR_SIZENWSE, OCR_SIZENESW, OCR_UP, OCR_HAND, OCR_SIZEALL, IDC_ARROW, IDC_HELP, \
     IDC_APPSTARTING, IDC_WAIT, IDC_CROSS, IDC_IBEAM, IDC_SIZENS, IDC_NO, IDC_HAND, IDC_UPARROW, IDC_SIZEWE, \
-    IDC_SIZENESW, IDC_SIZEALL, LR_DEFAULTSIZE
+    IDC_SIZENESW, IDC_SIZEALL
 from win32gui import LoadImage, LoadCursor, CopyIcon
 
 from lib.log import logger
@@ -230,7 +230,7 @@ def set_cursors_progress(cursors_info: CursorsInfo, scheme_type: SchemesType, sc
                 CopyIcon(cursor)
                 path = ""
             else:
-                cursor = LoadImage(None, cursor_data.cursor_path, IMAGE_CURSOR, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE)
+                cursor = LoadImage(None, cursor_data.cursor_path, IMAGE_CURSOR, cursor_size, cursor_size, LR_LOADFROMFILE)
                 path = cursor_data.cursor_path
             winreg.SetValueEx(global_set, cursor_data.kind.value, 0, winreg.REG_EXPAND_SZ, path)
             logger.debug(f"指针句柄: {cursor}")

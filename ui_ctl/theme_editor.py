@@ -59,13 +59,17 @@ class ThemeApplyDialog(DataDialog):
                                        enum_names={SchemesType.SYSTEM: "系统", SchemesType.USER: "用户"}),
                          DataLineParam("lost_type", "如何处理缺失光标", DataLineType.CHOICE, CursorLostType.USE_AERO,
                                        enum_names={CursorLostType.USE_IDC_RES: "使用IDC资源",
-                                                   CursorLostType.USE_AERO: "使用Aero光标"}))
+                                                   CursorLostType.USE_AERO: "使用Aero光标"}),
+                         DataLineParam("raw_size", "使用输出原大小", DataLineType.BOOL, False,
+                                       "可能会导致重启后光标大小改变\n"
+                                       "除非系统设置里光标大小为1, 而且鼠标指针的大小为32的倍数\n"
+                                       "如果鼠标指针太小, 请到系统设置中设置大小后, 再到MineCursor里应用"))
         set_multi_size_icon(self, r"assets/icons/apply_theme.png")
 
-    def get_result(self) -> tuple[SchemesType, CursorLostType]:
+    def get_result(self) -> tuple[SchemesType, CursorLostType, bool]:
         datas = self.datas
-        result = (datas["target"], datas["lost_type"])
-        return cast(tuple[SchemesType, CursorLostType], result)
+        result = (datas["target"], datas["lost_type"], datas["raw_size"])
+        return cast(tuple[SchemesType, CursorLostType, bool], result)
 
 
 class ProjectDataDialog(DataDialog):
@@ -269,7 +273,6 @@ class ThemeSelector(ThemeSelectorUI):
             with open(path_join(dir_path, "~右键安装.inf"), "w", encoding="gbk") as f:
                 f.write(ini)
 
-
     def on_import_theme(self):
         dialog = wx.FileDialog(self, "导入主题",
                                wildcard="MineCursor 主题文件 (*.mctheme)|*.mctheme|所有文件 (*.*)|*.*",
@@ -330,8 +333,8 @@ def get_all_theme_ids() -> dict[str, str]:
     return themes_ids
 
 
-def apply_theme(theme: CursorTheme, target: SchemesType, lost_type: CursorLostType,
-                dialog: AdvancedProgressDialog):
+def apply_theme(theme: CursorTheme, target: SchemesType, raw_size: bool,
+                lost_type: CursorLostType, dialog: AdvancedProgressDialog):
     # 删除之前同主题的文件夹
     dialog.set_panels_num(1)
     dialog.update(0, 0, "获取所有主题文件夹")
@@ -363,7 +366,7 @@ def apply_theme(theme: CursorTheme, target: SchemesType, lost_type: CursorLostTy
         cursor_data.set_path(file_path)
 
     dialog.set_panels_num(1)
-    gen = set_cursors_progress(cursor_paths, target, theme.name, theme.id, theme.base_size)
+    gen = set_cursors_progress(cursor_paths, target, theme.name, theme.id, theme.base_size, raw_size)
     msg = ""
     for msg, index in gen:
         if isinstance(msg, bool):
@@ -392,18 +395,18 @@ class ThemeCursorList(ThemeCursorListUI):
         info_dialog = ThemeApplyDialog(self, theme)
         if info_dialog.ShowModal() != wx.ID_OK:
             return
-        target, lost_type = info_dialog.get_result()
+        target, lost_type, raw_size = info_dialog.get_result()
 
         dialog = AdvancedProgressDialog(self, "应用主题", 2)
         self.apply_theme_btn.Disable()
-        Thread(target=self.real_apply_theme, args=(theme, target, lost_type, dialog), daemon=True).start()
+        Thread(target=self.real_apply_theme, args=(theme, target, raw_size, lost_type, dialog), daemon=True).start()
         dialog.ShowModal()
         dialog.Destroy()
 
-    def real_apply_theme(self, theme: CursorTheme, target: SchemesType, lost_type: CursorLostType,
-                         dialog: AdvancedProgressDialog):
+    def real_apply_theme(self, theme: CursorTheme, target: SchemesType, raw_size: bool,
+                         lost_type: CursorLostType, dialog: AdvancedProgressDialog):
         try:
-            apply_theme(theme, target, lost_type, dialog)
+            apply_theme(theme, target, raw_size, lost_type, dialog)
         except RuntimeError:
             ""
             logger.info("用户终止应用主题")

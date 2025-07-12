@@ -117,6 +117,10 @@ class MutilProjectDataDialog(DataDialog):
         super().__init__(parent, "添加指针项目", *self.params)
         set_multi_size_icon(self, r"assets/icons/add_project.png")
 
+        self.entries[1].set_depend(self.entries[0])
+        self.entries[2].set_depend(self.entries[0])
+        self.entries[4].set_depend(self.entries[3])
+
     def get_result(self) -> tuple[tuple[bool, int, int], tuple[bool, float]]:
         datas = self.datas
         return (datas["edit_size"], datas["size_width"], datas["size_height"]), (datas["edit_scale"], datas["scale"])
@@ -541,7 +545,9 @@ class ThemeCursorList(ThemeCursorListUI):
                 project.kind = kind
                 self.reload_theme()
         else:
-            dialog = MutilProjectDataDialog(self, active_project.raw_canvas_size)
+            dialog = MutilProjectDataDialog(self,
+                                            active_project.raw_canvas_size,
+                                            active_project.scale)
             if dialog.ShowModal() == wx.ID_OK:
                 (enable_size, size_w, size_h), (enable_scale, scale) = dialog.get_result()
                 if enable_size:

@@ -13,8 +13,12 @@ EVT_DATA_UPDATE = wx.PyEventBinder(mcEVT_DATA_UPDATE, 1)
 
 class DataEntryEvent(wx.PyCommandEvent):
     def __init__(self, data: str | int | float | bool | Enum):
-        super().__init__(mcEVT_DATA_UPDATE)
+        super().__init__(mcEVT_DATA_UPDATE, -1)
         self.data = data
+
+    def Skip(self, skip=True):
+        super().Skip(skip)
+
 
 
 class DataEntry(wx.Panel):
@@ -22,6 +26,7 @@ class DataEntry(wx.Panel):
                  data_type: Type[str | int | float | bool | Enum],
                  limits: tuple[int | float, int | float] | None = None, enum_names: dict[Enum, str] | None = None,
                  use_sizer=False):
+        self.depend_entry = None
         if use_sizer:
             super().__init__(parent)
             parent = self
@@ -139,6 +144,19 @@ class DataEntry(wx.Panel):
 
     def disable(self):
         self.entry.Disable()
+
+    def set_depend(self, depend_entry: 'DataEntry'):
+        self.depend_entry = depend_entry
+        if depend_entry.data is not True:
+            self.disable()
+        self.depend_entry.entry.Bind(EVT_DATA_UPDATE, self.depend_callback)
+
+    def depend_callback(self, event: DataEntryEvent):
+        event.Skip()
+        if event.data is True:
+            self.enable()
+        else:
+            self.disable()
 
 
 class StringEntry(DataEntry):

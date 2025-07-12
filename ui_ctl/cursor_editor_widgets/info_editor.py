@@ -27,24 +27,26 @@ def create_cfg_bind(widget: DataEntry,
                     obj,
                     cfg_path: str,
                     cbk: Callable[[DataEntryEvent], None] = lambda _: None,
-                    checking_widget: BoolEntry = None,
-                    checking_none: bool = False):
+                    enable_keyframe_anim_widget: bool = False,
+                    process_none_string: bool = False):
     def warp(event: DataEntryEvent):
-        if checking_widget is not None and checking_widget.entry.GetValue() == False:
+        if enable_keyframe_anim_widget and widget.entry.GetValue() == True:
             ret = wx.MessageBox("是否启用关键字动画编辑?\n会导致先前绘制的帧动画丢失", "警告",
                                 wx.ICON_WARNING | wx.YES_NO)
-            if ret == wx.YES:
-                checking_widget.set_value(True)
-                obj.enable_key_ani = True
-                warp(event)
+            enable = ret == wx.YES
+            obj.enable_key_ani = enable
+            widget.set_value(False)
+            widget.entry.ProcessEvent(DataEntryEvent(enable))
+            widget.set_value(enable)
             return
+        event.Skip()
         if cfg_path.count(".") == 1:
             attr_name, attr_name2 = cfg_path.split('.')
             next_attr = getattr(obj, attr_name)
             setattr(next_attr, attr_name2, event.data)
             setattr(obj, attr_name, next_attr)
         else:
-            if checking_none and event.data == "None":
+            if process_none_string and event.data == "None":
                 setattr(obj, cfg_path, None)
             else:
                 setattr(obj, cfg_path, event.data)
@@ -66,7 +68,6 @@ class ElementInfoEditor(ElementInfoEditorUI):
 
         def on_choice(event: wx.CommandEvent):
             event.Skip()
-            print("choice")
             element.resample = list(self.resample_map.keys())[self.resample_type.GetSelection()]
             event = ProjectUpdatedEvent()
             wx.PostEvent(self.resample_type, event)
@@ -84,17 +85,18 @@ class ElementInfoEditor(ElementInfoEditorUI):
         create_cfg_bind(self.reverse_x, element, "reverse_x")
         create_cfg_bind(self.reverse_y, element, "reverse_y")
         create_cfg_bind(self.reverse_way, element, "reverse_way")
-        create_cfg_bind(self.enable_key_ani, element, "enable_key_ani")
+        create_cfg_bind(self.enable_key_ani, element, "enable_key_ani", enable_keyframe_anim_widget=True)
         if len(element.frames) > 1:
-            def update_ani_data(_):
+            def update_ani_data(event: DataEntryEvent):
+                event.Skip()
                 element.update_ani_data_by_key_data()
 
-            create_cfg_bind(self.frame_start, element, "animation_key_data.frame_start",
-                            update_ani_data, self.enable_key_ani)
-            create_cfg_bind(self.frame_inv, element, "animation_key_data.frame_inv",
-                            update_ani_data, self.enable_key_ani)
-            create_cfg_bind(self.frame_length, element, "animation_key_data.frame_length",
-                            update_ani_data, self.enable_key_ani)
+            self.frame_start.entry.Bind(EVT_DATA_UPDATE, update_ani_data)
+            self.frame_inv.entry.Bind(EVT_DATA_UPDATE, update_ani_data)
+            self.frame_length.entry.Bind(EVT_DATA_UPDATE, update_ani_data)
+            self.frame_start.set_depend(self.enable_key_ani)
+            self.frame_inv.set_depend(self.enable_key_ani)
+            self.frame_length.set_depend(self.enable_key_ani)
         else:
             self.frame_start.entry.Unbind(EVT_DATA_UPDATE)
             self.frame_inv.entry.Unbind(EVT_DATA_UPDATE)
@@ -137,7 +139,7 @@ class ProjectInfoEditor(ProjectInfoEditorUI):
     def __init__(self, parent: wx.Window, project: CursorProject):
         super().__init__(parent, project)
         create_cfg_bind(self.name, project, "name")
-        create_cfg_bind(self.external_name, project, "external_name", checking_none=True)
+        create_cfg_bind(self.external_name, project, "external_name", process_none_string=True)
         create_cfg_bind(self.kind, project, "kind")
         create_cfg_bind(self.center_x, project, "center_pos.x")
         create_cfg_bind(self.center_y, project, "center_pos.y")
@@ -146,7 +148,8 @@ class ProjectInfoEditor(ProjectInfoEditorUI):
         create_cfg_bind(self.frame_count, project, "frame_count")
         create_cfg_bind(self.ani_rate, project, "ani_rate", cbk=self.update_ani_rate_tooltip)
         self.update_ani_rate_tooltip(None)
-        self.is_ani_cursor.entry.Bind(EVT_DATA_UPDATE, self.on_is_ani_cursor_switch)
+        self.ani_rate.set_depend(self.is_ani_cursor)
+        self.frame_count.set_depend(self.is_ani_cursor)
 
         def on_choice(event: wx.CommandEvent):
             event.Skip()
@@ -164,13 +167,3 @@ class ProjectInfoEditor(ProjectInfoEditorUI):
         self.ani_rate.label.SetToolTip("实际帧间隔为 [n * (1/60)] ms\n"
                                        f"实际间隔: {data / 60 * 1000:.2f}ms  "
                                        f"{1 / data * 60:.2f} FPS")
-
-    def on_is_ani_cursor_switch(self, event: DataEntryEvent):
-        event.Skip()
-
-        if event.data:
-            self.ani_rate.enable()
-            self.frame_count.enable()
-        else:
-            self.ani_rate.disable()
-            self.frame_count.disable()

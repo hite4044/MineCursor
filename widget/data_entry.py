@@ -93,10 +93,13 @@ class DataEntry(wx.Panel):
     def on_enter_press(self, _):
         self.finish_edit()
 
-    def on_text(self, _):
+    def on_text(self, event: wx.KeyEvent):
+        event.Skip()
         assert isinstance(self.entry, wx.TextCtrl)
-        if self.entry.GetValue() != self.last_value:
-            wx.PostEvent(self.entry, DataEntryEvent(self.entry.GetValue()))
+        value = self.entry.GetValue()
+        if value != self.last_value:
+            self.last_value = value
+            wx.PostEvent(self.entry, DataEntryEvent(value))
 
     def finish_edit(self, _=None):
         if isinstance(self.entry, wx.Choice):

@@ -21,7 +21,8 @@ ID_SCALE = 5
 
 class CursorEditorUI(wx.Frame):
     def __init__(self, parent: wx.Window, project: CursorProject):
-        super().__init__(parent, title=f"指针项目编辑器 - {project.name}", size=(1320, 720))
+        super().__init__(parent, size=(1320, 720),
+                         title=f"指针项目编辑器 - {project.name if project.name else project.kind.kind_name}")
         self.SetFont(ft(11))
 
         self.elements_lc = ui_class(ElementListCtrlUI)(self, project)
@@ -275,7 +276,7 @@ class ProjectInfoEditorUI(wx.Panel):
             return load_group_raw(defines, sizer, self)
 
         self.name: StringEntry = StringEntry(self, "名称")
-        self.name.set_value(project.name)
+        self.name.set_value(str(project.name))
         self.external_name: StringEntry = StringEntry(self, "外部名称")
         self.external_name.set_value(str(project.external_name))
         self.kind: EnumEntry = EnumEntry(self, "指针类型", CURSOR_KIND_NAME_OFFICIAL)

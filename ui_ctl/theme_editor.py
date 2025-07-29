@@ -106,16 +106,16 @@ class ProjectDataDialog(DataDialog):
                                        enum_names=CURSOR_KIND_NAME_OFFICIAL))
         set_multi_size_icon(self, r"assets/icons/add_project.png")
 
-    def get_result(self) -> tuple[str, str | None, int | tuple[int, int], CursorKind]:
+    def get_result(self) -> tuple[str | str, str | None, int | tuple[int, int], CursorKind]:
         datas = self.datas
         if len(self.canvas_params) == 1:
             size = datas["canvas_size"]
         else:
             size = (datas["size_width"], datas["size_height"])
+        result = [datas["name"], datas["external_name"] if datas["external_name"] else None, size, datas["kind"]]
         if datas["name"] == "":
-            datas["name"] = CURSOR_KIND_NAME_OFFICIAL[cast(CursorKind, datas["kind"])]
-        result = (datas["name"], datas["external_name"] if datas["external_name"] else None, size, datas["kind"])
-        return cast(tuple[str, str | None, int | tuple[int, int], CursorKind], result)
+            result[0] = None
+        return cast(tuple[str, str | None, int | tuple[int, int], CursorKind], tuple(result))
 
 
 class MutilProjectDataDialog(DataDialog):

@@ -59,7 +59,7 @@ class CursorEditor(CursorEditorUI):
         self.canvas.project_updated()
         if self.canvas.active_element is None:
             self.info_editor.set_element(None)
-        self.SetTitle(f"光标项目编辑器 - {self.project.name}")
+        self.SetTitle(f"光标项目编辑器 - {self.project.name if self.project.name else self.project.kind.kind_name}")
         self.b_output_size = self.project.canvas_size
 
     def on_scale_updated(self, event: ScaleUpdatedEvent):

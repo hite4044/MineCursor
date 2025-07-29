@@ -56,6 +56,10 @@ class CursorKind(Enum):
     PIN = "Pin"
     PERSON = "Person"
 
+    @property
+    def kind_name(self):
+        return CURSOR_KIND_NAME_OFFICIAL[self]
+
 
 CURSOR_KIND_NAME_OFFICIAL: dict[CursorKind, str] = {
     CursorKind.ARROW: "正常选择",

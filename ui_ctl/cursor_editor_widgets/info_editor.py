@@ -138,7 +138,7 @@ class ElementInfoEditor(ElementInfoEditorUI):
 class ProjectInfoEditor(ProjectInfoEditorUI):
     def __init__(self, parent: wx.Window, project: CursorProject):
         super().__init__(parent, project)
-        create_cfg_bind(self.name, project, "name")
+        create_cfg_bind(self.name, project, "name", process_none_string=True)
         create_cfg_bind(self.external_name, project, "external_name", process_none_string=True)
         create_cfg_bind(self.kind, project, "kind")
         create_cfg_bind(self.center_x, project, "center_pos.x")

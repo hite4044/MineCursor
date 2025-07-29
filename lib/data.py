@@ -301,7 +301,7 @@ class CursorElement:
 
 class CursorProject:
     def __init__(self, name: str, canvas_size: tuple[int, int]):
-        self.name = name
+        self.name: str | None = name
         self.raw_canvas_size = canvas_size
         self.external_name: str | None = None
         self.kind: CursorKind = CursorKind.ARROW

@@ -224,6 +224,8 @@ class ThemeSelector(ThemeSelectorUI):
         menu.Append("导出指针", self.on_export_theme_cursors, theme)
         self.PopupMenu(menu)
 
+        theme_manager.save()  # 经过测试，这行代码会在执行完菜单项里所绑定的函数过后才会之心
+
     def on_menu(self, event: wx.MouseEvent):
         index = cast(tuple[int, int], self.HitTest(event.GetPosition()))[0]
         if index != -1:
@@ -238,6 +240,8 @@ class ThemeSelector(ThemeSelectorUI):
         menu.AppendSeparator()
         menu.Append("清空所有主题", self.on_clear_all_theme)
         self.PopupMenu(menu)
+
+        theme_manager.save()  # 经过测试，这行代码会在执行完菜单项里所绑定的函数过后才会之心
 
     def on_add_theme(self):
         dialog = ThemeDataDialog(self, True, self.get_theme_default_name())
@@ -493,6 +497,8 @@ class ThemeCursorList(ThemeCursorListUI):
         text = "删除" if len(projects) == 1 else f"删除 ({len(projects)})"
         menu.Append(text, self.menu_delete_projects, projects)
         self.PopupMenu(menu)
+
+        theme_manager.save()  # 经过测试，这行代码会在执行完菜单里所绑定的函数过后才会保存
 
     def on_menu(self, event: wx.MouseEvent):
         index = cast(tuple[int, int], self.HitTest(event.GetPosition()))[0]

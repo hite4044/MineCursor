@@ -4,6 +4,7 @@ from PIL import Image
 from lib.data import CursorProject, CursorElement, Position, Scale2D
 from lib.log import logger
 from lib.perf import Counter
+from lib.theme_manager import theme_manager
 from ui.cursor_editor import CursorEditorUI
 from widget.win_icon import set_multi_size_icon
 from ui_ctl.cursor_editor_widgets.element_canvas import ElementCanvas
@@ -32,7 +33,14 @@ class CursorEditor(CursorEditorUI):
         self.Bind(EVT_ELEMENT_SELECTED, self.on_element_selected)
         self.Bind(EVT_PROJECT_UPDATED, self.on_project_updated)
         self.Bind(EVT_SCALE_UPDATED, self.on_scale_updated)
+        self.Bind(wx.EVT_CLOSE, self.on_close)
         logger.info(f"项目编辑器初始化用时: {timer.endT()}, 项目: {project}")
+
+    @staticmethod
+    def on_close(event: wx.CloseEvent):
+        event.Skip()
+        theme_manager.save()
+
 
     def on_mouse_move(self, event: wx.MouseEvent):
         event.Skip()

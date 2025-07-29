@@ -72,6 +72,21 @@ class ThemeApplyDialog(DataDialog):
         return cast(tuple[SchemesType, CursorLostType, bool], result)
 
 
+class ProjectCopyDialog(DataDialog):
+    def __init__(self, parent: wx.Window | None, project: CursorProject):
+        self.project = project
+        super().__init__(parent, "复制指针项目",
+                         DataLineParam("kind", "类型", DataLineType.CHOICE, project.kind,
+                                       enum_names=CURSOR_KIND_NAME_OFFICIAL)
+                         )
+
+    def get_result(self) -> CursorProject:
+        data_dict = deepcopy(self.project.to_dict())
+        new_project = CursorProject.from_dict(data_dict)
+        new_project.kind = cast(CursorKind, self.datas["kind"])
+        return new_project
+
+
 class ProjectDataDialog(DataDialog):
     def __init__(self, parent: wx.Window | None, is_create: bool = True,
                  name: str = "", external_name: str = "", size: int | tuple[int, int] = 32,
@@ -500,13 +515,11 @@ class ThemeCursorList(ThemeCursorListUI):
     def menu_copy_project(self, project: CursorProject):
         if not self.check_active_theme():
             return
-        data_dict = deepcopy(project.to_dict())
-        new_project = CursorProject.from_dict(data_dict)
-        new_project.name += " (New)"
-        if new_project.external_name is not None:
-            new_project.external_name += " (New)"
-        self.active_theme.projects.append(new_project)
-        self.reload_theme()
+        dialog = ProjectCopyDialog(self, project)
+        if dialog.ShowModal() == wx.ID_OK:
+            new_project = dialog.get_result()
+            self.active_theme.projects.append(new_project)
+            self.reload_theme()
 
     def menu_edit_projects(self, projects: list[CursorProject]):
         for project in projects:

@@ -1,4 +1,5 @@
 import wx
+import faulthandler
 
 from ui_ctl.theme_editor import ThemeEditor
 

@@ -4,7 +4,7 @@ from PIL import Image
 from lib.data import CursorProject, CursorElement, Position, Scale2D
 from lib.log import logger
 from lib.perf import Counter
-from lib.theme_manager import theme_manager
+from lib.resources import theme_manager
 from ui.cursor_editor import CursorEditorUI
 from widget.win_icon import set_multi_size_icon
 from ui_ctl.cursor_editor_widgets.element_canvas import ElementCanvas

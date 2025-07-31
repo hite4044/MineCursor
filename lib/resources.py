@@ -107,5 +107,12 @@ class ThemeManager:
             for callback in self.callbacks[action]:
                 callback(theme)
 
+    def find_project(self, project_id: str):
+        for theme in self.themes:
+            for project in theme.projects:
+                if project.id == project_id:
+                    return project
+        return  None
+
 
 theme_manager = ThemeManager()

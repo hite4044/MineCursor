@@ -92,12 +92,14 @@ class DataDialog(wx.Dialog):
 
     def on_cancel(self, _):
         self.EndModal(wx.ID_CANCEL)
+        self.Destroy()
 
     def on_ok(self, _):
         for i, entry in enumerate(self.entries):
             param = self.params[i]
             self.datas[param.id] = entry.data
         self.EndModal(wx.ID_OK)
+        self.Destroy()
 
 
 if __name__ == "__main__":

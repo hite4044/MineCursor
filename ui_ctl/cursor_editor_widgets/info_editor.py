@@ -88,6 +88,7 @@ class ElementInfoEditor(ElementInfoEditorUI):
 
         create_cfg_bind(self.animation_start_offset, element, "animation_start_offset")
         create_cfg_bind(self.loop_animation, element, "loop_animation")
+        create_cfg_bind(self.reverse_animation, element, "reverse_animation")
         create_cfg_bind(self.enable_key_ani, element, "enable_key_ani", enable_keyframe_anim_widget=True)
         if len(element.frames) > 1:
             def update_ani_data(event: DataEntryEvent):
@@ -124,6 +125,7 @@ class ElementInfoEditor(ElementInfoEditorUI):
         if len(element.frames) > 1:
             self.animation_start_offset.set_value(element.animation_start_offset)
             self.loop_animation.set_value(element.loop_animation)
+            self.reverse_animation.set_value(element.reverse_animation)
             self.frame_start.set_value(element.animation_key_data.frame_start)
             self.frame_inv.set_value(element.animation_key_data.frame_inv)
             self.frame_length.set_value(element.animation_key_data.frame_length)

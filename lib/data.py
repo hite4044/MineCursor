@@ -199,6 +199,7 @@ class CursorElement:
         self.animation_key_data: AnimationKeyData = AnimationKeyData()
         self.animation_start_offset: int = 0  # 元素在XX帧开始显示并播放播放
         self.loop_animation: bool = True
+        self.reverse_animation: bool = False
         self.animation_data: list[AnimationFrameData] = [AnimationFrameData() for _ in range(len(frames))]
         self.animation_data_index: list[int] = []
         self.proc_step = DEFAULT_PROC_ORDER
@@ -259,6 +260,8 @@ class CursorElement:
             "reverse_way": self.reverse_way.value,
             "resample": self.resample.value,
             "animation_start_offset": self.animation_start_offset,
+            "loop_animation": self.loop_animation,
+            "reverse_animation": self.reverse_animation,
             "animation_key_data": self.animation_key_data.save(),
             "animation_data": [data.save() for data in self.animation_data],
             "proc_step": [step.value for step in self.proc_step],
@@ -283,6 +286,9 @@ class CursorElement:
         )
         if "mask" in data:
             element.mask = Image.frombytes("L", data["mask"][0], data["mask"][1])
+        element.animation_start_offset = data.get("animation_start_offset", element.animation_start_offset)
+        element.loop_animation = data.get("loop_animation", element.loop_animation)
+        element.reverse_animation = data.get("reverse_animation", element.reverse_animation)
         element.animation_key_data = AnimationKeyData.load(data["animation_key_data"])
         element.animation_data = [AnimationFrameData.load(data) for data in data["animation_data"]]
         element.proc_step = [ProcessStep(step) for step in data["proc_step"]]

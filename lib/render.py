@@ -42,6 +42,8 @@ def render_project_frame(project: CursorProject, frame: int) -> Image.Image:
             if not element.loop_animation and temp_index >= element_frames:
                 continue
             frame_index = temp_index % element_frames
+            if element.reverse_animation:
+                frame_index = element_frames - frame_index - 1
 
         item = element.frames[frame_index]
         left_step = copy(list(element.proc_step))

@@ -186,6 +186,8 @@ class MaskEditorPanel(wx.Window):
         if background is None:
             background = Image.new("RGBA", mask.size, (255, 255, 255, 0))
         assert mask.size == background.size
+        background = background.copy()
+        background.putalpha(128)
         self.mask = mask
         self.mask_draw = ImageDraw.ImageDraw(mask)
         self.background = background

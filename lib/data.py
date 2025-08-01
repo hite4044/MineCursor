@@ -361,6 +361,9 @@ class CursorProject:
         project.ani_rate = data["ani_rate"]
         return project
 
+    def copy(self) -> 'CursorProject':
+        return CursorProject.from_dict(self.to_dict())
+
 
 @dataclass()
 class CursorTheme:

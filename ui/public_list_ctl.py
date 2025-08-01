@@ -1,5 +1,7 @@
 import wx
 
+from widget.editable_listctrl import EditableListCtrl
+
 
 class PublicThemeCursorListUI(wx.ListCtrl):
     USE_APPLY_BTN = True
@@ -21,7 +23,7 @@ class PublicThemeCursorListUI(wx.ListCtrl):
         self.SetSizer(sizer)
 
 
-class PublicThemeSelectorUI(wx.ListCtrl):
+class PublicThemeSelectorUI(EditableListCtrl):
     def __init__(self, parent: wx.Window):
         super().__init__(parent, style=wx.LC_REPORT | wx.NO_BORDER)
 
@@ -29,3 +31,5 @@ class PublicThemeSelectorUI(wx.ListCtrl):
         self.AppendColumn("大小", width=50, format=wx.LIST_FORMAT_CENTER)
         self.AppendColumn("作者", width=100)
         self.AppendColumn("描述", width=300)
+
+        self.EnableColumnEdit(0)

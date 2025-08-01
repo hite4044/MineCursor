@@ -32,6 +32,10 @@ class PublicThemeSelector(PublicThemeSelectorUI):
         self.line_theme_mapping: dict[int, CursorTheme] = {}
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_item_selected)
 
+    def on_data_changed(self, row: int, col: int, value: str):
+        self.line_theme_mapping[row].name = value
+        theme_manager.renew_theme(self.line_theme_mapping[row])
+
     def load_all_theme(self):
         for theme in theme_manager.themes:
             self.append_theme(theme)

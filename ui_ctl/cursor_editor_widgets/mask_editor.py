@@ -334,10 +334,9 @@ class MaskEditorPanel(wx.Window):
                             int(cvs_x + self.background.width * scale), int(cvs_y + i * scale))
 
     def render_bitmap(self, scale: float) -> wx.Bitmap:
-        image = self.alpha_back.copy()
-        image.putalpha(int(255 * 0.35))
-        image.paste(self.background, (0, 0), self.background)
-        image.paste(ImageOps.invert(self.mask), (0, 0), self.mask)
+        image = self.background.copy()
+        image.putalpha(int(255 * 0.4))
+        image.paste(self.alpha_back, (0, 0), self.mask)
         image = image.resize((int(image.width * scale), int(image.height * scale)), Image.Resampling.NEAREST)
         return PilImg2WxImg(image).ConvertToBitmap()
 

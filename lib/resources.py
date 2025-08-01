@@ -64,7 +64,7 @@ class ThemeManager:
 
     @staticmethod
     def save_theme_file(file_path: str, theme: CursorTheme):
-        logger.info(f"保存主题至: {basename(file_path)}")
+        logger.debug(f"保存主题至: {basename(file_path)}")
         data_string = str(theme.to_dict())
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(data_string)

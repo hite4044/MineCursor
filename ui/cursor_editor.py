@@ -246,6 +246,9 @@ class ElementInfoEditorUI(wx.ScrolledWindow):
         self.res_panel.Add(self.resample_type, 1, wx.EXPAND)
         sizer.Add(self.res_panel, 0, wx.EXPAND | wx.ALL, 5)
 
+        self.open_step_editor_btn = wx.Button(self, label="编辑渲染步骤")
+        sizer.Add(self.open_step_editor_btn, 0, wx.EXPAND | wx.ALL, 5)
+
         self.SetSizer(sizer)
         self.SetScrollRate(0, 30)
 

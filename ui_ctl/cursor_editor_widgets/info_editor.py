@@ -5,6 +5,7 @@ import wx
 from lib.data import CursorProject, CursorElement
 from lib.log import logger
 from ui.cursor_editor import InfoEditorUI, ElementInfoEditorUI, ProjectInfoEditorUI
+from ui_ctl.cursor_editor_widgets.step_editor import StepEditor
 from widget.data_entry import DataEntryEvent, DataEntry, EVT_DATA_UPDATE, BoolEntry
 from ui_ctl.cursor_editor_widgets.events import ProjectUpdatedEvent
 
@@ -63,6 +64,13 @@ class ElementInfoEditor(ElementInfoEditorUI):
     def __init__(self, parent: wx.Window):
         super().__init__(parent)
         self.active_element: CursorElement | None = None
+        self.open_step_editor_btn.Bind(wx.EVT_BUTTON, self.open_step_editor)
+
+    def open_step_editor(self, _):
+        if self.active_element:
+            StepEditor(self, self.active_element).Show()
+            event = ProjectUpdatedEvent()
+            wx.PostEvent(self, event)
 
     def set_element(self, element: CursorElement):
 

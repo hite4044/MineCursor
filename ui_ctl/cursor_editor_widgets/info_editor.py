@@ -85,15 +85,18 @@ class ElementInfoEditor(ElementInfoEditorUI):
         create_cfg_bind(self.reverse_x, element, "reverse_x")
         create_cfg_bind(self.reverse_y, element, "reverse_y")
         create_cfg_bind(self.reverse_way, element, "reverse_way")
+
+        create_cfg_bind(self.animation_start_offset, element, "animation_start_offset")
+        create_cfg_bind(self.loop_animation, element, "loop_animation")
         create_cfg_bind(self.enable_key_ani, element, "enable_key_ani", enable_keyframe_anim_widget=True)
         if len(element.frames) > 1:
             def update_ani_data(event: DataEntryEvent):
                 event.Skip()
                 element.update_ani_data_by_key_data()
+            create_cfg_bind(self.frame_start, element, "animation_key_data.frame_start", cbk=update_ani_data)
+            create_cfg_bind(self.frame_inv, element, "animation_key_data.frame_inv", cbk=update_ani_data)
+            create_cfg_bind(self.frame_length, element, "animation_key_data.frame_length", cbk=update_ani_data)
 
-            self.frame_start.entry.Bind(EVT_DATA_UPDATE, update_ani_data)
-            self.frame_inv.entry.Bind(EVT_DATA_UPDATE, update_ani_data)
-            self.frame_length.entry.Bind(EVT_DATA_UPDATE, update_ani_data)
             self.frame_start.set_depend(self.enable_key_ani)
             self.frame_inv.set_depend(self.enable_key_ani)
             self.frame_length.set_depend(self.enable_key_ani)
@@ -119,6 +122,8 @@ class ElementInfoEditor(ElementInfoEditorUI):
         self.reverse_way.set_value(element.reverse_way)
         self.enable_key_ani.set_value(element.enable_key_ani)
         if len(element.frames) > 1:
+            self.animation_start_offset.set_value(element.animation_start_offset)
+            self.loop_animation.set_value(element.loop_animation)
             self.frame_start.set_value(element.animation_key_data.frame_start)
             self.frame_inv.set_value(element.animation_key_data.frame_inv)
             self.frame_length.set_value(element.animation_key_data.frame_length)

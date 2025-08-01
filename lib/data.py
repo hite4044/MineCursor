@@ -198,6 +198,7 @@ class CursorElement:
         self.enable_key_ani: bool = False
         self.animation_key_data: AnimationKeyData = AnimationKeyData()
         self.animation_start_offset: int = 0  # 元素在XX帧开始显示并播放播放
+        self.loop_animation: bool = True
         self.animation_data: list[AnimationFrameData] = [AnimationFrameData() for _ in range(len(frames))]
         self.animation_data_index: list[int] = []
         self.proc_step = DEFAULT_PROC_ORDER
@@ -224,6 +225,8 @@ class CursorElement:
             index += data.index_increment
 
     def get_frame_index(self, target_frame: int) -> int:
+        target_frame -= self.animation_start_offset
+
         timer_frame = 0
         frame = 0
         if target_frame == 0:

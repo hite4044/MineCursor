@@ -188,8 +188,8 @@ class ElementInfoEditorUI(wx.ScrolledWindow):
                 ReverseWay.BOTH: "同时翻转"
             }))),
             (("动画", True),
-             ((BoolEntry, "启用关键字动画编辑"), (IntEntry, "动画开始"), (IntEntry, "帧间隔"), (IntEntry, "动画帧数"),
-              (StringEntry, "总帧数-只读")))
+             ((IntEntry, "动画起始偏移"), (BoolEntry, "循环动画"), (BoolEntry, "启用关键字动画编辑"),
+              (IntEntry, "动画开始"), (IntEntry, "帧间隔"), (IntEntry, "动画帧数"), (StringEntry, "总帧数-只读")))
         ]
         sizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -227,11 +227,13 @@ class ElementInfoEditorUI(wx.ScrolledWindow):
 
         ret = load_group(widget_groups[4])
         self.animation_panel: wx.CollapsiblePane = cast(wx.CollapsiblePane, sizer.GetChildren()[-1].Window)
-        self.enable_key_ani: BoolEntry = ret[0]
-        self.frame_start: IntEntry = ret[1]
-        self.frame_inv: IntEntry = ret[2]
-        self.frame_length: IntEntry = ret[3]
-        self.animation_frames_count: StringEntry = ret[4]
+        self.animation_start_offset: IntEntry = ret[0]
+        self.loop_animation: BoolEntry = ret[1]
+        self.enable_key_ani: BoolEntry = ret[2]
+        self.frame_start: IntEntry = ret[3]
+        self.frame_inv: IntEntry = ret[4]
+        self.frame_length: IntEntry = ret[5]
+        self.animation_frames_count: StringEntry = ret[6]
 
         self.resample_map = RESAMPLE_MAP
         self.res_panel = wx.BoxSizer(wx.HORIZONTAL)

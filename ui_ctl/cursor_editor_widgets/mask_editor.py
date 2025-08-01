@@ -51,15 +51,19 @@ class MaskEditor(wx.Dialog):
         self.bar.SetStatusText("", ID_NONE)
         self.bar.SetStatusText("缩放: 800%", ID_SCALE)
         self.reset = wx.Button(self.editor, label="重置")
+        self.show_grid = wx.CheckBox(self.editor, label="显示网格", style=wx.CHK_3STATE | wx.CHK_ALLOW_3RD_STATE_FOR_USER)
         self.ok = wx.Button(self.editor, label="确定")
         self.cancel = wx.Button(self.editor, label="取消")
+        self.show_grid.Set3StateValue(wx.CHK_UNDETERMINED)
 
         btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        btn_sizer.Add(self.reset, 0)
+        btn_sizer.Add(self.reset, 0, wx.EXPAND)
         btn_sizer.AddStretchSpacer()
-        btn_sizer.Add(self.ok, 0)
+        btn_sizer.Add(self.show_grid, 0, wx.EXPAND)
         btn_sizer.AddSpacer(5)
-        btn_sizer.Add(self.cancel, 0)
+        btn_sizer.Add(self.ok, 0, wx.EXPAND)
+        btn_sizer.AddSpacer(5)
+        btn_sizer.Add(self.cancel, 0, wx.EXPAND)
         btn_sizer_ver = wx.BoxSizer(wx.VERTICAL)
         btn_sizer_ver.AddStretchSpacer()
         btn_sizer_ver.Add(btn_sizer, 0, wx.EXPAND | wx.ALL, 5)
@@ -70,6 +74,7 @@ class MaskEditor(wx.Dialog):
         self.SetSizer(sizer)
 
         self.reset.Bind(wx.EVT_BUTTON, self.on_reset)
+        self.show_grid.Bind(wx.EVT_CHECKBOX, self.on_switch_show_grid)
         self.ok.Bind(wx.EVT_BUTTON, self.on_ok)
         self.cancel.Bind(wx.EVT_BUTTON, self.on_cancel)
         self.Bind(EVT_POSITION_UPDATED, self.on_position_updated)
@@ -78,6 +83,10 @@ class MaskEditor(wx.Dialog):
         self.b_canvas = mask.size
         self.Bind(wx.EVT_CLOSE, self.on_close)
 
+    def on_switch_show_grid(self, _):
+        state = self.show_grid.Get3StateValue()
+        self.editor.GRID_STATE = state
+        self.editor.Refresh()
 
     def on_close(self, event: wx.CloseEvent):
         ret = wx.MessageBox("确定要放弃没有保存的遮罩吗？", "确认关闭", wx.YES_NO | wx.ICON_QUESTION)
@@ -171,6 +180,7 @@ ME_SCALE_LEVEL = [
     18.0,
     20.0,
     25.0,
+    20.0,
     35.0,
     40.0,
     45.0,
@@ -192,6 +202,7 @@ def get_alpha_back(size: tuple[int, int]) -> Image.Image:
 
 
 class MaskEditorPanel(wx.Window):
+    GRID_STATE = wx.CHK_UNDETERMINED
     def __init__(self, parent: wx.Window, mask: Image.Image, background: Image.Image | None = None):
         super().__init__(parent)
         if background is None:
@@ -323,7 +334,7 @@ class MaskEditorPanel(wx.Window):
             self.scaled_bitmap_cache[self.scale] = bitmap
         cvs_x, cvs_y = self.get_canvas_position()
         dc.DrawBitmap(bitmap, cvs_x, cvs_y)
-        if self.draw_grid_line:
+        if (self.draw_grid_line and self.GRID_STATE != wx.CHK_UNCHECKED) or self.GRID_STATE == wx.CHK_CHECKED:
             dc.SetPen(wx.Pen(wx.Colour(128, 128, 128)))
             scale = self.scale
             for i in range(0, self.background.width + 1):

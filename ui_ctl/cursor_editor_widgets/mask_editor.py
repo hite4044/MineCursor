@@ -76,6 +76,15 @@ class MaskEditor(wx.Dialog):
         self.Bind(EVT_SCALE_UPDATED, self.on_scale_updated)
 
         self.b_canvas = mask.size
+        self.Bind(wx.EVT_CLOSE, self.on_close)
+
+
+    def on_close(self, event: wx.CloseEvent):
+        ret = wx.MessageBox("确定要放弃没有保存的遮罩吗？", "确认关闭", wx.YES_NO | wx.ICON_QUESTION)
+        if ret == wx.YES:
+            self.EndModal(wx.ID_CANCEL)
+            self.Destroy()
+            event.Skip()
 
     def on_position_updated(self, event: PositionUpdatedEvent):
         self.b_position = event.position
@@ -93,9 +102,11 @@ class MaskEditor(wx.Dialog):
 
     def on_ok(self, _):
         self.EndModal(wx.ID_OK)
+        self.Destroy()
 
     def on_cancel(self, _):
         self.EndModal(wx.ID_CANCEL)
+        self.Destroy()
 
     def get_mask(self):
         mask = ImageOps.invert(self.mask)

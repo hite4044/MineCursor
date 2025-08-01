@@ -66,5 +66,5 @@ class NewThemeCursorList(NewThemeCursorListUI):
         projects = data.split(", ")
         for project_id in projects:
             if project := theme_manager.find_project(project_id):
-                self.active_theme.projects.append(project)
+                self.active_theme.projects.append(project.copy())
             self.reload_theme()

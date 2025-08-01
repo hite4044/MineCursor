@@ -10,7 +10,6 @@ from widget.no_tab_notebook import NoTabNotebook
 class SourceInfoEditDialog(wx.Dialog):
     def __init__(self, parent: wx.Window, element: CursorElement):
         super().__init__(parent, title="编辑元素源信息", size=(1196, 795), style=wx.DEFAULT_FRAME_STYLE)
-        print(element.source_infos, element.frames)
         self.SetFont(parent.GetFont())
         self.element = element
         self.active_index = 0

@@ -191,13 +191,13 @@ ME_SCALE_LEVEL = [
 
 
 def get_alpha_back(size: tuple[int, int]) -> Image.Image:
-    image = Image.new("RGBA", size, (255, 255, 255, 255))
+    image = Image.new("RGBA", size, (109, 189, 79, 255))
     draw = ImageDraw.ImageDraw(image)
     RT = 4
     for y in range(0, size[1], RT):
         for x in range(0, size[0], RT):
             if int((x + y) / RT) % 2 == 0:
-                draw.rectangle(((x, y), (x + RT - 1, y + RT - 1)), (200, 200, 200, 255), outline=None)
+                draw.rectangle(((x, y), (x + RT - 1, y + RT - 1)), (155, 106, 73, 255), outline=None)
     return image
 
 
@@ -226,6 +226,8 @@ class MaskEditorPanel(wx.Window):
         self.scaled_bitmap_cache: dict[float, wx.Bitmap] = {}
         self.last_bitmap: wx.Bitmap | None = None
         self.draw_grid_line: bool = False
+
+        self.alpha_back.putalpha(100)
 
         self.SetDoubleBuffered(True)
         self.Bind(wx.EVT_MOUSEWHEEL, self.on_scroll)
@@ -346,7 +348,7 @@ class MaskEditorPanel(wx.Window):
 
     def render_bitmap(self, scale: float) -> wx.Bitmap:
         image = self.background.copy()
-        image.putalpha(int(255 * 0.4))
+        image.putalpha(int(255 * 0.7))
         image.paste(self.alpha_back, (0, 0), self.mask)
         image = image.resize((int(image.width * scale), int(image.height * scale)), Image.Resampling.NEAREST)
         return PilImg2WxImg(image).ConvertToBitmap()

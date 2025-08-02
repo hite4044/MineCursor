@@ -111,7 +111,10 @@ class ElementCanvas(ElementCanvasUI):
             if self.last_index >= len(elements):
                 self.last_index = 0
         else:
-            element = elements[0]
+            if self.active_element in elements:
+                element = self.active_element
+            else:
+                element = elements[0]
             self.last_index = 1 if len(elements) > 1 else 0
             self.last_point = raw_pos
         self.post_element_selected(element)

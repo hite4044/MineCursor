@@ -15,6 +15,7 @@ class StepEditor(wx.Dialog):
         super().__init__(parent, title="步骤编辑")
         self.SetFont(parent.GetFont())
         self.element = element
+        self.element.proc_step = list(element.proc_step)
 
         self.list = wx.ListBox(self)
         for step in element.proc_step:

@@ -163,7 +163,7 @@ class ElementListCtrl(ElementListCtrlUI):
             write_cur(frames[0], self.project.center_pos, path)
             progress_dialog.Update(1)
         else:
-            gen = write_ani(path, frames, self.project.center_pos, self.project.ani_rate)
+            gen = write_ani(path, frames, self.project)
             while True:
                 try:
                     msg, index = next(gen)

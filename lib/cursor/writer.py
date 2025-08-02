@@ -55,12 +55,11 @@ def write_cur(frame: Image.Image, hotspot: tuple[int, int], path: str):
 
 def write_cursor_progress(path: str, frames: list[Image.Image], project: CursorProject):
     hotspot = (int(project.center_pos[0] * project.scale), int(project.center_pos[1] * project.scale))
-    rate = project.ani_rate
     if path.endswith(".cur"):
         yield "保存至cur文件", -1
         write_cur(frames[0], hotspot, path)
     else:
-        gen = write_ani(path, frames, hotspot, rate)
+        gen = write_ani(path, frames, project)
         while True:
             try:
                 yield next(gen)

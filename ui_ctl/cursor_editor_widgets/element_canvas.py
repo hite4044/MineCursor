@@ -1,3 +1,5 @@
+import threading
+import time
 from typing import cast
 from typing import cast as type_cast
 
@@ -47,8 +49,8 @@ class ElementCanvas(ElementCanvasUI):
         self.last_index = 0
         self.drag_offset: tuple[int, int] | None = None
         self.cvs_drag_offset: tuple[int, int] | None = None
-        self.animation_timer = wx.Timer(self)
-        self.Bind(wx.EVT_TIMER, lambda _: self.update_frame())
+        self.animation_thread = threading.Thread(target=self.frame_thread)
+        self.animation_stop_flag = threading.Event()
 
         self.SetDoubleBuffered(True)
 
@@ -59,7 +61,7 @@ class ElementCanvas(ElementCanvasUI):
         self.Bind(wx.EVT_MOUSEWHEEL, self.on_scroll)
 
         if project.is_ani_cursor:
-            self.animation_timer.Start(self.project.frame_delay)
+            self.animation_thread.start()
 
     def set_element(self, element: CursorElement | None):
         self.active_element = element
@@ -71,14 +73,13 @@ class ElementCanvas(ElementCanvasUI):
             self.active_element = None
         self.Refresh()
         if self.project.is_ani_cursor:
-            if not self.animation_timer.IsRunning():
-                self.animation_timer.Start(self.project.frame_delay)
-            elif self.animation_timer.GetInterval() != self.project.frame_delay:
-                self.animation_timer.Stop()
-                self.animation_timer.Start(self.project.frame_delay)
+            if not self.animation_thread.is_alive():
+                self.animation_thread = threading.Thread(target=self.frame_thread)
+                self.animation_stop_flag.clear()
+                self.animation_thread.start()
         else:
-            if self.animation_timer.IsRunning():
-                self.animation_timer.Stop()
+            if self.animation_thread.is_alive():
+                self.animation_stop_flag.set()
             self.frame_index = 0
 
     def clear_frame_cache(self):
@@ -195,6 +196,16 @@ class ElementCanvas(ElementCanvasUI):
 
     def on_size(self, _):
         self.Refresh()
+
+    def frame_thread(self):
+        while not self.animation_stop_flag.is_set():
+            timer = time.perf_counter()
+            self.update_frame()
+            if self.project.ani_rates:
+                wait_time = self.project.ani_rates[self.frame_index] / 60
+            else:
+                wait_time = self.project.ani_rate / 60
+            self.animation_stop_flag.wait(timeout=max(0.0, wait_time - (time.perf_counter() - timer)))
 
     def update_frame(self):
         if self.frame_index >= self.project.frame_count:

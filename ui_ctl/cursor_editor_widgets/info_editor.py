@@ -5,6 +5,7 @@ import wx
 from lib.data import CursorProject, CursorElement
 from lib.log import logger
 from ui.cursor_editor import InfoEditorUI, ElementInfoEditorUI, ProjectInfoEditorUI
+from ui_ctl.cursor_editor_widgets.rate_editor import RateEditor
 from ui_ctl.cursor_editor_widgets.step_editor import StepEditor
 from widget.data_entry import DataEntryEvent, DataEntry, EVT_DATA_UPDATE, BoolEntry
 from ui_ctl.cursor_editor_widgets.events import ProjectUpdatedEvent
@@ -173,6 +174,15 @@ class ProjectInfoEditor(ProjectInfoEditorUI):
             wx.PostEvent(self.resample_type, event)
 
         self.resample_type.Bind(wx.EVT_CHOICE, on_choice)
+
+        self.open_rate_editor_btn.Bind(wx.EVT_BUTTON, self.open_rate_editor)
+
+    def open_rate_editor(self, _):
+        if not self.project.is_ani_cursor:
+            return
+        RateEditor(self, self.project).Show()
+        event = ProjectUpdatedEvent()
+        wx.PostEvent(self, event)
 
     def update_ani_rate_tooltip(self, event: DataEntryEvent | None):
         if event:

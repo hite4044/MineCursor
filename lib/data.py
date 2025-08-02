@@ -328,6 +328,7 @@ class CursorProject:
         self.is_ani_cursor = False
         self.frame_count = 20
         self.ani_rate: int = 6
+        self.ani_rates: list[int] | None = None
 
         self.id: str = generate_id(2)
 
@@ -358,6 +359,7 @@ class CursorProject:
             "is_ani_cursor": self.is_ani_cursor,
             "frame_count": self.frame_count,
             "ani_rate": self.ani_rate,
+            "ani_rates": self.ani_rates,
         }
 
     @staticmethod
@@ -375,6 +377,7 @@ class CursorProject:
         project.is_ani_cursor = data["is_ani_cursor"]
         project.frame_count = data["frame_count"]
         project.ani_rate = data["ani_rate"]
+        project.ani_rates = data.get("ani_rates")
         return project
 
     def copy(self) -> 'CursorProject':

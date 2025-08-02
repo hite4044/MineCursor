@@ -312,26 +312,28 @@ class ProjectInfoEditorUI(wx.Panel):
         self.resample_type = wx.Choice(self, choices=list(self.resample_map.values()))
         self.resample_type.SetSelection(0)
 
-        grid_sizer = wx.FlexGridSizer(8, 2, 5, 5)
+        self.open_rate_editor_btn = wx.Button(self, label="编辑帧间隔")
+
+        grid_sizer = wx.FlexGridSizer(9, 2, 5, 5)
         grid_sizer.AddGrowableCol(1, 1)
-        grid_sizer.Add(self.name.label, 0, wx.EXPAND)
-        grid_sizer.Add(self.name.entry, 1, wx.EXPAND)
-        grid_sizer.Add(self.external_name.label, 0, wx.EXPAND)
-        grid_sizer.Add(self.external_name.entry, 1, wx.EXPAND)
-        grid_sizer.Add(self.kind.label, 0, wx.EXPAND)
-        grid_sizer.Add(self.kind.entry, 1, wx.EXPAND)
-        grid_sizer.Add(self.scale.label, 0, wx.EXPAND)
-        grid_sizer.Add(self.scale.entry, 1, wx.EXPAND)
-        grid_sizer.Add(self.is_ani_cursor.label, 0, wx.EXPAND)
-        grid_sizer.Add(self.is_ani_cursor.entry, 1, wx.EXPAND)
-
-        grid_sizer.Add(self.frame_count.label, 0, wx.EXPAND)
-        grid_sizer.Add(self.frame_count.entry, 1, wx.EXPAND)
-        grid_sizer.Add(self.ani_rate.label, 0, wx.EXPAND)
-        grid_sizer.Add(self.ani_rate.entry, 1, wx.EXPAND)
-
-        grid_sizer.Add(CenteredText(self, label="缩放方法: "), 0, wx.EXPAND)
-        grid_sizer.Add(self.resample_type, 0, wx.EXPAND)
+        widget_list = [
+            self.name,
+            self.external_name,
+            self.kind,
+            self.scale,
+            self.is_ani_cursor,
+            self.frame_count,
+            self.ani_rate,
+            (CenteredText(self, label="缩放方法: "), self.resample_type),
+            (wx.Window(self), self.open_rate_editor_btn)
+        ]
+        for item in widget_list:
+            if isinstance(item, tuple):
+                grid_sizer.Add(item[0], 0, wx.EXPAND)
+                grid_sizer.Add(item[1], 1, wx.EXPAND)
+            else:
+                grid_sizer.Add(item.label, 0, wx.EXPAND)
+                grid_sizer.Add(item.entry, 1, wx.EXPAND)
         sizer.Add(grid_sizer, 1, wx.EXPAND | wx.ALL, 5)
         self.SetSizer(sizer)
 

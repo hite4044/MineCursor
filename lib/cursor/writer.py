@@ -21,8 +21,13 @@ def create_project_cache():
     return project_dir
 
 
-def write_ani(path: str, frames: list[Image.Image], hotspot: tuple[int, int], rate: int):
+def write_ani(path: str, frames: list[Image.Image], project: CursorProject):
     project_dir = create_project_cache()
+    hotspot = (int(project.center_pos[0] * project.scale), int(project.center_pos[1] * project.scale))
+    if project.ani_rates:
+        rates = project.ani_rates + [project.ani_rate] * (project.frame_count - len(project.ani_rates))
+    else:
+        rates = [project.ani_rate] * project.frame_count
 
     files = []
     for i, frame in enumerate(frames):
@@ -34,7 +39,7 @@ def write_ani(path: str, frames: list[Image.Image], hotspot: tuple[int, int], ra
     ani = ani_file.open(ani_path, "w")
     yield "合并帧", -1
     ani.setframespath(files, xy=hotspot)
-    ani.setrate([rate for _ in range(len(frames))])
+    ani.setrate(rates)
     ani.close()
     yield "复制文件至保存路径", -1
     copy_file(ani_path, path)

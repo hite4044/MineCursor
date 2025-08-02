@@ -22,6 +22,7 @@ class StepEditor(wx.Dialog):
             self.list.Append(STEP_NAME_MAP[step])
 
         sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(wx.StaticText(self, label="选中后上下键移动"), 0, wx.EXPAND)
         sizer.Add(self.list, 1, wx.EXPAND)
         self.SetSizer(sizer)
 
@@ -29,7 +30,7 @@ class StepEditor(wx.Dialog):
 
     def exchange_item(self, index1: int, index2: int):
         self.element.proc_step[index1], self.element.proc_step[index2] = self.element.proc_step[index2], \
-        self.element.proc_step[index1]
+            self.element.proc_step[index1]
         self.list.SetString(index1, STEP_NAME_MAP[self.element.proc_step[index1]])
         self.list.SetString(index2, STEP_NAME_MAP[self.element.proc_step[index2]])
 

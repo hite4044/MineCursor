@@ -131,6 +131,12 @@ class ProjectCopyDialog(DataDialog):
 ActionStack = list[tuple[int, CursorProject]]
 
 
+def mk_end(li: list):
+    if len(li) > 1:
+        return f" ({len(li)})"
+    return ""
+
+
 class PublicThemeCursorList(PublicThemeCursorListUI):
     ICON_SIZE = 96
 
@@ -162,6 +168,12 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
             for index, project in stacks[::-1]:
                 self.active_theme.projects.insert(index, project)
             self.reload_theme()
+        elif event.GetKeyCode() == wx.WXK_UP and event.GetModifiers() == wx.MOD_SHIFT:
+            self.move_project(self.get_select_items()[0], -1)
+        elif event.GetKeyCode() == wx.WXK_DOWN and event.GetModifiers() == wx.MOD_SHIFT:
+            self.move_project(self.get_select_items()[0], 1)
+        else:
+            event.Skip()
 
     def clear(self):
         self.image_list.RemoveAll()
@@ -211,21 +223,36 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
         active_project = self.active_theme.projects[event.GetIndex()]
         projects = [self.active_theme.projects[i] for i in self.get_select_items()]
         menu = EtcMenu()
-        menu.Append("添加项目", self.menu_add_project)
+        menu.Append("添加项目 (&A)", self.menu_add_project)
         menu.AppendSeparator()
-        text = "编辑项目" if len(projects) == 1 else f"编辑项目 ({len(projects)})"
-        menu.Append(text, self.menu_edit_projects, projects)
-        text = "编辑项目信息" if len(projects) == 1 else f"编辑项目信息 ({len(projects)})"
-        menu.Append(text, self.menu_edit_project_info, projects, active_project)
+        if len(projects) == 1:
+            if event.GetIndex() != 0:
+                menu.Append("向上移动", self.move_project, event.GetIndex(), -1)
+            if event.GetIndex() != len(self.active_theme.projects) - 1:
+                menu.Append("向下移动", self.move_project, event.GetIndex(), 1)
+            menu.AppendSeparator()
+        menu.Append("编辑项目" + mk_end(projects), self.menu_edit_projects, projects)
+        menu.Append("编辑项目信息" + mk_end(projects), self.menu_edit_project_info, projects, active_project)
         if len(projects) == 1:
             menu.AppendSeparator()
             menu.Append("复制项目", self.menu_copy_project, active_project)
         menu.AppendSeparator()
-        text = "删除" if len(projects) == 1 else f"删除 ({len(projects)})"
-        menu.Append(text, self.menu_delete_projects, projects)
+        menu.Append("删除" + mk_end(projects), self.menu_delete_projects, projects)
+
         self.PopupMenu(menu)
 
         theme_manager.save()  # 经过测试，这行代码会在执行完菜单里所绑定的函数过后才会保存
+
+    def move_project(self, index: int, offset: int):
+        if not self.check_active_theme():
+            return
+        if not (0 <= index + offset < len(self.active_theme.projects)):
+            return
+        project = self.active_theme.projects[index]
+        self.active_theme.projects.pop(index)
+        self.active_theme.projects.insert(index + offset, project)
+        self.reload_theme()
+        self.Select(index + offset)
 
     def menu_add_project(self):  # 新建一个项目
         if not self.check_active_theme():

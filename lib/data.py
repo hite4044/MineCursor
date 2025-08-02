@@ -1,11 +1,12 @@
 import os.path
 import random
+from base64 import b64encode, b64decode
 from dataclasses import dataclass, field
 from enum import Enum
 from io import BytesIO
 from os import makedirs
 from os.path import expandvars, join
-from typing import Any
+from typing import Any, cast
 from zipfile import ZipFile
 
 from PIL import Image
@@ -267,7 +268,7 @@ class CursorElement:
             "proc_step": [step.value for step in self.proc_step],
         }
         if self.mask:
-            data["mask"] = (self.mask.size, self.mask.tobytes())
+            data["mask"] = (self.mask.size, b64encode(self.mask.tobytes()).decode("utf-8"))
         return data
 
     @staticmethod
@@ -285,7 +286,10 @@ class CursorElement:
             resample=Image.Resampling(data["resample"])
         )
         if "mask" in data:
-            element.mask = Image.frombytes("L", data["mask"][0], data["mask"][1])
+            if isinstance(data["mask"][1], bytes):
+                element.mask = Image.frombytes("L", data["mask"][0], data["mask"][1])
+            else:
+                element.mask = Image.frombytes("L", data["mask"][0], b64decode(data["mask"][1]))
         element.animation_start_offset = data.get("animation_start_offset", element.animation_start_offset)
         element.loop_animation = data.get("loop_animation", element.loop_animation)
         element.reverse_animation = data.get("reverse_animation", element.reverse_animation)
@@ -344,7 +348,7 @@ class CursorProject:
     def to_dict(self):
         return {
             "name": self.name,
-            "raw_canvas_size": self.raw_canvas_size,
+            "raw_canvas_size": list(self.raw_canvas_size),
             "external_name": self.external_name,
             "kind": self.kind.value,
             "elements": [element.to_dict() for element in self.elements],
@@ -360,7 +364,7 @@ class CursorProject:
     def from_dict(data: dict) -> 'CursorProject':
         project = CursorProject(
             name=data["name"],
-            canvas_size=data["raw_canvas_size"],
+            canvas_size=cast(tuple[int, int], tuple(data["raw_canvas_size"])),
         )
         project.external_name = data["external_name"]
         project.kind = CursorKind(data["kind"])

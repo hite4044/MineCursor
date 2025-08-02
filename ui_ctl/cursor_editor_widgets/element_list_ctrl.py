@@ -53,6 +53,7 @@ class ElementListCtrl(ElementListCtrlUI):
         element = self.get_element_by_index(index)
         self.project.add_element(element.copy())
         self.rebuild_control()
+        self.send_project_updated()
 
     def on_menu(self, event: wx.MouseEvent):
         if type_cast(tuple[int, int], self.HitTest(event.GetPosition()))[0] != -1:

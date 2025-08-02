@@ -46,6 +46,8 @@ class ElementListCtrl(ElementListCtrlUI):
                 self.project.elements.insert(index, project)
             self.rebuild_control()
             self.send_project_updated()
+        else:
+            event.Skip()
 
     def project_updated(self):
         for i, element in enumerate(self.project.elements):
@@ -177,7 +179,8 @@ class ElementListCtrl(ElementListCtrlUI):
         wx.MessageBox("保存成功")
 
     def on_remove_all_elements(self):
-        if wx.MessageBox("确定要清空所有元素吗？", "提示", wx.YES_NO | wx.ICON_QUESTION) == wx.ID_YES:
+        if wx.MessageBox("确定要清空所有元素吗？", "提示", wx.YES_NO | wx.ICON_QUESTION) == wx.YES:
+            self.elements_has_deleted.append([(i, element) for i, element in enumerate(self.project.elements)])
             self.project.elements.clear()
             self.rebuild_control()
             self.send_project_updated()

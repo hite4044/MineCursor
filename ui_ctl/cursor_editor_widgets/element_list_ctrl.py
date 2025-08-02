@@ -9,10 +9,16 @@ from lib.image_pil2wx import PilImg2WxImg
 from lib.render import render_project_gen
 from ui.cursor_editor import ElementListCtrlUI
 from ui_ctl.cursor_editor_widgets.events import ProjectUpdatedEvent, ElementSelectedEvent
+from ui_ctl.cursor_editor_widgets.mask_editor import MaskEditor
 from ui_ctl.cursor_editor_widgets.source_info_edit_dialog import SourceInfoEditDialog
 from ui_ctl.element_add_dialog import ElementAddDialog
-from ui_ctl.cursor_editor_widgets.mask_editor import MaskEditor
 from widget.ect_menu import EtcMenu
+
+
+def mk_end(li: list):
+    if len(li) > 1:
+        return f" ({len(li)})"
+    return ""
 
 
 class ElementListCtrl(ElementListCtrlUI):
@@ -20,32 +26,55 @@ class ElementListCtrl(ElementListCtrlUI):
         super().__init__(parent, project)
 
         self.line_mapping = {}
-        self.select_processing = False
+        self.elements_has_deleted: list[list[tuple[int, CursorElement]]] = []
         self.set_processing = False
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_select)
         self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_menu)
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu)
+        self.Bind(wx.EVT_KEY_DOWN, self.on_key_down, self)
         for element in project.elements:
             self.add_element(element)
+
+    def on_key_down(self, event: wx.KeyEvent):
+        if event.GetKeyCode() == wx.WXK_DELETE:
+            self.remove_elements(self.get_select_elements())
+        elif event.GetKeyCode() == ord("Z") and event.GetModifiers() == wx.MOD_CONTROL:
+            if len(self.elements_has_deleted) == 0:
+                return
+            stacks = self.elements_has_deleted.pop(-1)
+            for index, project in stacks[::-1]:
+                self.project.elements.insert(index, project)
+            self.rebuild_control()
+            self.send_project_updated()
 
     def project_updated(self):
         for i, element in enumerate(self.project.elements):
             if element.name != self.GetItemText(i, 1):
                 self.SetItem(i, 1, element.name)
 
+    def get_select_elements(self) -> list[CursorElement]:
+        first = self.GetFirstSelected()
+        selections = []
+        while first != -1:
+            selections.append(self.get_element_by_index(first))
+            first = self.GetNextSelected(first)
+        return selections
+
     def on_item_menu(self, event: wx.ListEvent):
         index = event.GetIndex()
+        elements = self.get_select_elements()
         menu = EtcMenu()
 
         menu.Append("添加", self.on_add_element)
+        if len(elements) == 1:
+            menu.AppendSeparator()
+            menu.Append("复制", self.copy_element, index)
+            menu.Append("上移一层", self.move_element, index, -1)
+            menu.Append("下移一层", self.move_element, index, 1)
+            menu.Append("编辑遮罩", self.on_edit_mask, index)
+            menu.Append("编辑源信息", self.on_edit_source, index)
         menu.AppendSeparator()
-        menu.Append("复制", self.copy_element, index)
-        menu.Append("上移一层", self.move_element, index, -1)
-        menu.Append("下移一层", self.move_element, index, 1)
-        menu.Append("编辑遮罩", self.on_edit_mask, index)
-        menu.Append("编辑源信息", self.on_edit_source, index)
-        menu.AppendSeparator()
-        menu.Append("删除", self.remove_element, index)
+        menu.Append("删除" + mk_end(elements), self.remove_elements, elements)
 
         self.PopupMenu(menu)
 
@@ -174,9 +203,11 @@ class ElementListCtrl(ElementListCtrlUI):
             return None
         return element
 
-    def remove_element(self, line: int):
-        element = self.get_element_by_index(line)
-        self.project.elements.remove(element)
+    def remove_elements(self, elements: list[CursorElement]):
+        indexes: list[int] = [{v: k for k, v in self.line_mapping.items()}[element.id] for element in elements]
+        self.elements_has_deleted.append([(line, element) for line, element in zip(indexes[::-1], elements[::-1])])
+        for element in elements:
+            self.project.elements.remove(element)
         self.rebuild_control()
         self.send_project_updated()
 
@@ -187,6 +218,7 @@ class ElementListCtrl(ElementListCtrlUI):
         self.project.elements[line + delta] = self.project.elements[line]
         self.project.elements[line] = old_element
         self.rebuild_control()
+        self.Select(line + delta)
         self.send_project_updated()
 
     def add_element(self, element: CursorElement):
@@ -197,9 +229,6 @@ class ElementListCtrl(ElementListCtrlUI):
         self.line_mapping[line] = element.id
 
     def set_element(self, element: CursorElement | None):
-        if self.select_processing:
-            return
-
         self.set_processing = True
         # 取消选择所有项
         for i in range(self.GetItemCount()):
@@ -211,6 +240,7 @@ class ElementListCtrl(ElementListCtrlUI):
         self.set_processing = False
 
     def on_select(self, event: wx.ListEvent):
+        event.Skip()
         if self.set_processing:
             return
         select_id = self.line_mapping[event.GetIndex()]
@@ -220,7 +250,6 @@ class ElementListCtrl(ElementListCtrlUI):
         else:
             return
 
-        self.select_processing = True
         event = ElementSelectedEvent(element)
+        event.SetEventObject(self)
         wx.PostEvent(self, event)
-        self.select_processing = False

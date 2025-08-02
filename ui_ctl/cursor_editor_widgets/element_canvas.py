@@ -167,6 +167,7 @@ class ElementCanvas(ElementCanvasUI):
 
     def post_element_selected(self, element: CursorElement | None):
         event = ElementSelectedEvent(element)
+        event.SetEventObject(self)
         wx.CallAfter(wx.PostEvent, self, event)
 
     def on_scroll(self, event: wx.MouseEvent):

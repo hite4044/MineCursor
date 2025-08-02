@@ -53,8 +53,9 @@ class CursorEditor(CursorEditorUI):
     def on_element_selected(self, event: ElementSelectedEvent):
         logger.info(f"元素被选择 -> {event.element}")
         self.info_editor.set_element(event.element)
-        self.canvas.set_element(event.element)
-        if not self.elements_lc.select_processing:
+        if event.GetEventObject() is not self.canvas:
+            self.canvas.set_element(event.element)
+        if event.GetEventObject() is not self.elements_lc:
             self.elements_lc.set_element(event.element)
         if event.element:
             self.b_rect_size = event.element.final_rect[2:]

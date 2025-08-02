@@ -12,6 +12,7 @@ from ui_ctl.cursor_editor_widgets.events import ProjectUpdatedEvent, ElementSele
 from ui_ctl.cursor_editor_widgets.source_info_edit_dialog import SourceInfoEditDialog
 from ui_ctl.element_add_dialog import ElementAddDialog
 from ui_ctl.cursor_editor_widgets.mask_editor import MaskEditor
+from widget.ect_menu import EtcMenu
 
 
 class ElementListCtrl(ElementListCtrlUI):
@@ -33,23 +34,25 @@ class ElementListCtrl(ElementListCtrlUI):
                 self.SetItem(i, 1, element.name)
 
     def on_item_menu(self, event: wx.ListEvent):
-        line = event.GetIndex()
-        menu = wx.Menu()
+        index = event.GetIndex()
+        menu = EtcMenu()
 
-        def ect_binder(name: str, func: Callable, *args):
-            item = menu.Append(wx.ID_ANY, name)
-            menu.Bind(wx.EVT_MENU, lambda _: func(*args), id=item.GetId())
-
-        ect_binder("添加", self.on_add_element)
+        menu.Append("添加", self.on_add_element)
         menu.AppendSeparator()
-        ect_binder("上移一层", self.move_element, line, -1)
-        ect_binder("下移一层", self.move_element, line, 1)
-        ect_binder("编辑遮罩", self.on_edit_mask, line)
-        ect_binder("编辑源信息", self.on_edit_source, line)
+        menu.Append("复制", self.copy_element, index)
+        menu.Append("上移一层", self.move_element, index, -1)
+        menu.Append("下移一层", self.move_element, index, 1)
+        menu.Append("编辑遮罩", self.on_edit_mask, index)
+        menu.Append("编辑源信息", self.on_edit_source, index)
         menu.AppendSeparator()
-        ect_binder("删除", self.remove_element, line)
+        menu.Append("删除", self.remove_element, index)
 
         self.PopupMenu(menu)
+
+    def copy_element(self, index: int):
+        element = self.get_element_by_index(index)
+        self.project.add_element(element.copy())
+        self.rebuild_control()
 
     def on_menu(self, event: wx.MouseEvent):
         if type_cast(tuple[int, int], self.HitTest(event.GetPosition()))[0] != -1:

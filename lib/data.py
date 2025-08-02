@@ -301,6 +301,9 @@ class CursorElement:
         element.build_animation_index()
         return element
 
+    def copy(self) -> 'CursorElement':
+        return CursorElement.from_dict(self.to_dict())
+
     def __hash__(self):
         return self.id
 

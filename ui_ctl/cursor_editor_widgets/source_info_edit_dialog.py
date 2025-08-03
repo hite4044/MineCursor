@@ -174,6 +174,7 @@ class SourceInfoEditDialog(wx.Dialog):
             AssetType.ZIP_FILE: "MC贴图",
             AssetType.RECT: "矩形",
         }
+        item = self.source_lc.GetFirstSelected()
         self.source_lc.DeleteAllItems()
         for i, source_info in enumerate(self.element.source_infos):
             self.source_lc.InsertItem(i, "")
@@ -182,3 +183,11 @@ class SourceInfoEditDialog(wx.Dialog):
                 self.source_lc.SetItem(i, 2, source_info.source_path)
             elif source_info.type == AssetType.RECT:
                 self.source_lc.SetItem(i, 2, f"{source_info.color} {source_info.size}")
+
+
+        self.source_lc.Unbind(wx.EVT_LIST_ITEM_SELECTED)
+        self.source_lc.Select(item)
+        self.source_lc.EnsureVisible(item)
+        self.source_lc.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_select_source)
+
+

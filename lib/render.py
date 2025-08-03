@@ -33,14 +33,14 @@ def render_project_frame(project: CursorProject, frame: int) -> Image.Image:
     canvas = Image.new("RGBA", project.raw_canvas_size, (255, 255, 255, 0))
     for element in project.elements[::-1]:
         element_frames = len(element.frames)
+        if frame < element.animation_start_offset:
+            continue
+        if not element.loop_animation and frame - element.animation_start_offset >= element_frames:
+            continue
         if element_frames == 1:
             frame_index = 0
         else:
-            if frame < element.animation_start_offset:
-                continue
             temp_index = element.get_frame_index(frame)
-            if not element.loop_animation and temp_index >= element_frames:
-                continue
             frame_index = temp_index % element_frames
             if element.reverse_animation:
                 frame_index = element_frames - frame_index - 1

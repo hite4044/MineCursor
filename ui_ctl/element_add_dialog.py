@@ -265,12 +265,15 @@ class ElementSelectList(ElementSelectListUI):
         pil_image = image.resize((image.width * mutil, image.height * mutil), Resampling.NEAREST)
         self.asset_shower.SetBitmap(PilImg2WxImg(pil_image))
 
-    def get_element_info(self) -> Optional[AssetsChoicerAssetInfo]:
+    def get_element_info(self, single_frame: bool = False) -> Optional[AssetsChoicerAssetInfo]:
         if self.showing_item is None:
             return None
         if self.showing_item.IsOk():
             if self.assets_tree.ItemHasChildren(self.showing_item):
                 children = get_item_children(self.assets_tree, self.showing_item)
+                if single_frame and self.dir_view.IsShown():
+                    index = self.dir_view.GetFirstSelected()
+                    children = [children[index]]
                 return AssetsChoicerAssetInfo(
                     [(Image.open(BytesIO(self.zip_file.read(self.assets_map[child]))).convert("RGBA"),
                       self.assets_map[child])

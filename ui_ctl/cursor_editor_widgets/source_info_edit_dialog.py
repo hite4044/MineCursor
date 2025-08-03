@@ -59,7 +59,7 @@ class SourceInfoEditDialog(wx.Dialog):
         source_win = self.notebook.now_window
         if source_win is self.mc_source:
             if self.mc_source.get_element_info():
-                info = self.mc_source.get_element_info()
+                info = self.mc_source.get_element_info(single_frame=True)
                 self.element.frames[self.active_index] = info.frames[0][0]
                 self.element.source_infos[self.active_index] = AssetSourceInfo(
                     type_=AssetType.ZIP_FILE,

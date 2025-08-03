@@ -46,12 +46,42 @@ class SourceInfoEditDialog(wx.Dialog):
         self.SetSizer(sizer)
 
         self.source_lc.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_select_source)
+        self.source_lc.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_menu)
         self.source_lc.Bind(wx.EVT_CONTEXT_MENU, self.on_menu)
+        self.source_lc.Bind(wx.EVT_KEY_DOWN, self.on_key)
         self.Bind(wx.EVT_BUTTON, self.on_apply, self.apply_btn)
 
-    def on_menu(self, _):
+    def on_key(self, event: wx.KeyEvent):
+        print(event.GetKeyCode(), wx.WXK_UP, event.GetModifiers(), wx.MOD_SHIFT)
+        if event.GetKeyCode() == wx.WXK_UP and event.GetModifiers() == wx.MOD_SHIFT:
+            self.exchange_item(self.source_lc.GetFirstSelected(), -1)
+        elif event.GetKeyCode() == wx.WXK_DOWN and event.GetModifiers() == wx.MOD_SHIFT:
+            self.exchange_item(self.source_lc.GetFirstSelected(), 1)
+        else:
+            event.Skip()
+
+    def exchange_item(self, index: int, offset: int):
+        if not (0 <= index + offset < self.source_lc.GetItemCount()) or index == -1:
+            return
+        temp = self.element.source_infos[index + offset]
+        self.element.source_infos[index + offset] = self.element.source_infos[index]
+        self.element.source_infos[index] = temp
+        self.load_source_lc()
+
+        self.source_lc.Select(index + offset)
+        self.source_lc.EnsureVisible(index + offset)
+        self.on_select_source(None)
+
+    def on_menu(self, event: wx.ListEvent):
         menu = EtcMenu()
         menu.Append("添加", self.on_add)
+        menu.AppendSeparator()
+        if isinstance(event, wx.ListEvent):
+            event.Veto()
+            index = event.GetIndex()
+            menu.Append("上移", self.exchange_item, index, -1)
+            menu.Append("下移", self.exchange_item, index, 1)
+            menu.AppendSeparator()
         menu.Append("删除", self.on_delete)
         self.PopupMenu(menu)
 

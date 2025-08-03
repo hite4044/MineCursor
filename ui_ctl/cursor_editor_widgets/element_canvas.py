@@ -49,7 +49,7 @@ class ElementCanvas(ElementCanvasUI):
         self.last_index = 0
         self.drag_offset: tuple[int, int] | None = None
         self.cvs_drag_offset: tuple[int, int] | None = None
-        self.animation_thread = threading.Thread(target=self.frame_thread)
+        self.animation_thread = threading.Thread(target=self.frame_thread, daemon=True)
         self.animation_stop_flag = threading.Event()
 
         self.SetDoubleBuffered(True)
@@ -59,9 +59,16 @@ class ElementCanvas(ElementCanvasUI):
         self.Bind(wx.EVT_MOUSE_EVENTS, self.on_dragging)
         self.Bind(wx.EVT_LEFT_DOWN, self.on_click)
         self.Bind(wx.EVT_MOUSEWHEEL, self.on_scroll)
+        self.Bind(wx.EVT_WINDOW_DESTROY, self.on_destroy)
 
         if project.is_ani_cursor:
             self.animation_thread.start()
+
+    def on_destroy(self, event: wx.WindowDestroyEvent):
+        event.Skip()
+        if self.animation_thread.is_alive():
+            self.animation_stop_flag.set()
+            self.animation_thread.join()
 
     def set_element(self, element: CursorElement | None):
         self.active_element = element
@@ -74,7 +81,7 @@ class ElementCanvas(ElementCanvasUI):
         self.Refresh()
         if self.project.is_ani_cursor:
             if not self.animation_thread.is_alive():
-                self.animation_thread = threading.Thread(target=self.frame_thread)
+                self.animation_thread = threading.Thread(target=self.frame_thread, daemon=True)
                 self.animation_stop_flag.clear()
                 self.animation_thread.start()
         else:

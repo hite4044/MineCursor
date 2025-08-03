@@ -41,7 +41,6 @@ class CursorEditor(CursorEditorUI):
         event.Skip()
         theme_manager.save()
 
-
     def on_mouse_move(self, event: wx.MouseEvent):
         event.Skip()
         self.b_cursor_pos = self.canvas.translate_mouse_position(event.GetPosition().IM)

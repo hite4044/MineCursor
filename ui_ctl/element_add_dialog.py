@@ -328,7 +328,14 @@ class ElementSelectList(ElementSelectListUI):
             self.dir_view.ClearAll()
             if self.dir_image_list:
                 self.dir_image_list.Destroy()
-            children = get_item_children(self.assets_tree, item)
+            children: list[wx.TreeItemId] = get_item_children(self.assets_tree, item)
+
+            # 按照图片序号排序
+            paths: list[str] = [self.assets_map[child] for child in children]
+            mapping = {k:v for k, v in zip(paths, children)}
+            paths.sort(key=lambda v: int(v.split("_")[-1].split(".")[0]))
+            children: list[wx.TreeItemId] = [mapping[path] for path in paths]
+
             image_io = BytesIO(self.zip_file.read(self.assets_map[children[0]]))
             first_image = Image.open(image_io)
             self.dir_image_list = wx.ImageList(first_image.width * ES_MUTIL_DIR, first_image.height * ES_MUTIL_DIR)
@@ -370,10 +377,11 @@ class ElementSelectList(ElementSelectListUI):
                 if single_frame and self.dir_view.IsShown():
                     index = self.dir_view.GetFirstSelected()
                     children = [children[index]]
+                paths = [self.assets_map[child] for child in children]
+                paths.sort(key=lambda v: int(v.split("_")[-1].split(".")[0]))
                 return AssetsChoicerAssetInfo(
-                    [(Image.open(BytesIO(self.zip_file.read(self.assets_map[child]))).convert("RGBA"),
-                      self.assets_map[child])
-                     for child in children], self.source.id)
+                    [(Image.open(BytesIO(self.zip_file.read(path))).convert("RGBA"), path)
+                     for path in paths], self.source.id)
             zip_path = self.assets_map[self.showing_item]
             image_io = BytesIO(self.zip_file.read(zip_path))
             return AssetsChoicerAssetInfo([(Image.open(image_io).convert("RGBA"), zip_path)], self.source.id)

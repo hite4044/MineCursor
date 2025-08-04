@@ -217,6 +217,7 @@ ES_DIR = 0
 ES_SHOWER = 1
 ES_MUTIL_DIR = 3
 
+NUM_PATTER = re.compile(r'\d+$')
 
 class ElementSelectList(ElementSelectListUI):
     def __init__(self, parent: wx.Window, source: AssetSource, kind: CursorKind):
@@ -254,8 +255,8 @@ class ElementSelectList(ElementSelectListUI):
                 root = root_map[root_name]
                 if full_path.split(".")[0][-1] in "0123456789":  # 数字结尾
                     no_fix_path, end_fix = full_path.split(".")
-                    no_num_path = re.sub(r'\d+$', '', no_fix_path).rstrip("_") + "." + end_fix
-                    number = re.findall(r'\d+$', no_fix_path)[0]
+                    no_num_path = re.sub(NUM_PATTER, '', no_fix_path).rstrip("_") + "." + end_fix
+                    number = re.findall(NUM_PATTER, no_fix_path)[0]
                     if no_num_path not in animation_root_map:
                         ani_root = self.assets_tree.AppendItem(root, no_num_path.split("/")[-1])
                         animation_root_map[no_num_path] = (ani_root, int(number))
@@ -269,7 +270,27 @@ class ElementSelectList(ElementSelectListUI):
                 file_name = full_path.split("/")[-1]
                 item = self.assets_tree.AppendItem(root, file_name)
                 assets_map[item] = full_path
+        # 筛选被误判的数字结尾的素材
+        for sub_root in get_item_children(self.assets_tree, self.real_root):
+            for node in get_item_children(self.assets_tree, sub_root):
+                # 遍历所有项
+                if not self.assets_tree.ItemHasChildren(node):
+                    continue
+                children = get_item_children(self.assets_tree, node)
+                try:
+                    numbers = [int(re.findall(NUM_PATTER, assets_map[child].split(".")[0])[0]) for child in children]
+                except IndexError:
+                    continue
+                numbers.sort()
+                if len(numbers) == 1 or list(range(min(numbers), max(numbers)+1)) != numbers:
+                    for child in children[::-1]:
+                        full_path = assets_map.pop(child)
+                        file_name = full_path.split("/")[-1]
+                        item = self.assets_tree.InsertItem(sub_root, node, file_name)
+                        assets_map[item] = full_path
+                    self.assets_tree.Delete(node)
 
+        # 填充推荐列表
         image = self.tree_image_list.Add(PilImg2WxImg(Image.open(ROOT_IMAGES["推荐"])).ConvertToBitmap())
         recommend_root = self.assets_tree.InsertItem(self.real_root, 0, "推荐", image)
         with open(self.source.recommend_file) as recommend_file:
@@ -332,8 +353,12 @@ class ElementSelectList(ElementSelectListUI):
 
             # 按照图片序号排序
             paths: list[str] = [self.assets_map[child] for child in children]
-            mapping = {k:v for k, v in zip(paths, children)}
-            paths.sort(key=lambda v: int(v.split("_")[-1].split(".")[0]))
+            mapping = {k: v for k, v in zip(paths, children)}
+            try:
+                paths.sort(key=lambda v: int(re.findall(NUM_PATTER, v.split('.')[0])[0]))
+            except IndexError:
+                print(paths)
+                exit(0)
             children: list[wx.TreeItemId] = [mapping[path] for path in paths]
 
             image_io = BytesIO(self.zip_file.read(self.assets_map[children[0]]))

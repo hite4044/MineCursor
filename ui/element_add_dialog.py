@@ -1,9 +1,11 @@
 import wx
+from PIL import Image
+from PIL.Image import Resampling
 
 from lib.cursor.setter import CursorKind
 from lib.data import AssetSource
 from widget.center_text import CenteredText
-from widget.data_entry import StringEntry, IntEntry
+from widget.data_entry import StringEntry, IntEntry, EnumEntry
 from widget.font import ft
 from widget.no_tab_notebook import NoTabNotebook
 
@@ -65,7 +67,49 @@ class RectElementSourceUI(wx.Panel):
 
 
 class ImageElementSourceUI(wx.Panel):
-    pass
+    RESAMPLE_MAP = {
+        Resampling.NEAREST: "最近邻",
+        Resampling.BILINEAR: "双线性",
+        Resampling.HAMMING: "汉明",
+        Resampling.BICUBIC: "双三次",
+        Resampling.LANCZOS: "Lanczos"
+    }
+
+    def __init__(self, parent: wx.Window):
+        super().__init__(parent)
+        self.active_image: Image.Image | None = None
+
+        self.path_entry = wx.TextCtrl(self)
+        self.chs_file_btn = wx.Button(self, label="选择")
+        self.file_drag_wnd = CenteredText(self, label="拖放图片文件至此", size=(-1, 300))
+        self.name = StringEntry(self, "元素名称")
+        self.resize_width = IntEntry(self, "缩放至宽度")
+        self.resize_height = IntEntry(self, "缩放至高度")
+        self.resize_resample = EnumEntry(self, "缩放方法", self.RESAMPLE_MAP)
+        self.preview_bitmap = wx.StaticBitmap(self)
+
+        self.file_drag_wnd.SetFont(ft(24))
+        self.name.set_value("新图像")
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        fp_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        fp_sizer.Add(self.path_entry, 1, wx.EXPAND)
+        fp_sizer.Add(self.chs_file_btn, 0, wx.EXPAND)
+        sizer.Add(fp_sizer, 0, wx.EXPAND)
+        sizer.Add(self.file_drag_wnd)
+        grid_sizer = wx.FlexGridSizer(4, 2, 5, 5)
+        entries = [
+            self.name,
+            self.resize_width,
+            self.resize_height,
+            self.resize_resample
+        ]
+        for entry in entries:
+            grid_sizer.Add(entry.label, 0, wx.EXPAND)
+            grid_sizer.Add(entry.entry, 1, wx.EXPAND)
+        sizer.Add(grid_sizer)
+        sizer.Add(self.preview_bitmap)
+        self.SetSizer(sizer)
 
 
 class ElementSelectListUI(wx.SplitterWindow):

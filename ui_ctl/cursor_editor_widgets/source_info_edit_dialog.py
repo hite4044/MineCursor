@@ -2,7 +2,8 @@ import wx
 
 from lib.cursor.setter import CursorKind
 from lib.data import CursorElement, AssetType, AssetSources, AssetSourceInfo
-from ui_ctl.element_add_dialog import ElementAddDialog, ElementSelectList, RectElementSource
+from lib.image_pil2wx import PilImg2WxImg
+from ui_ctl.element_add_dialog import ElementAddDialog, ElementSelectList, RectElementSource, ImageElementSource
 from widget.ect_menu import EtcMenu
 from widget.no_tab_notebook import NoTabNotebook
 
@@ -25,10 +26,12 @@ class SourceInfoEditDialog(wx.Dialog):
         self.notebook = NoTabNotebook(right_panel)
         self.mc_source = ElementSelectList(self.notebook, AssetSources.MINECRAFT_1_21_5.value, CursorKind.ARROW)
         self.rect_source = RectElementSource(self.notebook)
+        self.image_source = ImageElementSource(self.notebook)
         self.apply_btn = wx.Button(right_panel, label="应用")
 
         self.notebook.add_page(self.mc_source)
         self.notebook.add_page(self.rect_source)
+        self.notebook.add_page(self.image_source)
         self.notebook.switch_page(0)
 
         right_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -113,6 +116,12 @@ class SourceInfoEditDialog(wx.Dialog):
                 )
             )
             self.element.frames[self.active_index] = self.element.source_infos[self.active_index].load_frame()
+        elif source_win is self.image_source:
+            if self.image_source.get_element():
+                element = self.image_source.get_element()
+                self.element.source_infos[self.active_index] = element.source_infos[0]
+            else:
+                return
         self.load_source_lc()
 
     def on_delete(self):
@@ -133,7 +142,7 @@ class SourceInfoEditDialog(wx.Dialog):
         if not dialog.element:
             return
         if len(dialog.element.source_infos) > 1:
-            ret = wx.MessageBox("真的要添加多个源信息吗?\n听一听 Kittens Express - Tenkitsune 吧, 很好听的",
+            ret = wx.MessageBox("真的添加多个源信息吗?\n选不会取消哦\n听一听 Kittens Express - Tenkitsune 吧, 很好听的",
                                 "添加源信息", wx.ICON_QUESTION | wx.YES_NO)
             if ret != wx.YES:
                 return
@@ -168,11 +177,16 @@ class SourceInfoEditDialog(wx.Dialog):
             self.rect_source.size_width.set_value(source_info.size[0])
             self.rect_source.size_height.set_value(source_info.size[1])
             self.notebook.switch_page(1)
+        elif source_info.type == AssetType.IMAGE:
+            self.image_source.resize_width.set_value(source_info.size[0])
+            self.image_source.resize_height.set_value(source_info.size[1])
+            self.image_source.preview_bitmap.SetBitmap(PilImg2WxImg(source_info.image).ConvertToBitmap())
 
     def load_source_lc(self):
         name_map = {
             AssetType.ZIP_FILE: "MC贴图",
             AssetType.RECT: "矩形",
+            AssetType.IMAGE: "图像"
         }
         item = self.source_lc.GetFirstSelected()
         self.source_lc.DeleteAllItems()
@@ -183,7 +197,8 @@ class SourceInfoEditDialog(wx.Dialog):
                 self.source_lc.SetItem(i, 2, source_info.source_path)
             elif source_info.type == AssetType.RECT:
                 self.source_lc.SetItem(i, 2, f"{source_info.color} {source_info.size}")
-
+            elif source_info.type == AssetType.IMAGE:
+                self.source_lc.SetItem(i, 2, f"{source_info.size[0]}x{source_info.size[1]}")
 
         self.source_lc.Unbind(wx.EVT_LIST_ITEM_SELECTED)
         self.source_lc.Select(item)

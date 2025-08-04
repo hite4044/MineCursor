@@ -94,6 +94,7 @@ class Margins(DataClassSaveLoadMixin):
 class AssetType(Enum):
     ZIP_FILE = 0
     RECT = 1
+    IMAGE = 2
 
 
 class AssetSourceInfo:
@@ -102,7 +103,10 @@ class AssetSourceInfo:
                  source_path: str | None = None,
 
                  size: tuple[int, int] | None = None,
-                 color: tuple[int, int, int] | tuple[int, int, int, int] | None = None, ):
+
+                 color: tuple[int, int, int] | tuple[int, int, int, int] | None = None,
+
+                 image: Image.Image | None = None):
         self.type: AssetType = type_
         self.source_id: str = source_id
         self.source_path: str = source_path
@@ -110,22 +114,55 @@ class AssetSourceInfo:
         self.size = size
         self.color = color
 
+        self.image = image
+
     def to_dict(self):
-        return {
-            "type": self.type.value,
-            "source_id": self.source_id,
-            "source_path": self.source_path,
-            **({"size": self.size, "color": self.color} if self.size else {})
-        }
+        if self.type == AssetType.ZIP_FILE:
+            return {
+                "type": self.type.value,
+                "source_id": self.source_id,
+                "source_path": self.source_path,
+            }
+        elif self.type == AssetType.RECT:
+            return {
+                "type": self.type.value,
+                "size": list(self.size),
+                "color": list(self.color)
+            }
+        elif self.type == AssetType.IMAGE:
+            image_io = BytesIO()
+            self.image.save(image_io, format="PNG")
+            return {
+                "type": self.type.value,
+                "size": list(self.size),
+                "image": b64encode(image_io.getvalue()).decode("utf-8")
+            }
+        raise RuntimeError(f"炸死你！({self.type}")
 
     @staticmethod
     def from_dict(data: dict):
-        return AssetSourceInfo(
-            type_=AssetType(data["type"]),
-            source_id=data["source_id"],
-            source_path=data["source_path"],
-            **({"size": data["size"], "color": data["color"]} if "size" in data else {})
-        )
+        asset_type = AssetType(data["type"])
+        if asset_type == AssetType.ZIP_FILE:
+            return AssetSourceInfo(
+                type_=asset_type,
+                source_id=data["source_id"],
+                source_path=data["source_path"],
+            )
+        elif asset_type == AssetType.RECT:
+            return AssetSourceInfo(
+                type_=asset_type,
+                size=cast(tuple[int, int], tuple(data["size"])),
+                color=cast(tuple[int, int, int, int], tuple(data["color"]))
+            )
+        elif asset_type == AssetType.IMAGE:
+            image_io = BytesIO(b64decode(data["image"]))
+            image = Image.open(image_io)
+            return AssetSourceInfo(
+                type_=asset_type,
+                size=image.size,
+                image=image
+            )
+        raise RuntimeError(f"炸死你！({asset_type}")
 
     def load_frame(self) -> Image.Image:
         if self.type == AssetType.ZIP_FILE:
@@ -136,6 +173,8 @@ class AssetSourceInfo:
                 return Image.new("RGBA", self.size, (*self.color, 255))
             elif len(self.color) == 4:
                 return Image.new("RGBA", self.size, self.color)
+        elif self.type == AssetType.IMAGE:
+            return self.image
         raise NotImplementedError
 
 

@@ -36,7 +36,7 @@ class ElementAddDialog(ElementAddDialogUI):
             selector = ui_class(ElementSelectListUI)(self.sources_notebook, source, CursorKind.ARROW)
             self.sources_notebook.AddPage(selector, source.name)
         self.rect_element_source = RectElementSource(self.sources_notebook)
-        self.image_element_source = ImageElementSource(self)
+        self.image_element_source = ImageElementSource(self.sources_notebook)
         self.sources_notebook.AddPage(self.rect_element_source, "矩形")
         self.sources_notebook.AddPage(self.image_element_source, "图像")
         self.ok.Bind(wx.EVT_BUTTON, self.on_ok)

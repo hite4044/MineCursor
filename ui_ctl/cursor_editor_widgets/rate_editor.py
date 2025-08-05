@@ -57,9 +57,8 @@ class RateEditor(wx.Dialog):
         self.update_data()
 
     def update_data(self, row=None, col=None, value=None):
-        if row:
+        if row is not None:
             self.rates[row] = int(value)
-        print(self.rates)
         self.project.ani_rates = self.rates
         self.full_data()
 

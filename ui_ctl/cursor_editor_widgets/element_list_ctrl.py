@@ -46,6 +46,12 @@ class ElementListCtrl(ElementListCtrlUI):
                 self.project.elements.insert(index, project)
             self.rebuild_control()
             self.send_project_updated()
+        elif event.GetKeyCode() == wx.WXK_UP and event.GetModifiers() == wx.MOD_SHIFT:
+            index = self.GetFirstSelected()
+            self.move_element(index, -1)
+        elif event.GetKeyCode() == wx.WXK_DOWN and event.GetModifiers() == wx.MOD_SHIFT:
+            index = self.GetFirstSelected()
+            self.move_element(index, 1)
         else:
             event.Skip()
 

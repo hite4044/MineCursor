@@ -180,7 +180,9 @@ class ProjectInfoEditor(ProjectInfoEditorUI):
     def open_rate_editor(self, _):
         if not self.project.is_ani_cursor:
             return
-        RateEditor(self, self.project).Show()
+        editor = RateEditor(self, self.project)
+        editor.Show()
+        editor.Destroy()
         event = ProjectUpdatedEvent()
         wx.PostEvent(self, event)
 

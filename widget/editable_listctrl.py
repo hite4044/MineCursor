@@ -4,9 +4,10 @@ from wx.lib.mixins.listctrl import TextEditMixin
 
 class CustomMixin(TextEditMixin):
     """延迟500ms编辑框的打开"""
-    def __init__(self):
+    def __init__(self, open_delay: int = 500):
         TextEditMixin.__init__(self)
         self.open_editor_call = None
+        self.open_delay = open_delay
 
     def OnLeftDown(self, evt=None):
         assert isinstance(self, wx.ListCtrl)
@@ -16,7 +17,7 @@ class CustomMixin(TextEditMixin):
         super().OnLeftDown(evt)
 
     def OpenEditor(self, col, row):
-        self.open_editor_call = wx.CallLater(500, self.open_editor_warp, col, row)
+        self.open_editor_call = wx.CallLater(self.open_delay, self.open_editor_warp, col, row)
 
     def open_editor_warp(self, col, row):
         assert isinstance(self, wx.ListCtrl)
@@ -39,10 +40,10 @@ class EditableListCtrl(wx.ListCtrl, CustomMixin):
     """支持多列编辑的 ListCtrl 子类"""
 
     def __init__(self, parent, ID=wx.ID_ANY, pos=wx.DefaultPosition,
-                 size=wx.DefaultSize, style=wx.LC_REPORT):
+                 size=wx.DefaultSize, style=wx.LC_REPORT, open_delay: int = 500):
         wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
         self.editorBgColour = self.GetBackgroundColour()
-        CustomMixin.__init__(self)
+        CustomMixin.__init__(self, open_delay)
 
         # 绑定事件
         self.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self._onBeginEdit)

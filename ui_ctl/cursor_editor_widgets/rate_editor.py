@@ -16,10 +16,11 @@ class RateEditor(wx.Dialog):
         else:
             self.rates = [project.ani_rate] * project.frame_count
 
-        self.list = EditableListCtrl(self, style=wx.LC_REPORT | wx.LC_SINGLE_SEL)
-        self.list.AppendColumn("帧数")
+        self.list = EditableListCtrl(self, style=wx.LC_REPORT | wx.LC_SINGLE_SEL, open_delay=200)
+        self.list.AppendColumn("帧数", width=50)
+        self.list.AppendColumn("时间")
         self.list.AppendColumn("帧率")
-        self.list.EnableColumnEdit(1)
+        self.list.EnableColumnEdit(2)
         self.list.on_data_changed = self.update_data
         self.full_data()
         self.clear_btn = wx.Button(self.list, label="清空帧率")
@@ -45,12 +46,19 @@ class RateEditor(wx.Dialog):
         self.list.DeleteAllItems()
 
     def full_data(self):
+        select_now = self.list.GetFirstSelected()
+        scroll_value = self.list.GetScrollPos(wx.VERTICAL)
         self.list.DeleteAllItems()
         for i, rate in enumerate(self.rates):
             self.list.InsertItem(i, str(i + 1))
-            self.list.SetItem(i, 1, str(rate))
+            self.list.SetItem(i, 1, f"{rate / 60 * 1000:.2f} ms")
+            self.list.SetItem(i, 2, str(rate))
             if i > self.project.frame_count:
                 self.list.SetItemBackgroundColour(i, wx.Colour(225, 255, 225))
+        self.list.Refresh()
+        self.list.ScrollLines(scroll_value)
+        self.list.EnsureVisible(select_now)
+        self.list.Select(select_now)
 
     def exchange_item(self, index1: int, index2: int):
         self.rates[index1], self.rates[index2] = self.rates[index2], self.rates[index1]
@@ -59,8 +67,13 @@ class RateEditor(wx.Dialog):
     def update_data(self, row=None, col=None, value=None):
         if row is not None:
             self.rates[row] = int(value)
+            self.list.SetItem(row, 1, f"{int(value) / 60 * 1000:.2f} ms")
+        else:
+            self.full_data()
+        self.apply_to_project()
+
+    def apply_to_project(self):
         self.project.ani_rates = self.rates
-        self.full_data()
 
     def on_key(self, event: wx.KeyEvent):
         item_selected = self.list.GetFirstSelected() if self.list.GetFirstSelected() != wx.NOT_FOUND else None

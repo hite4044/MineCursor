@@ -1,4 +1,5 @@
 from copy import deepcopy
+from enum import Enum
 from typing import cast
 
 import wx
@@ -128,6 +129,22 @@ class ProjectCopyDialog(DataDialog):
         return new_project
 
 
+class ProjectMoveThemeDialog(DataDialog):
+    def __init__(self, parent: wx.Window, active_theme: CursorTheme):
+        self.themes_enum_cls = Enum("ThemesEnum", tuple(theme.id for theme in theme_manager.themes))
+        self.enum_to_theme_map = {self.themes_enum_cls[theme.id]: theme for theme in theme_manager.themes}
+        super().__init__(parent, "移动指针项目至其他主题",
+                         DataLineParam("theme", "目标主题", DataLineType.CHOICE,
+                                       getattr(self.themes_enum_cls, active_theme.id),
+                                       enum_names={ \
+                                           getattr(self.themes_enum_cls, theme.id): \
+                                               f"{theme.name} ({len(theme.projects)}-cur)" \
+                                           for theme in theme_manager.themes}))
+
+    def get_result(self) -> CursorTheme:
+        return self.enum_to_theme_map[self.datas["theme"]]
+
+
 ActionStack = list[tuple[int, CursorProject]]
 
 
@@ -237,11 +254,21 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
             menu.AppendSeparator()
             menu.Append("复制项目", self.menu_copy_project, active_project)
         menu.AppendSeparator()
+        menu.Append("移动至其他主题" + mk_end(projects), self.move_project_to_theme, projects)
         menu.Append("删除" + mk_end(projects), self.menu_delete_projects, projects)
 
         self.PopupMenu(menu)
 
         theme_manager.save()  # 经过测试，这行代码会在执行完菜单里所绑定的函数过后才会保存
+
+    def move_project_to_theme(self, projects: list[CursorProject]):
+        if not self.check_active_theme():
+            return
+        dialog = ProjectMoveThemeDialog(self, self.active_theme)
+        if dialog.ShowModal() == wx.ID_OK:
+            theme = dialog.get_result()
+            theme.projects.extend([project.copy() for project in projects])
+            self.reload_theme()
 
     def move_project(self, index: int, offset: int):
         if not self.check_active_theme():

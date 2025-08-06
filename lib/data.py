@@ -422,6 +422,12 @@ class CursorProject:
     def copy(self) -> 'CursorProject':
         return CursorProject.from_dict(self.to_dict())
 
+    def find_element(self, element_id: str):
+        for element in self.elements:
+            if element.id == element_id:
+                return element
+        return None
+
 
 @dataclass()
 class CursorTheme:
@@ -459,6 +465,11 @@ class CursorTheme:
             description=data["description"],
             projects=[CursorProject.from_dict(project) for project in data["projects"]],
         )
+
+    def copy(self):
+        data = self.to_dict()
+        data["id"] = generate_id()
+        return self.from_dict(data)
 
 
 @dataclass

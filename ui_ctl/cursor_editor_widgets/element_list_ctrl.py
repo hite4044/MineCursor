@@ -3,6 +3,7 @@ from typing import Callable, cast as type_cast
 import wx
 from PIL import Image
 
+from lib.clipboard import ClipBoard
 from lib.cursor.writer import write_cur, write_ani
 from lib.data import CursorProject, CursorElement
 from lib.image_pil2wx import PilImg2WxImg
@@ -35,17 +36,23 @@ class ElementListCtrl(ElementListCtrlUI):
         for element in project.elements:
             self.add_element(element)
 
+        self.clip = ClipBoard(self, self.clip_on_get_data, self.clip_on_set_data)
+
+    def clip_on_get_data(self):
+        item = self.GetFirstSelected()
+        return None if item == -1 else self.get_element_by_index(item).id
+
+    def clip_on_set_data(self, element_id: str):
+        if element := self.project.find_element(element_id):
+            self.project.elements.append(element.copy())
+            self.rebuild_control()
+            self.send_project_updated()
+
     def on_key_down(self, event: wx.KeyEvent):
         if event.GetKeyCode() == wx.WXK_DELETE:
             self.remove_elements(self.get_select_elements())
         elif event.GetKeyCode() == ord("Z") and event.GetModifiers() == wx.MOD_CONTROL:
-            if len(self.elements_has_deleted) == 0:
-                return
-            stacks = self.elements_has_deleted.pop(-1)
-            for index, project in stacks[::-1]:
-                self.project.elements.insert(index, project)
-            self.rebuild_control()
-            self.send_project_updated()
+            self.undo()
         elif event.GetKeyCode() == wx.WXK_UP and event.GetModifiers() == wx.MOD_SHIFT:
             index = self.GetFirstSelected()
             self.move_element(index, -1)
@@ -54,6 +61,15 @@ class ElementListCtrl(ElementListCtrlUI):
             self.move_element(index, 1)
         else:
             event.Skip()
+
+    def undo(self):
+        if len(self.elements_has_deleted) == 0:
+            return
+        stacks = self.elements_has_deleted.pop(-1)
+        for index, project in stacks[::-1]:
+            self.project.elements.insert(index, project)
+        self.rebuild_control()
+        self.send_project_updated()
 
     def project_updated(self):
         for i, element in enumerate(self.project.elements):
@@ -73,16 +89,20 @@ class ElementListCtrl(ElementListCtrlUI):
         elements = self.get_select_elements()
         menu = EtcMenu()
 
-        menu.Append("添加", self.on_add_element)
+        menu.Append("添加 (&A)", self.on_add_element)
         if len(elements) == 1:
             menu.AppendSeparator()
-            menu.Append("复制", self.copy_element, index)
-            menu.Append("上移一层", self.move_element, index, -1)
-            menu.Append("下移一层", self.move_element, index, 1)
-            menu.Append("编辑遮罩", self.on_edit_mask, index)
-            menu.Append("编辑源信息", self.on_edit_source, index)
+            menu.Append("编辑遮罩 (&M)", self.on_edit_mask, index)
+            menu.Append("编辑源信息 (&I)", self.on_edit_source, index)
+            menu.AppendSeparator()
+            menu.Append("上移一层 (&W)", self.move_element, index, -1)
+            menu.Append("下移一层 (&S)", self.move_element, index, 1)
+            menu.AppendSeparator()
+            menu.Append("复制 (&C)", self.copy_element, index)
+            if len(self.elements_has_deleted) == -1:
+                menu.Append("撤销 (&Z)", self.undo)
         menu.AppendSeparator()
-        menu.Append("删除" + mk_end(elements), self.remove_elements, elements)
+        menu.Append("删除 (&D)" + mk_end(elements), self.remove_elements, elements)
 
         self.PopupMenu(menu)
 
@@ -102,11 +122,11 @@ class ElementListCtrl(ElementListCtrlUI):
             item = menu.Append(wx.ID_ANY, name)
             menu.Bind(wx.EVT_MENU, lambda _: func(*args), id=item.GetId())
 
-        ect_binder("添加", self.on_add_element)
+        ect_binder("添加 (&A)", self.on_add_element)
         menu.AppendSeparator()
-        ect_binder("清空", self.on_remove_all_elements)
+        ect_binder("清空 (&D)", self.on_remove_all_elements)
         menu.AppendSeparator()
-        ect_binder("导出", self.output_file)
+        ect_binder("导出 (&O)", self.output_file)
         self.PopupMenu(menu)
 
     def on_add_element(self):

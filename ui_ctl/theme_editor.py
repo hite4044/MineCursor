@@ -112,7 +112,7 @@ class ThemeSelector(PublicThemeSelector):
         super().__init__(parent)
 
         self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_menu)
-        self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu)
+        self.Bind(wx.EVT_CONTEXT_MENU, self.on_menu)
         self.load_all_theme()
         target = ThemeFileDropTarget()
         target.on_drop_theme = self.on_drop_theme
@@ -121,37 +121,47 @@ class ThemeSelector(PublicThemeSelector):
     def on_item_menu(self, event: wx.ListEvent):
         theme = self.line_theme_mapping[event.GetIndex()]
         menu = EtcMenu()
-        menu.Append("添加", self.on_add_theme)
-        menu.Append("合成主题", self.on_create_theme)
+        menu.Append("添加 (&A)", self.on_add_theme)
+        menu.Append("合成主题 (&M)", self.on_create_theme)
         menu.AppendSeparator()
-        menu.Append("导入主题", self.on_import_theme)
+        menu.Append("编辑主题信息 (&E)", self.on_edit_theme, theme)
         menu.AppendSeparator()
-        menu.Append("编辑主题信息", self.on_edit_theme, theme)
-        menu.Append("删除", self.on_delete_theme, theme)
+        menu.Append("导入主题 (&I)", self.on_import_theme)
+        menu.Append("导出主题 (&O)", self.on_export_theme, theme)
         menu.AppendSeparator()
-        menu.Append("导出主题", self.on_export_theme, theme)
-        menu.Append("导出指针", self.on_export_theme_cursors, theme)
+        menu.Append("导出指针 (&C)", self.on_export_theme_cursors, theme)
+        menu.AppendSeparator()
+        menu.Append("删除 (&D)", self.on_delete_theme, theme)
         self.PopupMenu(menu)
 
-        theme_manager.save()  # 经过测试，这行代码会在执行完菜单项里所绑定的函数过后才会之心
 
     def on_menu(self, event: wx.MouseEvent):
-        index = cast(tuple[int, int], self.HitTest(event.GetPosition()))[0]
+        index = cast(tuple[int, int], self.HitTest(self.ScreenToClient(event.GetPosition())))[0]
         if index != -1:
             event.Skip()
             return
 
         menu = EtcMenu()
-        menu.Append("添加", self.on_add_theme)
-        menu.Append("合成主题", self.on_create_theme)
+        menu.Append("添加 (&A)", self.on_add_theme)
+        menu.Append("合成主题 (&M)", self.on_create_theme)
         menu.AppendSeparator()
-        menu.Append("导入主题", self.on_import_theme)
-        menu.Append("打开主题文件夹", self.on_open_theme_folder)
+        menu.Append("导入主题 (&I)", self.on_import_theme)
         menu.AppendSeparator()
-        menu.Append("清空所有主题", self.on_clear_all_theme)
+        menu.Append("打开主题文件夹 (&O)", self.on_open_theme_folder)
+        menu.AppendSeparator()
+        menu.Append("清空所有主题 (&D)", self.on_clear_all_theme)
         self.PopupMenu(menu)
 
         theme_manager.save()  # 经过测试，这行代码会在执行完菜单项里所绑定的函数过后才会之心
+
+    def exchange_item(self, index: int, offset: int):
+        if not (0 <= index + offset < self.GetItemCount()):
+            return
+        project = theme_manager.themes[index]
+        theme_manager.themes.pop(index)
+        theme_manager.themes.insert(index + offset, project)
+        self.reload_themes()
+        self.Select(index + offset)
 
     def on_create_theme(self):
         dialog = ThemeCreator(self)

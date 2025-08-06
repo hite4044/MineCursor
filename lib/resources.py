@@ -112,7 +112,13 @@ class ThemeManager:
             for project in theme.projects:
                 if project.id == project_id:
                     return project
-        return  None
+        return None
+
+    def find_theme(self, theme_id: str):
+        for theme in self.themes:
+            if theme.id == theme_id:
+                return theme
+        return None
 
 
 theme_manager = ThemeManager()

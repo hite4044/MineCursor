@@ -281,14 +281,26 @@ class ElementSelectList(ElementSelectListUI):
                     numbers = [int(re.findall(NUM_PATTER, assets_map[child].split(".")[0])[0]) for child in children]
                 except IndexError:
                     continue
+                mapping = {k: v for k, v in zip(numbers, children)}
+                unsorted_numbers = numbers.copy()
                 numbers.sort()
-                if len(numbers) == 1 or list(range(min(numbers), max(numbers)+1)) != numbers:
+                if len(numbers) == 1 or list(range(min(numbers), max(numbers)+1)) != numbers:  # 去除被误判成多帧动画的节点
                     for child in children[::-1]:
                         full_path = assets_map.pop(child)
                         file_name = full_path.split("/")[-1]
                         item = self.assets_tree.InsertItem(sub_root, node, file_name)
                         assets_map[item] = full_path
                     self.assets_tree.Delete(node)
+                elif list(range(len(unsorted_numbers))) != unsorted_numbers:  # 重新排序多帧动画的帧
+                    children_texts: list[list[wx.TreeItemId | str | int]] = [[mapping[number], "", 0, ""] for number in numbers]
+                    for i, (child, _, _, _) in enumerate(children_texts):
+                        children_texts[i][1] = self.assets_tree.GetItemText(child)
+                        children_texts[i][2] = self.assets_tree.GetItemImage(child)
+                        children_texts[i][3] = assets_map.pop(child)
+                    self.assets_tree.DeleteChildren(node)
+                    for child, text, image, path in children_texts:
+                        item = self.assets_tree.AppendItem(node, text, image)
+                        assets_map[item] = path
 
         # 填充推荐列表
         image = self.tree_image_list.Add(PilImg2WxImg(Image.open(ROOT_IMAGES["推荐"])).ConvertToBitmap())

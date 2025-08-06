@@ -169,7 +169,7 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
         if self.EDITABLE:
             self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_menu, self)
             self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_item_activated, self)
-            self.Bind(wx.EVT_RIGHT_DOWN, self.on_empty_menu, self)
+            self.Bind(wx.EVT_CONTEXT_MENU, self.on_empty_menu, self)
 
             self.Bind(wx.EVT_KEY_DOWN, self.on_key_down, self)
 
@@ -177,20 +177,24 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
         if event.GetKeyCode() == wx.WXK_DELETE:
             self.menu_delete_projects(projects=[self.active_theme.projects[i] for i in self.get_select_items()])
         elif event.GetKeyCode() == ord("Z") and event.GetModifiers() == wx.MOD_CONTROL:
-            if not self.check_active_theme():
-                return
-            if len(self.cursors_has_deleted) == 0:
-                return
-            stacks = self.cursors_has_deleted.pop(-1)
-            for index, project in stacks[::-1]:
-                self.active_theme.projects.insert(index, project)
-            self.reload_theme()
+            self.undo_action()
         elif event.GetKeyCode() == wx.WXK_UP and event.GetModifiers() == wx.MOD_SHIFT:
             self.move_project(self.get_select_items()[0], -1)
         elif event.GetKeyCode() == wx.WXK_DOWN and event.GetModifiers() == wx.MOD_SHIFT:
             self.move_project(self.get_select_items()[0], 1)
         else:
             event.Skip()
+
+
+    def undo_action(self):
+        if not self.check_active_theme():
+            return
+        if len(self.cursors_has_deleted) == 0:
+            return
+        stacks = self.cursors_has_deleted.pop(-1)
+        for index, project in stacks[::-1]:
+            self.active_theme.projects.insert(index, project)
+        self.reload_theme()
 
     def clear(self):
         self.image_list.RemoveAll()
@@ -231,9 +235,12 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
             return
 
         menu = EtcMenu()
-        menu.Append("添加项目", self.menu_add_project)
+        menu.Append("添加项目 (&A)", self.menu_add_project)
         menu.AppendSeparator()
-        menu.Append("清空所有项目", self.menu_clear_all_projects)
+        if len(self.cursors_has_deleted) != 0:
+            menu.Append("撤销操作 (&Z)", self.undo_action)
+        menu.AppendSeparator()
+        menu.Append("清空所有项目 (&D)", self.menu_clear_all_projects)
         self.PopupMenu(menu)
 
     def on_item_menu(self, event: wx.ListEvent):  # 当鼠标右键某个项目时触发
@@ -242,20 +249,23 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
         menu = EtcMenu()
         menu.Append("添加项目 (&A)", self.menu_add_project)
         menu.AppendSeparator()
-        if len(projects) == 1:
+        menu.Append("编辑项目 (&E)" + mk_end(projects), self.menu_edit_projects, projects)
+        menu.Append("编辑项目信息 (&I)" + mk_end(projects), self.menu_edit_project_info, projects, active_project)
+        if len(projects) == 1 and len(self.active_theme.projects) != 1:
+            menu.AppendSeparator()
             if event.GetIndex() != 0:
-                menu.Append("向上移动", self.move_project, event.GetIndex(), -1)
+                menu.Append("向上移动 (&W)", self.move_project, event.GetIndex(), -1)
             if event.GetIndex() != len(self.active_theme.projects) - 1:
-                menu.Append("向下移动", self.move_project, event.GetIndex(), 1)
-            menu.AppendSeparator()
-        menu.Append("编辑项目" + mk_end(projects), self.menu_edit_projects, projects)
-        menu.Append("编辑项目信息" + mk_end(projects), self.menu_edit_project_info, projects, active_project)
+                menu.Append("向下移动 (&S)", self.move_project, event.GetIndex(), 1)
         if len(projects) == 1:
             menu.AppendSeparator()
-            menu.Append("复制项目", self.menu_copy_project, active_project)
+            menu.Append("复制项目 (&C)", self.menu_copy_project, active_project)
         menu.AppendSeparator()
-        menu.Append("移动至其他主题" + mk_end(projects), self.move_project_to_theme, projects)
-        menu.Append("删除" + mk_end(projects), self.menu_delete_projects, projects)
+        menu.Append("移动至其他主题 (&M)" + mk_end(projects), self.move_project_to_theme, projects)
+        if len(self.cursors_has_deleted) != 0:
+            menu.Append("撤销操作 (&Z)", self.undo_action)
+        menu.AppendSeparator()
+        menu.Append("删除 (&D)" + mk_end(projects), self.menu_delete_projects, projects)
 
         self.PopupMenu(menu)
 

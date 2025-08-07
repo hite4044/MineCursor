@@ -191,6 +191,12 @@ class ReverseWay(Enum):
     BOTH = 2
 
 
+class ThemeType(Enum):
+    NORMAL = 0  # 普通
+    FOR_CHOOSE = 1  # 用作选配
+    FOR_TEMP = 2  # 用作模版
+
+
 @dataclass
 class AnimationKeyData(DataClassSaveLoadMixin):
     frame_start: int = 0
@@ -432,6 +438,7 @@ class CursorProject:
 @dataclass()
 class CursorTheme:
     name: str
+    type: ThemeType = ThemeType.NORMAL
     base_size: int = 32
     author: str = "Unknow"
     description: str = "None"
@@ -448,6 +455,7 @@ class CursorTheme:
     def to_dict(self):
         return {
             "name": self.name,
+            "type": self.type.value,
             "id": self.id,
             "base_size": self.base_size,
             "author": self.author,
@@ -459,6 +467,7 @@ class CursorTheme:
     def from_dict(data: dict) -> 'CursorTheme':
         return CursorTheme(
             name=data["name"],
+            type=ThemeType(data.get("type", ThemeType.NORMAL)),
             id=data["id"],
             base_size=data["base_size"],
             author=data["author"],

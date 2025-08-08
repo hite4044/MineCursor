@@ -182,7 +182,7 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
         self.cursors_has_deleted: list[ActionStack] = []
 
         if self.EDITABLE:
-            self.Bind(wx.EVT_CONTEXT_MENU, self.on_empty_menu, self)
+            self.Bind(wx.EVT_RIGHT_DOWN, self.on_empty_menu, self)
             self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_menu, self)
             self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_item_activated, self)
 
@@ -256,7 +256,7 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
         return selections
 
     def on_empty_menu(self, event: wx.MouseEvent):
-        index = cast(tuple[int, int], self.HitTest(self.ScreenToClient(event.GetPosition())))[0]
+        index = cast(tuple[int, int], self.HitTest(event.GetPosition()))[0]
         if index != -1:
             event.Skip()
             return

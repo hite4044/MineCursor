@@ -54,7 +54,7 @@ class SourceInfoEditDialog(wx.Dialog):
 
         self.source_lc.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_select_source)
         self.source_lc.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_menu)
-        self.source_lc.Bind(wx.EVT_CONTEXT_MENU, self.on_menu)
+        self.source_lc.Bind(wx.EVT_RIGHT_DOWN, self.on_menu)
         self.source_lc.Bind(wx.EVT_KEY_DOWN, self.on_key)
         self.Bind(wx.EVT_BUTTON, self.on_apply, self.apply_btn)
 
@@ -78,17 +78,17 @@ class SourceInfoEditDialog(wx.Dialog):
         self.source_lc.EnsureVisible(index + offset)
         self.on_select_source(None)
 
-    def on_menu(self, event: wx.ListEvent):
+    def on_menu(self, event: wx.ListEvent | wx.MouseEvent):
         menu = EtcMenu()
-        menu.Append("添加", self.on_add)
+        menu.Append("添加 (&A)", self.on_add)
         menu.AppendSeparator()
         if isinstance(event, wx.ListEvent):
             event.Veto()
             index = event.GetIndex()
-            menu.Append("上移", self.exchange_item, index, -1)
-            menu.Append("下移", self.exchange_item, index, 1)
+            menu.Append("上移 (&W)", self.exchange_item, index, -1)
+            menu.Append("下移 (&S)", self.exchange_item, index, 1)
             menu.AppendSeparator()
-        menu.Append("删除", self.on_delete)
+        menu.Append("删除 (%D)", self.on_delete)
         self.PopupMenu(menu)
 
     def on_apply(self, _):

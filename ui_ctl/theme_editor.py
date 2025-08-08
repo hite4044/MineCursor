@@ -112,7 +112,7 @@ class ThemeSelector(PublicThemeSelector):
         super().__init__(parent)
 
         self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_menu)
-        self.Bind(wx.EVT_CONTEXT_MENU, self.on_menu)
+        self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu)
         self.load_all_theme()
         target = ThemeFileDropTarget()
         target.on_drop_theme = self.on_drop_theme
@@ -136,7 +136,7 @@ class ThemeSelector(PublicThemeSelector):
 
 
     def on_menu(self, event: wx.MouseEvent):
-        index = cast(tuple[int, int], self.HitTest(self.ScreenToClient(event.GetPosition())))[0]
+        index = cast(tuple[int, int], self.HitTest(event.GetPosition()))[0]
         if index != -1:
             event.Skip()
             return

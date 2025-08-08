@@ -2,13 +2,18 @@ import wx
 
 from lib.cursor.setter import CursorKind
 from lib.data import CursorElement, AssetType, AssetSources, AssetSourceInfo
-from ui_ctl.element_add_dialog import ElementAddDialog, ElementSelectList, RectElementSource
+from lib.image_pil2wx import PilImg2WxImg
+from ui_ctl.element_add_dialog import ElementAddDialog, ElementSelectList, RectElementSource, ImageElementSource
 from widget.ect_menu import EtcMenu
 from widget.no_tab_notebook import NoTabNotebook
 
 
+class C_ElementSelectList(ElementSelectList):
+    SHOW_SWITCH_CHOICE = True
+
+
 class SourceInfoEditDialog(wx.Dialog):
-    def __init__(self, parent: wx.Window, element: CursorElement):
+    def __init__(self, parent: wx.Window, element: CursorElement, proj_kind: CursorKind):
         super().__init__(parent, title="编辑元素源信息", size=(1196, 795), style=wx.DEFAULT_FRAME_STYLE)
         self.SetFont(parent.GetFont())
         self.element = element
@@ -23,12 +28,14 @@ class SourceInfoEditDialog(wx.Dialog):
 
         right_panel = wx.Panel(warp)
         self.notebook = NoTabNotebook(right_panel)
-        self.mc_source = ElementSelectList(self.notebook, AssetSources.MINECRAFT_1_21_5.value, CursorKind.ARROW)
+        self.mc_source = C_ElementSelectList(self.notebook, AssetSources.DEFAULT.value, proj_kind)
         self.rect_source = RectElementSource(self.notebook)
+        self.image_source = ImageElementSource(self.notebook)
         self.apply_btn = wx.Button(right_panel, label="应用")
 
         self.notebook.add_page(self.mc_source)
         self.notebook.add_page(self.rect_source)
+        self.notebook.add_page(self.image_source)
         self.notebook.switch_page(0)
 
         right_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -46,20 +53,49 @@ class SourceInfoEditDialog(wx.Dialog):
         self.SetSizer(sizer)
 
         self.source_lc.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_select_source)
-        self.source_lc.Bind(wx.EVT_CONTEXT_MENU, self.on_menu)
+        self.source_lc.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_menu)
+        self.source_lc.Bind(wx.EVT_RIGHT_DOWN, self.on_menu)
+        self.source_lc.Bind(wx.EVT_KEY_DOWN, self.on_key)
         self.Bind(wx.EVT_BUTTON, self.on_apply, self.apply_btn)
 
-    def on_menu(self, _):
+    def on_key(self, event: wx.KeyEvent):
+        if event.GetKeyCode() == wx.WXK_UP and event.GetModifiers() == wx.MOD_SHIFT:
+            self.exchange_item(self.source_lc.GetFirstSelected(), -1)
+        elif event.GetKeyCode() == wx.WXK_DOWN and event.GetModifiers() == wx.MOD_SHIFT:
+            self.exchange_item(self.source_lc.GetFirstSelected(), 1)
+        else:
+            event.Skip()
+
+    def exchange_item(self, index: int, offset: int):
+        if not (0 <= index + offset < self.source_lc.GetItemCount()) or index == -1:
+            return
+        temp = self.element.source_infos[index + offset]
+        self.element.source_infos[index + offset] = self.element.source_infos[index]
+        self.element.source_infos[index] = temp
+        self.load_source_lc()
+
+        self.source_lc.Select(index + offset)
+        self.source_lc.EnsureVisible(index + offset)
+        self.on_select_source(None)
+
+    def on_menu(self, event: wx.ListEvent | wx.MouseEvent):
         menu = EtcMenu()
-        menu.Append("添加", self.on_add)
-        menu.Append("删除", self.on_delete)
+        menu.Append("添加 (&A)", self.on_add)
+        menu.AppendSeparator()
+        if isinstance(event, wx.ListEvent):
+            event.Veto()
+            index = event.GetIndex()
+            menu.Append("上移 (&W)", self.exchange_item, index, -1)
+            menu.Append("下移 (&S)", self.exchange_item, index, 1)
+            menu.AppendSeparator()
+        menu.Append("删除 (&D)", self.on_delete)
         self.PopupMenu(menu)
 
     def on_apply(self, _):
         source_win = self.notebook.now_window
         if source_win is self.mc_source:
             if self.mc_source.get_element_info():
-                info = self.mc_source.get_element_info()
+                info = self.mc_source.get_element_info(single_frame=True)
                 self.element.frames[self.active_index] = info.frames[0][0]
                 self.element.source_infos[self.active_index] = AssetSourceInfo(
                     type_=AssetType.ZIP_FILE,
@@ -83,6 +119,12 @@ class SourceInfoEditDialog(wx.Dialog):
                 )
             )
             self.element.frames[self.active_index] = self.element.source_infos[self.active_index].load_frame()
+        elif source_win is self.image_source:
+            if self.image_source.get_element():
+                element = self.image_source.get_element()
+                self.element.source_infos[self.active_index] = element.source_infos[0]
+            else:
+                return
         self.load_source_lc()
 
     def on_delete(self):
@@ -103,7 +145,7 @@ class SourceInfoEditDialog(wx.Dialog):
         if not dialog.element:
             return
         if len(dialog.element.source_infos) > 1:
-            ret = wx.MessageBox("真的要添加多个源信息吗?\n听一听 Kittens Express - Tenkitsune 吧, 很好听的",
+            ret = wx.MessageBox("真的添加多个源信息吗?\n选不会取消哦\n听一听 Kittens Express - Tenkitsune 吧, 很好听的",
                                 "添加源信息", wx.ICON_QUESTION | wx.YES_NO)
             if ret != wx.YES:
                 return
@@ -138,12 +180,18 @@ class SourceInfoEditDialog(wx.Dialog):
             self.rect_source.size_width.set_value(source_info.size[0])
             self.rect_source.size_height.set_value(source_info.size[1])
             self.notebook.switch_page(1)
+        elif source_info.type == AssetType.IMAGE:
+            self.image_source.resize_width.set_value(source_info.size[0])
+            self.image_source.resize_height.set_value(source_info.size[1])
+            self.image_source.preview_bitmap.SetBitmap(PilImg2WxImg(source_info.image).ConvertToBitmap())
 
     def load_source_lc(self):
         name_map = {
             AssetType.ZIP_FILE: "MC贴图",
             AssetType.RECT: "矩形",
+            AssetType.IMAGE: "图像"
         }
+        item = self.source_lc.GetFirstSelected()
         self.source_lc.DeleteAllItems()
         for i, source_info in enumerate(self.element.source_infos):
             self.source_lc.InsertItem(i, "")
@@ -152,3 +200,12 @@ class SourceInfoEditDialog(wx.Dialog):
                 self.source_lc.SetItem(i, 2, source_info.source_path)
             elif source_info.type == AssetType.RECT:
                 self.source_lc.SetItem(i, 2, f"{source_info.color} {source_info.size}")
+            elif source_info.type == AssetType.IMAGE:
+                self.source_lc.SetItem(i, 2, f"{source_info.size[0]}x{source_info.size[1]}")
+
+        self.source_lc.Unbind(wx.EVT_LIST_ITEM_SELECTED)
+        self.source_lc.Select(item)
+        self.source_lc.EnsureVisible(item)
+        self.source_lc.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_select_source)
+
+

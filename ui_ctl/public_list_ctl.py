@@ -1,9 +1,11 @@
 from copy import deepcopy
+from enum import Enum
 from typing import cast
 
 import wx
 from PIL.Image import Resampling
 
+from lib.clipboard import ClipBoard
 from lib.cursor.setter import CURSOR_KIND_NAME_CUTE, CURSOR_KIND_NAME_OFFICIAL, CursorKind
 from lib.data import CursorTheme, CursorProject
 from lib.image_pil2wx import PilImg2WxImg
@@ -29,12 +31,23 @@ class ThemeSelectedEvent(wx.PyCommandEvent):
 class PublicThemeSelector(PublicThemeSelectorUI):
     def __init__(self, parent: wx.Window):
         super().__init__(parent)
+        self.clip = ClipBoard(self, self.clip_on_get_copy_data, self.clip_on_set_copy_data)
         self.line_theme_mapping: dict[int, CursorTheme] = {}
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_item_selected)
+
+    def clip_on_get_copy_data(self):
+        item = self.GetFirstSelected()
+        return None if item == -1 else theme_manager.themes[item].id
+
+    def clip_on_set_copy_data(self, theme_id: str):
+        if theme := theme_manager.find_theme(theme_id):
+            theme_manager.themes.append(theme.copy())
+            self.reload_themes()
 
     def on_data_changed(self, row: int, col: int, value: str):
         self.line_theme_mapping[row].name = value
         theme_manager.renew_theme(self.line_theme_mapping[row])
+        theme_manager.save()
 
     def load_all_theme(self):
         for theme in theme_manager.themes:
@@ -45,6 +58,8 @@ class PublicThemeSelector(PublicThemeSelectorUI):
         self.line_theme_mapping.clear()
         self.load_all_theme()
 
+        theme_manager.save()  # 经过测试，这行代码会在执行完菜单项里所绑定的函数过后才会之心
+
     def append_theme(self, theme: CursorTheme):
         line = self.GetItemCount()
         index = self.InsertItem(line, theme.name)
@@ -54,6 +69,7 @@ class PublicThemeSelector(PublicThemeSelectorUI):
         self.line_theme_mapping[index] = theme
 
     def on_item_selected(self, event: wx.ListEvent):
+        event.Skip()
         theme = self.line_theme_mapping[event.GetIndex()]
         logger.debug(f"主题被选择: {theme}")
         wx.PostEvent(self, ThemeSelectedEvent(theme))
@@ -128,6 +144,22 @@ class ProjectCopyDialog(DataDialog):
         return new_project
 
 
+class ProjectMoveThemeDialog(DataDialog):
+    def __init__(self, parent: wx.Window, active_theme: CursorTheme):
+        self.themes_enum_cls = Enum("ThemesEnum", tuple(theme.id for theme in theme_manager.themes))
+        self.enum_to_theme_map = {self.themes_enum_cls[theme.id]: theme for theme in theme_manager.themes}
+        super().__init__(parent, "移动指针项目至其他主题",
+                         DataLineParam("theme", "目标主题", DataLineType.CHOICE,
+                                       getattr(self.themes_enum_cls, active_theme.id),
+                                       enum_names={ \
+                                           getattr(self.themes_enum_cls, theme.id): \
+                                               f"{theme.name} ({len(theme.projects)}-cur)" \
+                                           for theme in theme_manager.themes}))
+
+    def get_result(self) -> CursorTheme:
+        return self.enum_to_theme_map[self.datas["theme"]]
+
+
 ActionStack = list[tuple[int, CursorProject]]
 
 
@@ -150,30 +182,46 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
         self.cursors_has_deleted: list[ActionStack] = []
 
         if self.EDITABLE:
+            self.Bind(wx.EVT_RIGHT_DOWN, self.on_empty_menu, self)
             self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_menu, self)
             self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_item_activated, self)
-            self.Bind(wx.EVT_RIGHT_DOWN, self.on_empty_menu, self)
 
             self.Bind(wx.EVT_KEY_DOWN, self.on_key_down, self)
+
+        self.clip = ClipBoard(self, self.clip_on_get_copy_data, self.clip_on_set_copy_data)
+
+    def clip_on_get_copy_data(self):
+        if not self.check_active_theme():
+            return None
+        item = self.GetFirstSelected()
+        return None if item == -1 else self.active_theme.projects[item].id
+
+    def clip_on_set_copy_data(self, project_id: str):
+        if project := theme_manager.find_project(project_id):
+            self.active_theme.projects.append(project.copy())
+            self.reload_theme()
 
     def on_key_down(self, event: wx.KeyEvent):
         if event.GetKeyCode() == wx.WXK_DELETE:
             self.menu_delete_projects(projects=[self.active_theme.projects[i] for i in self.get_select_items()])
         elif event.GetKeyCode() == ord("Z") and event.GetModifiers() == wx.MOD_CONTROL:
-            if not self.check_active_theme():
-                return
-            if len(self.cursors_has_deleted) == 0:
-                return
-            stacks = self.cursors_has_deleted.pop(-1)
-            for index, project in stacks[::-1]:
-                self.active_theme.projects.insert(index, project)
-            self.reload_theme()
+            self.undo_action()
         elif event.GetKeyCode() == wx.WXK_UP and event.GetModifiers() == wx.MOD_SHIFT:
             self.move_project(self.get_select_items()[0], -1)
         elif event.GetKeyCode() == wx.WXK_DOWN and event.GetModifiers() == wx.MOD_SHIFT:
             self.move_project(self.get_select_items()[0], 1)
         else:
             event.Skip()
+
+    def undo_action(self):
+        if not self.check_active_theme():
+            return
+        if len(self.cursors_has_deleted) == 0:
+            return
+        stacks = self.cursors_has_deleted.pop(-1)
+        for index, project in stacks[::-1]:
+            self.active_theme.projects.insert(index, project)
+        self.reload_theme()
 
     def clear(self):
         self.image_list.RemoveAll()
@@ -214,9 +262,12 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
             return
 
         menu = EtcMenu()
-        menu.Append("添加项目", self.menu_add_project)
+        menu.Append("添加项目 (&A)", self.menu_add_project)
         menu.AppendSeparator()
-        menu.Append("清空所有项目", self.menu_clear_all_projects)
+        if len(self.cursors_has_deleted) != 0:
+            menu.Append("撤销操作 (&Z)", self.undo_action)
+            menu.AppendSeparator()
+        menu.Append("清空所有项目 (&D)", self.menu_clear_all_projects)
         self.PopupMenu(menu)
 
     def on_item_menu(self, event: wx.ListEvent):  # 当鼠标右键某个项目时触发
@@ -225,23 +276,34 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
         menu = EtcMenu()
         menu.Append("添加项目 (&A)", self.menu_add_project)
         menu.AppendSeparator()
-        if len(projects) == 1:
+        menu.Append("编辑项目 (&E)" + mk_end(projects), self.menu_edit_projects, projects)
+        menu.Append("编辑项目信息 (&I)" + mk_end(projects), self.menu_edit_project_info, projects, active_project)
+        if len(projects) == 1 and len(self.active_theme.projects) != 1:
+            menu.AppendSeparator()
             if event.GetIndex() != 0:
-                menu.Append("向上移动", self.move_project, event.GetIndex(), -1)
+                menu.Append("向上移动 (&W)", self.move_project, event.GetIndex(), -1)
             if event.GetIndex() != len(self.active_theme.projects) - 1:
-                menu.Append("向下移动", self.move_project, event.GetIndex(), 1)
-            menu.AppendSeparator()
-        menu.Append("编辑项目" + mk_end(projects), self.menu_edit_projects, projects)
-        menu.Append("编辑项目信息" + mk_end(projects), self.menu_edit_project_info, projects, active_project)
+                menu.Append("向下移动 (&S)", self.move_project, event.GetIndex(), 1)
         if len(projects) == 1:
             menu.AppendSeparator()
-            menu.Append("复制项目", self.menu_copy_project, active_project)
+            menu.Append("复制项目 (&C)", self.menu_copy_project, active_project)
         menu.AppendSeparator()
-        menu.Append("删除" + mk_end(projects), self.menu_delete_projects, projects)
+        menu.Append("移动至其他主题 (&M)" + mk_end(projects), self.move_project_to_theme, projects)
+        if len(self.cursors_has_deleted) != 0:
+            menu.Append("撤销操作 (&Z)", self.undo_action)
+        menu.AppendSeparator()
+        menu.Append("删除 (&D)" + mk_end(projects), self.menu_delete_projects, projects)
 
         self.PopupMenu(menu)
 
-        theme_manager.save()  # 经过测试，这行代码会在执行完菜单里所绑定的函数过后才会保存
+    def move_project_to_theme(self, projects: list[CursorProject]):
+        if not self.check_active_theme():
+            return
+        dialog = ProjectMoveThemeDialog(self, self.active_theme)
+        if dialog.ShowModal() == wx.ID_OK:
+            theme = dialog.get_result()
+            theme.projects.extend([project.copy() for project in projects])
+            self.reload_theme()
 
     def move_project(self, index: int, offset: int):
         if not self.check_active_theme():
@@ -354,6 +416,7 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
 
     def reload_theme(self):
         self.load_theme(self.active_theme)
+        theme_manager.save()
 
     def on_item_activated(self, event: wx.ListEvent):
         active_project = self.active_theme.projects[event.GetIndex()]

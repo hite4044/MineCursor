@@ -94,6 +94,7 @@ class Margins(DataClassSaveLoadMixin):
 class AssetType(Enum):
     ZIP_FILE = 0
     RECT = 1
+    IMAGE = 2
 
 
 class AssetSourceInfo:
@@ -102,7 +103,10 @@ class AssetSourceInfo:
                  source_path: str | None = None,
 
                  size: tuple[int, int] | None = None,
-                 color: tuple[int, int, int] | tuple[int, int, int, int] | None = None, ):
+
+                 color: tuple[int, int, int] | tuple[int, int, int, int] | None = None,
+
+                 image: Image.Image | None = None):
         self.type: AssetType = type_
         self.source_id: str = source_id
         self.source_path: str = source_path
@@ -110,22 +114,55 @@ class AssetSourceInfo:
         self.size = size
         self.color = color
 
+        self.image = image
+
     def to_dict(self):
-        return {
-            "type": self.type.value,
-            "source_id": self.source_id,
-            "source_path": self.source_path,
-            **({"size": self.size, "color": self.color} if self.size else {})
-        }
+        if self.type == AssetType.ZIP_FILE:
+            return {
+                "type": self.type.value,
+                "source_id": self.source_id,
+                "source_path": self.source_path,
+            }
+        elif self.type == AssetType.RECT:
+            return {
+                "type": self.type.value,
+                "size": list(self.size),
+                "color": list(self.color)
+            }
+        elif self.type == AssetType.IMAGE:
+            image_io = BytesIO()
+            self.image.save(image_io, format="PNG")
+            return {
+                "type": self.type.value,
+                "size": list(self.size),
+                "image": b64encode(image_io.getvalue()).decode("utf-8")
+            }
+        raise RuntimeError(f"炸死你！({self.type}")
 
     @staticmethod
     def from_dict(data: dict):
-        return AssetSourceInfo(
-            type_=AssetType(data["type"]),
-            source_id=data["source_id"],
-            source_path=data["source_path"],
-            **({"size": data["size"], "color": data["color"]} if "size" in data else {})
-        )
+        asset_type = AssetType(data["type"])
+        if asset_type == AssetType.ZIP_FILE:
+            return AssetSourceInfo(
+                type_=asset_type,
+                source_id=data["source_id"],
+                source_path=data["source_path"],
+            )
+        elif asset_type == AssetType.RECT:
+            return AssetSourceInfo(
+                type_=asset_type,
+                size=cast(tuple[int, int], tuple(data["size"])),
+                color=cast(tuple[int, int, int, int], tuple(data["color"]))
+            )
+        elif asset_type == AssetType.IMAGE:
+            image_io = BytesIO(b64decode(data["image"]))
+            image = Image.open(image_io)
+            return AssetSourceInfo(
+                type_=asset_type,
+                size=image.size,
+                image=image
+            )
+        raise RuntimeError(f"炸死你！({asset_type}")
 
     def load_frame(self) -> Image.Image:
         if self.type == AssetType.ZIP_FILE:
@@ -136,6 +173,8 @@ class AssetSourceInfo:
                 return Image.new("RGBA", self.size, (*self.color, 255))
             elif len(self.color) == 4:
                 return Image.new("RGBA", self.size, self.color)
+        elif self.type == AssetType.IMAGE:
+            return self.image
         raise NotImplementedError
 
 
@@ -150,6 +189,12 @@ class ReverseWay(Enum):
     X_FIRST = 0
     Y_FIRST = 1
     BOTH = 2
+
+
+class ThemeType(Enum):
+    NORMAL = 0  # 普通
+    FOR_CHOOSE = 1  # 用作选配
+    FOR_TEMP = 2  # 用作模版
 
 
 @dataclass
@@ -383,10 +428,17 @@ class CursorProject:
     def copy(self) -> 'CursorProject':
         return CursorProject.from_dict(self.to_dict())
 
+    def find_element(self, element_id: str):
+        for element in self.elements:
+            if element.id == element_id:
+                return element
+        return None
+
 
 @dataclass()
 class CursorTheme:
     name: str
+    type: ThemeType = ThemeType.NORMAL
     base_size: int = 32
     author: str = "Unknow"
     description: str = "None"
@@ -403,6 +455,7 @@ class CursorTheme:
     def to_dict(self):
         return {
             "name": self.name,
+            "type": self.type.value,
             "id": self.id,
             "base_size": self.base_size,
             "author": self.author,
@@ -414,6 +467,7 @@ class CursorTheme:
     def from_dict(data: dict) -> 'CursorTheme':
         return CursorTheme(
             name=data["name"],
+            type=ThemeType(data.get("type", ThemeType.NORMAL)),
             id=data["id"],
             base_size=data["base_size"],
             author=data["author"],
@@ -421,28 +475,44 @@ class CursorTheme:
             projects=[CursorProject.from_dict(project) for project in data["projects"]],
         )
 
+    def copy(self):
+        data = self.to_dict()
+        data["id"] = generate_id()
+        return self.from_dict(data)
+
 
 @dataclass
 class AssetSource:
     name: str
     id: str
-    recommend_file: str
     textures_zip: str
+    recommend_file: str | None = None
 
 
 class AssetSources(Enum):
     MINECRAFT_1_21_5 = AssetSource("Minecraft 1.21.5",
                                    "minecraft-textures-1.21.5",
-                                   r"assets/sources/1.21.5/recommend.json",
                                    r"assets/sources/1.21.5/textures.zip")
+    MINECRAFT_25W32A = AssetSource("Minecraft 25w32a (1.21.9)",
+                                   "minecraft-textures-25w32a",
+                                   r"assets/sources/25w32a/textures.zip")
+    DEFAULT = MINECRAFT_25W32A
 
     @staticmethod
     def get_source_by_id(target_id: str) -> AssetSource | None:
-        for source in AssetSources.__members__.values():
-            assert isinstance(source, AssetSources)
-            if target_id == source.value.id:
-                return source.value
-        raise ValueError(f"未找到id为{target_id}的素材源")
+        for source_member in AssetSources.__members__.values():
+            source = source_member.value
+            assert isinstance(source, AssetSource)
+            if target_id == source.id:
+                return source
+        raise ValueError(f"未找到id为 [{target_id}] 的素材源")
+
+    @staticmethod
+    def get_sources() -> list[AssetSource]:
+        members = AssetSources.__members__.copy()
+        members.pop("DEFAULT")
+        sources = list(member.value for member in members.values())
+        return sources
 
 
 @dataclass

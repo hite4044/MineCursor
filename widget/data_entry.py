@@ -73,6 +73,12 @@ class DataEntry(wx.Panel):
         self.label.SetMinSize((-1, 28))
         self.entry.SetMinSize((-1, 28))
 
+    def Bind(self, event, handler, *args):
+        if event is EVT_DATA_UPDATE:
+            self.entry.Bind(event, handler)
+            return
+        super().Bind(event, handler, *args)
+
     def on_mouse_wheel(self, event: wx.MouseEvent):
         delta = event.GetWheelRotation() / event.GetWheelDelta()
         self.data += self.data_type(delta)

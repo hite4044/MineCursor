@@ -143,7 +143,7 @@ GroupData = tuple[tuple[str, bool], tuple[tuple, ...]]
 EntryType = DataEntry | IntEntry | FloatEntry | StringEntry | BoolEntry | EnumEntry
 RESAMPLE_MAP = {
     Resampling.NEAREST: "最近邻",
-    Resampling.BILINEAR: "BiLinear",
+    Resampling.BILINEAR: "双线性",
     Resampling.HAMMING: "汉明",
     Resampling.BICUBIC: "双三次",
     Resampling.LANCZOS: "Lanczos"

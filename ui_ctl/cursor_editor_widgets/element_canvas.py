@@ -202,7 +202,10 @@ class ElementCanvas(ElementCanvasUI):
             timer = time.perf_counter()
             self.update_frame()
             if self.project.ani_rates:
-                wait_time = self.project.ani_rates[self.frame_index] / 60
+                try:
+                    wait_time = self.project.ani_rates[self.frame_index] / 60
+                except IndexError:
+                    wait_time = self.project.ani_rate / 60
             else:
                 wait_time = self.project.ani_rate / 60
             self.animation_stop_flag.wait(timeout=max(0.0, wait_time - (time.perf_counter() - timer)))

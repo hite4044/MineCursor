@@ -182,9 +182,6 @@ class ProjectInfoEditor(ProjectInfoEditorUI):
             return
         editor = RateEditor(self, self.project)
         editor.Show()
-        editor.Destroy()
-        event = ProjectUpdatedEvent()
-        wx.PostEvent(self, event)
 
     def update_ani_rate_tooltip(self, event: DataEntryEvent | None):
         if event:

@@ -505,7 +505,7 @@ class AssetSources(Enum):
             assert isinstance(source, AssetSource)
             if target_id == source.id:
                 return source
-        raise ValueError(f"未找到id为{target_id}的素材源")
+        raise ValueError(f"未找到id为 [{target_id}] 的素材源")
 
     @staticmethod
     def get_sources() -> list[AssetSource]:

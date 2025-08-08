@@ -12,7 +12,7 @@ from lib.render import render_project_gen
 from ui.cursor_editor import ElementListCtrlUI
 from ui_ctl.cursor_editor_widgets.events import ProjectUpdatedEvent, ElementSelectedEvent
 from ui_ctl.cursor_editor_widgets.mask_editor import MaskEditor
-from ui_ctl.cursor_editor_widgets.source_info_edit_dialog import SourceInfoEditDialog
+from ui_ctl.cursor_editor_widgets.source_info_editor import SourceInfoEditDialog
 from ui_ctl.element_add_dialog import ElementAddDialog
 from widget.ect_menu import EtcMenu
 

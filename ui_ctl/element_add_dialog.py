@@ -232,12 +232,12 @@ class SourceSwitchDataDialog(DataDialog):
         super().__init__(parent, "切换素材源", DataLineParam("source_id", "素材源", DataLineType.CHOICE,
                                                              getattr(SourceEnum, now_source.id),
                                                              enum_names={
-                                                                 getattr(SourceEnum, source.id): source.id \
+                                                                 getattr(SourceEnum, source.id): source.name \
                                                                  for source in AssetSources.get_sources()
                                                              }))
 
     def get_result(self):
-        return AssetSources.get_source_by_id(self.datas["source_id"])
+        return AssetSources.get_source_by_id(self.datas["source_id"].name)
 
 
 ES_DIR = 0
@@ -263,9 +263,13 @@ class ElementSelectList(ElementSelectListUI):
         self.assets_tree.Bind(wx.EVT_TREE_ITEM_EXPANDING, self.on_expand_root)
         self.assets_tree.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.on_select_item)
         self.assets_tree.Bind(wx.EVT_LEFT_DOWN, self.on_click)
+        self.assets_tree.Bind(wx.EVT_RIGHT_DOWN, self.on_menu)
 
-    def on_right_down(self):
+    def on_menu(self, event: wx.MouseEvent):
+        event.Skip()
         menu = EtcMenu()
+        item = menu.Append(f"当前素材源: {self.source.name}")
+        item.Enable(False)
         menu.Append("切换素材源", self.on_switch_source)
         self.PopupMenu(menu)
 

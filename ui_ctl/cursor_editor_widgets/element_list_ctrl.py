@@ -7,6 +7,7 @@ from lib.clipboard import ClipBoard
 from lib.cursor.writer import write_cur, write_ani
 from lib.data import CursorProject, CursorElement
 from lib.image_pil2wx import PilImg2WxImg
+from lib.perf import Counter
 from lib.render import render_project_gen
 from ui.cursor_editor import ElementListCtrlUI
 from ui_ctl.cursor_editor_widgets.events import ProjectUpdatedEvent, ElementSelectedEvent
@@ -141,7 +142,7 @@ class ElementListCtrl(ElementListCtrlUI):
 
     def on_edit_source(self, index: int):
         element = self.get_element_by_index(index)
-        dialog = SourceInfoEditDialog(self, element)
+        dialog = SourceInfoEditDialog(self, element, self.project.kind)
         dialog.ShowModal()
         self.rebuild_control()
         self.send_project_updated()

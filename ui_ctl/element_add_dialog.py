@@ -1,5 +1,5 @@
-import json
 import re
+from enum import Enum
 from io import BytesIO
 from os.path import isfile
 from typing import Optional
@@ -14,7 +14,10 @@ from lib.image_pil2wx import PilImg2WxImg
 from lib.ui_interface import ui_class
 from ui.element_add_dialog import ElementSelectListUI, ElementAddDialogUI, AssetSource, RectElementSourceUI, \
     ImageElementSourceUI
+from ui_ctl.element_add_dialog_widgets.source_assets_manager import SourceAssetsManager
+from widget.data_dialog import DataDialog, DataLineParam, DataLineType
 from widget.data_entry import DataEntryEvent, EVT_DATA_UPDATE
+from widget.ect_menu import EtcMenu
 
 ROOT_IMAGES = {
     "推荐": "assets/resource_type_icons/Recommend.png",
@@ -26,13 +29,23 @@ ROOT_IMAGES = {
     "particle": "assets/resource_type_icons/Particle.png"
 }
 
+ROOT_TEXTS = {
+    "推荐": "推荐",
+    "block": "方块",
+    "mob_effect": "状态效果",
+    "entity": "实体",
+    "item": "物品",
+    "painting": "画",
+    "particle": "粒子"
+}
+
 
 class ElementAddDialog(ElementAddDialogUI):
     def __init__(self, parent: wx.Window):
         super().__init__(parent)
         self.element: CursorElement | None = None
         source: AssetSource
-        for source in map(lambda n: n.value, AssetSources.__members__.values()):
+        for source in AssetSources.get_sources():
             selector = ui_class(ElementSelectListUI)(self.sources_notebook, source, CursorKind.ARROW)
             self.sources_notebook.AddPage(selector, source.name)
         self.rect_element_source = RectElementSource(self.sources_notebook)
@@ -213,17 +226,36 @@ def get_item_children(tree_view, item: wx.TreeItemId):
     return subitems
 
 
+class SourceSwitchDataDialog(DataDialog):
+    def __init__(self, parent: wx.Window, now_source: AssetSource):
+        SourceEnum = Enum("SourceEnum", tuple(source.id for source in AssetSources.get_sources()))
+        super().__init__(parent, "切换素材源", DataLineParam("source_id", "素材源", DataLineType.CHOICE,
+                                                             getattr(SourceEnum, now_source.id),
+                                                             enum_names={
+                                                                 getattr(SourceEnum, source.id): source.id \
+                                                                 for source in AssetSources.get_sources()
+                                                             }))
+
+    def get_result(self):
+        return AssetSources.get_source_by_id(self.datas["source_id"])
+
+
 ES_DIR = 0
 ES_SHOWER = 1
 ES_MUTIL_DIR = 3
 
 NUM_PATTER = re.compile(r'\d+$')
+ANIM_FRAME_PATTER = re.compile(r"\d+\.\w+$")
+
 
 class ElementSelectList(ElementSelectListUI):
+    SHOW_SWITCH_CHOICE = False
+
     def __init__(self, parent: wx.Window, source: AssetSource, kind: CursorKind):
         super().__init__(parent, source, kind)
         self.zip_file = None
         self.showing_item = None
+        self.assets = SourceAssetsManager(source.textures_zip, self.assets_tree, self.tree_image_list)
         self.assets_map: dict[wx.TreeItemId, str] = {}
         self.loaded_roots: list[wx.TreeItemId] = []
         self.dir_image_list: wx.ImageList | None = None
@@ -232,91 +264,25 @@ class ElementSelectList(ElementSelectListUI):
         self.assets_tree.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.on_select_item)
         self.assets_tree.Bind(wx.EVT_LEFT_DOWN, self.on_click)
 
+    def on_right_down(self):
+        menu = EtcMenu()
+        menu.Append("切换素材源", self.on_switch_source)
+        self.PopupMenu(menu)
+
+    def on_switch_source(self):
+        dialog = SourceSwitchDataDialog(self, self.source)
+        if dialog.ShowModal() == wx.ID_OK:
+            self.source = dialog.get_result()
+            self.load_source()
+
     def load_source(self):
         self.tree_image_list.RemoveAll()
         self.assets_tree.DeleteAllItems()
 
-        from zipfile import ZipFile
-        file = ZipFile(self.source.textures_zip)
-        root_map: dict[str, wx.TreeItemId] = {}
-        animation_root_map: dict[str, tuple[wx.TreeItemId, int]] = {}
-        assets_map: dict[wx.TreeItemId, str] = {}
-        for full_path, info in file.NameToInfo.items():
-            if full_path.count(".") > 1:
-                continue
-            root_name = full_path.split("/")[0]
-            if full_path.endswith("/"):
-                if full_path.count("/") != 1:
-                    continue
-                image = self.tree_image_list.Add(PilImg2WxImg(Image.open(ROOT_IMAGES[root_name])).ConvertToBitmap())
-                root = self.assets_tree.AppendItem(self.real_root, full_path[:-1], image)
-                root_map[root_name] = root
-            else:
-                root = root_map[root_name]
-                if full_path.split(".")[0][-1] in "0123456789":  # 数字结尾
-                    no_fix_path, end_fix = full_path.split(".")
-                    no_num_path = re.sub(NUM_PATTER, '', no_fix_path).rstrip("_") + "." + end_fix
-                    number = re.findall(NUM_PATTER, no_fix_path)[0]
-                    if no_num_path not in animation_root_map:
-                        ani_root = self.assets_tree.AppendItem(root, no_num_path.split("/")[-1])
-                        animation_root_map[no_num_path] = (ani_root, int(number))
-                        assets_map[ani_root] = full_path
-                    else:
-                        ani_root = animation_root_map[no_num_path][0]
-                        animation_root_map[no_num_path] = (ani_root, int(number))
-                    item = self.assets_tree.AppendItem(ani_root, number)
-                    assets_map[item] = full_path
-                    continue
-                file_name = full_path.split("/")[-1]
-                item = self.assets_tree.AppendItem(root, file_name)
-                assets_map[item] = full_path
-        # 筛选被误判的数字结尾的素材
-        for sub_root in get_item_children(self.assets_tree, self.real_root):
-            for node in get_item_children(self.assets_tree, sub_root):
-                # 遍历所有项
-                if not self.assets_tree.ItemHasChildren(node):
-                    continue
-                children = get_item_children(self.assets_tree, node)
-                try:
-                    numbers = [int(re.findall(NUM_PATTER, assets_map[child].split(".")[0])[0]) for child in children]
-                except IndexError:
-                    continue
-                mapping = {k: v for k, v in zip(numbers, children)}
-                unsorted_numbers = numbers.copy()
-                numbers.sort()
-                if len(numbers) == 1 or list(range(min(numbers), max(numbers)+1)) != numbers:  # 去除被误判成多帧动画的节点
-                    for child in children[::-1]:
-                        full_path = assets_map.pop(child)
-                        file_name = full_path.split("/")[-1]
-                        item = self.assets_tree.InsertItem(sub_root, node, file_name)
-                        assets_map[item] = full_path
-                    self.assets_tree.Delete(node)
-                elif list(range(len(unsorted_numbers))) != unsorted_numbers:  # 重新排序多帧动画的帧
-                    children_texts: list[list[wx.TreeItemId | str | int]] = [[mapping[number], "", 0, ""] for number in numbers]
-                    for i, (child, _, _, _) in enumerate(children_texts):
-                        children_texts[i][1] = self.assets_tree.GetItemText(child)
-                        children_texts[i][2] = self.assets_tree.GetItemImage(child)
-                        children_texts[i][3] = assets_map.pop(child)
-                    self.assets_tree.DeleteChildren(node)
-                    for child, text, image, path in children_texts:
-                        item = self.assets_tree.AppendItem(node, text, image)
-                        assets_map[item] = path
+        assets_map: dict[wx.TreeItemId, str] = self.assets.load_source(self.source, self.kind)
 
-        # 填充推荐列表
-        image = self.tree_image_list.Add(PilImg2WxImg(Image.open(ROOT_IMAGES["推荐"])).ConvertToBitmap())
-        recommend_root = self.assets_tree.InsertItem(self.real_root, 0, "推荐", image)
-        with open(self.source.recommend_file) as recommend_file:
-            recommend_list = json.loads(recommend_file.read())[self.kind.value]
-            for recommend_path in recommend_list:
-                image_io = BytesIO(file.read(recommend_path))
-                pil_image = translate_item_icon(Image.open(image_io))
-                image = self.tree_image_list.Add(PilImg2WxImg(pil_image).ConvertToBitmap())
-                item = self.assets_tree.AppendItem(recommend_root, recommend_path.split("/")[-1], image)
-                assets_map[item] = recommend_path
-        self.loaded_roots.append(recommend_root)
-        self.assets_tree.Expand(recommend_root)
         self.assets_map = assets_map
-        self.zip_file = file
+        self.zip_file = self.assets.file
 
     def on_expand_root(self, event: wx.TreeEvent):
         event.Skip()
@@ -402,7 +368,12 @@ class ElementSelectList(ElementSelectListUI):
                 break
             mutil += 1
         mutil -= 1
-        pil_image = image.resize((image.width * mutil, image.height * mutil), Resampling.NEAREST)
+        if mutil < 1:
+            image.thumbnail(shower_size)
+            pil_image = image
+        else:
+            width, height = image.width * mutil, image.height * mutil
+            pil_image = image.resize((max(1, round(width)), max(1, round(height))), Resampling.NEAREST)
         self.asset_shower.SetBitmap(PilImg2WxImg(pil_image))
 
     def get_element_info(self, single_frame: bool = False) -> Optional[AssetsChoicerAssetInfo]:

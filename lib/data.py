@@ -485,23 +485,34 @@ class CursorTheme:
 class AssetSource:
     name: str
     id: str
-    recommend_file: str
     textures_zip: str
+    recommend_file: str | None = None
 
 
 class AssetSources(Enum):
     MINECRAFT_1_21_5 = AssetSource("Minecraft 1.21.5",
                                    "minecraft-textures-1.21.5",
-                                   r"assets/sources/1.21.5/recommend.json",
                                    r"assets/sources/1.21.5/textures.zip")
+    MINECRAFT_25W32A = AssetSource("Minecraft 25w32a (1.21.9)",
+                                   "minecraft-textures-25w32a",
+                                   r"assets/sources/25w32a/textures.zip")
+    DEFAULT = MINECRAFT_25W32A
 
     @staticmethod
     def get_source_by_id(target_id: str) -> AssetSource | None:
-        for source in AssetSources.__members__.values():
-            assert isinstance(source, AssetSources)
-            if target_id == source.value.id:
-                return source.value
+        for source_member in AssetSources.__members__.values():
+            source = source_member.value
+            assert isinstance(source, AssetSource)
+            if target_id == source.id:
+                return source
         raise ValueError(f"未找到id为{target_id}的素材源")
+
+    @staticmethod
+    def get_sources() -> list[AssetSource]:
+        members = AssetSources.__members__.copy()
+        members.pop("DEFAULT")
+        sources = list(member.value for member in members.values())
+        return sources
 
 
 @dataclass

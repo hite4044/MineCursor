@@ -8,8 +8,12 @@ from widget.ect_menu import EtcMenu
 from widget.no_tab_notebook import NoTabNotebook
 
 
+class C_ElementSelectList(ElementSelectList):
+    SHOW_SWITCH_CHOICE = True
+
+
 class SourceInfoEditDialog(wx.Dialog):
-    def __init__(self, parent: wx.Window, element: CursorElement):
+    def __init__(self, parent: wx.Window, element: CursorElement, proj_kind: CursorKind):
         super().__init__(parent, title="编辑元素源信息", size=(1196, 795), style=wx.DEFAULT_FRAME_STYLE)
         self.SetFont(parent.GetFont())
         self.element = element
@@ -24,7 +28,7 @@ class SourceInfoEditDialog(wx.Dialog):
 
         right_panel = wx.Panel(warp)
         self.notebook = NoTabNotebook(right_panel)
-        self.mc_source = ElementSelectList(self.notebook, AssetSources.MINECRAFT_1_21_5.value, CursorKind.ARROW)
+        self.mc_source = C_ElementSelectList(self.notebook, AssetSources.DEFAULT.value, proj_kind)
         self.rect_source = RectElementSource(self.notebook)
         self.image_source = ImageElementSource(self.notebook)
         self.apply_btn = wx.Button(right_panel, label="应用")
@@ -55,7 +59,6 @@ class SourceInfoEditDialog(wx.Dialog):
         self.Bind(wx.EVT_BUTTON, self.on_apply, self.apply_btn)
 
     def on_key(self, event: wx.KeyEvent):
-        print(event.GetKeyCode(), wx.WXK_UP, event.GetModifiers(), wx.MOD_SHIFT)
         if event.GetKeyCode() == wx.WXK_UP and event.GetModifiers() == wx.MOD_SHIFT:
             self.exchange_item(self.source_lc.GetFirstSelected(), -1)
         elif event.GetKeyCode() == wx.WXK_DOWN and event.GetModifiers() == wx.MOD_SHIFT:

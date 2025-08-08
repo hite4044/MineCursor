@@ -68,9 +68,9 @@ class ElementListCtrl(ElementListCtrlUI):
         menu = EtcMenu()
 
         menu.Append("添加", self.on_add_element)
+        menu.AppendSeparator()
+        menu.Append("复制" + mk_end(elements), self.copy_elements, elements)
         if len(elements) == 1:
-            menu.AppendSeparator()
-            menu.Append("复制", self.copy_element, index)
             menu.Append("上移一层", self.move_element, index, -1)
             menu.Append("下移一层", self.move_element, index, 1)
             menu.Append("编辑遮罩", self.on_edit_mask, index)
@@ -80,9 +80,9 @@ class ElementListCtrl(ElementListCtrlUI):
 
         self.PopupMenu(menu)
 
-    def copy_element(self, index: int):
-        element = self.get_element_by_index(index)
-        self.project.add_element(element.copy())
+    def copy_elements(self, elements: list[CursorElement]):
+        for element in elements[::-1]:
+            self.project.elements.append(element.copy())
         self.rebuild_control()
         self.send_project_updated()
 

@@ -88,7 +88,7 @@ class SourceInfoEditDialog(wx.Dialog):
             menu.Append("上移 (&W)", self.exchange_item, index, -1)
             menu.Append("下移 (&S)", self.exchange_item, index, 1)
             menu.AppendSeparator()
-        menu.Append("删除 (%D)", self.on_delete)
+        menu.Append("删除 (&D)", self.on_delete)
         self.PopupMenu(menu)
 
     def on_apply(self, _):

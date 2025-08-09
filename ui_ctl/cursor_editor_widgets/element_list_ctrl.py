@@ -128,7 +128,7 @@ class ElementListCtrl(ElementListCtrlUI):
         self.PopupMenu(menu)
 
     def on_add_element(self):
-        dialog = ElementAddDialog(self)
+        dialog = ElementAddDialog(self, self.project.kind)
         if dialog.ShowModal() != wx.ID_OK:
             return
         if not dialog.element:

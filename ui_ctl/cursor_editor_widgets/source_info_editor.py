@@ -17,6 +17,7 @@ class SourceInfoEditDialog(wx.Dialog):
         super().__init__(parent, title="编辑元素源信息", size=(1196, 795), style=wx.DEFAULT_FRAME_STYLE)
         self.SetFont(parent.GetFont())
         self.element = element
+        self.proj_kind = proj_kind
         self.active_index = 0
 
         warp = wx.SplitterWindow(self)
@@ -140,7 +141,7 @@ class SourceInfoEditDialog(wx.Dialog):
         self.load_source_lc()
 
     def on_add(self):
-        dialog = ElementAddDialog(self)
+        dialog = ElementAddDialog(self, self.proj_kind)
         dialog.ShowModal()
         if not dialog.element:
             return

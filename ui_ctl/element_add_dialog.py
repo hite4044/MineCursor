@@ -32,12 +32,12 @@ ROOT_TEXTS = {
 
 
 class ElementAddDialog(ElementAddDialogUI):
-    def __init__(self, parent: wx.Window):
+    def __init__(self, parent: wx.Window, cursor_kind: CursorKind):
         super().__init__(parent)
         self.element: CursorElement | None = None
         source: AssetSource
         for source in AssetSources.get_sources():
-            selector = ui_class(ElementSelectListUI)(self.sources_notebook, source, CursorKind.ARROW)
+            selector = ui_class(ElementSelectListUI)(self.sources_notebook, source, cursor_kind)
             self.sources_notebook.AddPage(selector, source.name)
         self.rect_element_source = RectElementSource(self.sources_notebook)
         self.image_element_source = ImageElementSource(self.sources_notebook)
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     app = wx.App()
     win = wx.Frame(None)
     win.SetFont(ft(11))
-    dlg = ElementAddDialog(win)
+    dlg = ElementAddDialog(win, CursorKind.ARROW)
     win.Show()
     dlg.ShowModal()
     app.MainLoop()

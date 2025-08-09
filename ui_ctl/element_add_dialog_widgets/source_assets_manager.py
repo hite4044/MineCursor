@@ -18,17 +18,17 @@ class AssetRootLoadWay(Enum):
 
 
 ROOT_IMAGES = {
-    "推荐": "assets/resource_type_icons/Recommend.png",
-    "block": "assets/resource_type_icons/Block.png",
-    "entity": "assets/resource_type_icons/Entity.png",
-    "environment": "assets/resource_type_icons/Environment.png",
-    "gui": "assets/resource_type_icons/Gui.png",
-    "item": "assets/resource_type_icons/Item.png",
-    "map": "assets/resource_type_icons/Map.png",
-    "misc": "assets/resource_type_icons/Misc.png",
-    "mob_effect": "assets/resource_type_icons/Effect.png",
-    "painting": "assets/resource_type_icons/Painting.png",
-    "particle": "assets/resource_type_icons/Particle.png"
+    "推荐": "assets/icons/asset_types/Recommend.png",
+    "block": "assets/icons/asset_types/Block.png",
+    "entity": "assets/icons/asset_types/Entity.png",
+    "environment": "assets/icons/asset_types/Environment.png",
+    "gui": "assets/icons/asset_types/Gui.png",
+    "item": "assets/icons/asset_types/Item.png",
+    "map": "assets/icons/asset_types/Map.png",
+    "misc": "assets/icons/asset_types/Misc.png",
+    "mob_effect": "assets/icons/asset_types/Effect.png",
+    "painting": "assets/icons/asset_types/Painting.png",
+    "particle": "assets/icons/asset_types/Particle.png"
 }
 
 ROOT_TEXTS = {
@@ -187,13 +187,16 @@ class SourceAssetsManager:
 
         crt_kind_name = typing.cast(str, self.cur_kind.value)
         if crt_kind_name in recommend_data:  # 如果包含这个类型的指针推荐
-            folded_root = self.tree_ctrl.AppendItem(root_item, "更多")  # 收进一个单独的文件夹
-            load_sub_root(root_item, self.cur_kind.kind_name)
+            folded_root = -1
+            if len(recommend_data) <= 1:
+                folded_root = self.tree_ctrl.AppendItem(root_item, "更多")  # 收进一个单独的文件夹
+            load_sub_root(root_item, recommend_data[crt_kind_name])
             recommend_data.pop(crt_kind_name)  # 从待加载列表中移除
         else:  # 不然就用传入的根节点
             folded_root = root_item
-        for kind_name, files in recommend_data:
-            load_sub_root(folded_root, files)
+        for kind_name, files in recommend_data.items():
+            kind_root = self.tree_ctrl.AppendItem(folded_root, CursorKind(kind_name).kind_name)
+            load_sub_root(kind_root, files)
         return assets_map
 
     def load_flat_expand_root(self, root_item: wx.TreeItemId, filelist: list[ZipInfo]):

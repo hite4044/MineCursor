@@ -2,6 +2,7 @@ import re
 from enum import Enum
 from io import BytesIO
 from typing import Optional
+from zipfile import ZipFile
 
 import wx
 from PIL import Image, UnidentifiedImageError
@@ -10,6 +11,7 @@ from PIL.Image import Resampling
 from lib.cursor.setter import CursorKind
 from lib.data import AssetSources, AssetsChoicerAssetInfo
 from lib.image_pil2wx import PilImg2WxImg
+from lib.log import logger
 from ui.element_add_dialog import ElementSelectListUI, AssetSource
 from ui_ctl.element_add_dialog_widgets.source_assets_manager import SourceAssetsManager
 from widget.data_dialog import DataDialog, DataLineParam, DataLineType
@@ -32,7 +34,7 @@ def translate_item_icon(image: Image.Image) -> Image.Image:
     return base
 
 
-def get_item_children(tree_view, item: wx.TreeItemId):
+def get_item_children(tree_view, item: wx.TreeItemId) -> list[wx.TreeItemId]:
     subitems = []
     child, cookie = tree_view.GetFirstChild(item)
     while child:
@@ -68,7 +70,7 @@ class ElementSelectList(ElementSelectListUI):
 
     def __init__(self, parent: wx.Window, source: AssetSource, kind: CursorKind):
         super().__init__(parent, source, kind)
-        self.zip_file = None
+        self.zip_file: ZipFile | None = None
         self.showing_item = None
         self.assets = SourceAssetsManager(source.textures_zip, self.assets_tree, self.tree_image_list)
         self.assets_map: dict[wx.TreeItemId, str] = {}
@@ -97,6 +99,7 @@ class ElementSelectList(ElementSelectListUI):
     def load_source(self):
         self.tree_image_list.RemoveAll()
         self.assets_tree.DeleteAllItems()
+        self.loaded_roots.clear()
 
         assets_map: dict[wx.TreeItemId, str] = self.assets.load_source(self.source, self.kind)
 
@@ -108,18 +111,21 @@ class ElementSelectList(ElementSelectListUI):
         root = event.GetItem()
         if root in self.loaded_roots:
             return
-        root_path = self.assets_tree.GetItemText(root)
-        if self.real_root != self.assets_tree.GetItemParent(root):
+        root_parent = self.assets_tree.GetItemParent(root)
+        if self.real_root != root_parent and root not in self.assets.recommend_roots:  # 必须是根节点的子节点
             return
-        for item, path in self.assets_map.items():
-            if path.startswith(root_path + "/"):
-                image_io = BytesIO(self.zip_file.read(path))
-                try:
-                    pil_image = translate_item_icon(Image.open(image_io))
-                except UnidentifiedImageError:
-                    continue
-                image = self.tree_image_list.Add(PilImg2WxImg(pil_image).ConvertToBitmap())
-                self.assets_tree.SetItemImage(item, image)
+        for child in get_item_children(self.assets_tree, root):
+            try:
+                image_io = BytesIO(self.zip_file.read(self.assets_map[child]))
+            except KeyError:  # 适配推荐树
+                continue
+            try:
+                pil_image = translate_item_icon(Image.open(image_io))
+            except UnidentifiedImageError:  # 真TM奇怪的错误
+                logger.info(f"图片读取错误: {self.assets_map[child]}")
+                continue
+            image = self.tree_image_list.Add(PilImg2WxImg(pil_image).ConvertToBitmap())
+            self.assets_tree.SetItemImage(child, image)
         self.loaded_roots.append(root)
 
     def on_click(self, event: wx.MouseEvent):
@@ -155,7 +161,7 @@ class ElementSelectList(ElementSelectListUI):
                 paths.sort(key=lambda v: int(re.findall(NUM_PATTER, v.split('.')[0])[0]))
             except IndexError:
                 print(paths)
-                exit(0)
+                raise
             children: list[wx.TreeItemId] = [mapping[path] for path in paths]
 
             image_io = BytesIO(self.zip_file.read(self.assets_map[children[0]]))

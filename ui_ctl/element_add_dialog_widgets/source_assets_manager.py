@@ -126,6 +126,7 @@ class SourceAssetsManager:
         self.file = ZipFile(source_file)
         self.assets_tree = {}
         self.item_to_asset_map = {}
+        self.recommend_roots: list[wx.TreeItemId] = []
         self.source: AssetSource | None = None
 
         self.real_root = self.tree_ctrl.GetRootItem()
@@ -179,8 +180,10 @@ class SourceAssetsManager:
     def load_recommend_root(self, root_item: wx.TreeItemId):
         assets_map: dict[wx.TreeItemId, str] = {}
         recommend_data: RecommendData = self.current_recommend()
+        self.recommend_roots.clear()
 
         def load_sub_root(root: wx.TreeItemId, files_t: list[str]):  # 加载一个文件列表到一个节点
+            self.recommend_roots.append(root)
             for fp in files_t:
                 item_t = self.tree_ctrl.AppendItem(root, fp.split("/")[-1])
                 assets_map[item_t] = fp
@@ -188,7 +191,7 @@ class SourceAssetsManager:
         crt_kind_name = typing.cast(str, self.cur_kind.value)
         if crt_kind_name in recommend_data:  # 如果包含这个类型的指针推荐
             folded_root = -1
-            if len(recommend_data) <= 1:
+            if len(recommend_data) > 1:
                 folded_root = self.tree_ctrl.AppendItem(root_item, "更多")  # 收进一个单独的文件夹
             load_sub_root(root_item, recommend_data[crt_kind_name])
             recommend_data.pop(crt_kind_name)  # 从待加载列表中移除
@@ -197,6 +200,7 @@ class SourceAssetsManager:
         for kind_name, files in recommend_data.items():
             kind_root = self.tree_ctrl.AppendItem(folded_root, CursorKind(kind_name).kind_name)
             load_sub_root(kind_root, files)
+        self.tree_ctrl.Expand(root_item)
         return assets_map
 
     def load_flat_expand_root(self, root_item: wx.TreeItemId, filelist: list[ZipInfo]):

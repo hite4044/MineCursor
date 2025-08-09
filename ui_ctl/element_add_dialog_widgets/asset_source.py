@@ -85,8 +85,7 @@ class ElementSelectList(ElementSelectListUI):
     def on_menu(self, event: wx.MouseEvent):
         event.Skip()
         menu = EtcMenu()
-        item = menu.Append(f"当前素材源: {self.source.name}")
-        item.Enable(False)
+        menu.Append(f"当前素材源: {self.source.name}").Enable(False)
         menu.Append("切换素材源", self.on_switch_source)
         self.PopupMenu(menu)
 

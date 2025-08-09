@@ -5,6 +5,7 @@ from typing import Union, Type
 import wx
 
 from widget.data_entry import DataEntry
+from widget.win_icon import set_multi_size_icon
 
 
 class DataLineType(Enum):
@@ -89,6 +90,10 @@ class DataDialog(wx.Dialog):
 
         self.cancel_btn.Bind(wx.EVT_BUTTON, self.on_cancel)
         self.ok_btn.Bind(wx.EVT_BUTTON, self.on_ok)
+
+    def set_icon(self, path: str):
+        path = "assets/icons/" + path
+        set_multi_size_icon(self, path)
 
     def on_cancel(self, _):
         self.EndModal(wx.ID_CANCEL)

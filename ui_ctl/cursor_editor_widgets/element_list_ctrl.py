@@ -1,4 +1,4 @@
-from typing import Callable, cast as type_cast
+from typing import cast as type_cast
 
 import wx
 from PIL import Image
@@ -7,7 +7,6 @@ from lib.clipboard import ClipBoard
 from lib.cursor.writer import write_cur, write_ani
 from lib.data import CursorProject, CursorElement
 from lib.image_pil2wx import PilImg2WxImg
-from lib.perf import Counter
 from lib.render import render_project_gen
 from ui.cursor_editor import ElementListCtrlUI
 from ui_ctl.cursor_editor_widgets.events import ProjectUpdatedEvent, ElementSelectedEvent
@@ -90,20 +89,20 @@ class ElementListCtrl(ElementListCtrlUI):
         elements = self.get_select_elements()
         menu = EtcMenu()
 
-        menu.Append("添加 (&A)", self.on_add_element)
+        menu.Append("添加 (&A)", self.on_add_element, icon="element/add.png")
         if len(elements) == 1:
             menu.AppendSeparator()
-            menu.Append("编辑遮罩 (&M)", self.on_edit_mask, index)
-            menu.Append("编辑源信息 (&I)", self.on_edit_source, index)
+            menu.Append("编辑遮罩 (&M)", self.on_edit_mask, index, icon="element/edit_mask.png")
+            menu.Append("编辑源信息 (&I)", self.on_edit_source, index, icon="element/edit_info.png")
             menu.AppendSeparator()
-            menu.Append("上移一层 (&W)", self.move_element, index, -1)
-            menu.Append("下移一层 (&S)", self.move_element, index, 1)
+            menu.Append("上移一层 (&W)", self.move_element, index, -1, icon="action/up.png")
+            menu.Append("下移一层 (&S)", self.move_element, index, 1, icon="action/down.png")
         menu.AppendSeparator()
-        menu.Append("复制 (&C)" + mk_end(elements), self.copy_elements, elements)
+        menu.Append("复制 (&C)" + mk_end(elements), self.copy_elements, elements, icon="element/copy.png")
         if len(self.elements_has_deleted) == -1:
-            menu.Append("撤销 (&Z)", self.undo)
+            menu.Append("撤销 (&Z)", self.undo, icon="action/undo.png")
         menu.AppendSeparator()
-        menu.Append("删除 (&D)" + mk_end(elements), self.remove_elements, elements)
+        menu.Append("删除 (&D)" + mk_end(elements), self.remove_elements, elements, "action/delete.png")
 
         self.PopupMenu(menu)
 
@@ -119,11 +118,11 @@ class ElementListCtrl(ElementListCtrlUI):
             return
         menu = EtcMenu()
 
-        menu.Append("添加 (&A)", self.on_add_element)
+        menu.Append("添加 (&A)", self.on_add_element, icon="element/add.png")
         menu.AppendSeparator()
-        menu.Append("清空 (&D)", self.on_remove_all_elements)
+        menu.Append("清空 (&D)", self.on_remove_all_elements, icon="action/delete.png")
         menu.AppendSeparator()
-        menu.Append("导出 (&O)", self.output_file)
+        menu.Append("导出 (&O)", self.output_file, icon="project/export.png")
 
         self.PopupMenu(menu)
 

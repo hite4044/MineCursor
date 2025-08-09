@@ -9,6 +9,7 @@ from ui.element_add_dialog import ElementSelectListUI, ElementAddDialogUI, Asset
 from ui_ctl.element_add_dialog_widgets.asset_source import ElementSelectList
 from ui_ctl.element_add_dialog_widgets.image_source import ImageElementSource
 from ui_ctl.element_add_dialog_widgets.rect_source import RectElementSource
+from widget.win_icon import set_multi_size_icon
 
 ROOT_IMAGES = {
     "推荐": "assets/resource_type_icons/Recommend.png",
@@ -45,6 +46,7 @@ class ElementAddDialog(ElementAddDialogUI):
         self.sources_notebook.AddPage(self.image_element_source, "图像")
         self.ok.Bind(wx.EVT_BUTTON, self.on_ok)
         self.cancel.Bind(wx.EVT_BUTTON, self.on_close)
+        set_multi_size_icon(self, "assets/icons/element/add.png")
 
     def on_ok(self, _):
         if self.sources_notebook.GetCurrentPage() is self.rect_element_source:

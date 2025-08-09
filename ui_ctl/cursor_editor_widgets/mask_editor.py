@@ -5,6 +5,7 @@ from PIL import Image, ImageOps
 from PIL import ImageDraw
 
 from lib.image_pil2wx import PilImg2WxImg
+from widget.win_icon import set_multi_size_icon
 
 mcEVT_SCALE_UPDATED = wx.NewEventType()
 EVT_SCALE_UPDATED = wx.PyEventBinder(mcEVT_SCALE_UPDATED, 1)
@@ -35,6 +36,7 @@ class MaskEditor(wx.Dialog):
         super().__init__(parent, title="编辑遮罩", size=(870, 720), style=wx.DEFAULT_FRAME_STYLE)
         if parent:
             self.SetFont(parent.GetFont())
+        set_multi_size_icon(self, "assets/icons/element/edit_mask.png")
         mask = ImageOps.invert(mask)
         self.mask = mask
         self.background = background

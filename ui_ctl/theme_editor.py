@@ -71,9 +71,9 @@ class ThemeDataDialog(DataDialog):
                          DataLineParam("description", "描述", DataLineType.STRING, description),
                          )
         if is_create:
-            set_multi_size_icon(self, r"assets/icons/add_theme.png")
+            self.set_icon("theme/add.png")
         else:
-            set_multi_size_icon(self, r"assets/icons/edit_theme.png")
+            self.set_icon("theme/edit_info.png")
 
     def get_result(self) -> tuple[str, int, str, str]:
         datas = self.datas
@@ -121,17 +121,17 @@ class ThemeSelector(PublicThemeSelector):
     def on_item_menu(self, event: wx.ListEvent):
         theme = self.line_theme_mapping[event.GetIndex()]
         menu = EtcMenu()
-        menu.Append("添加 (&A)", self.on_add_theme)
-        menu.Append("合成主题 (&M)", self.on_create_theme)
+        menu.Append("添加 (&A)", self.on_add_theme, icon="theme/add.png")
+        menu.Append("合成主题 (&M)", self.on_create_theme, icon="theme/merge.png")
         menu.AppendSeparator()
-        menu.Append("编辑主题信息 (&E)", self.on_edit_theme, theme)
+        menu.Append("编辑主题信息 (&E)", self.on_edit_theme, theme, icon="theme/edit_info.png")
         menu.AppendSeparator()
-        menu.Append("导入主题 (&I)", self.on_import_theme)
-        menu.Append("导出主题 (&O)", self.on_export_theme, theme)
+        menu.Append("导入主题 (&I)", self.on_import_theme, icon="theme/import.png")
+        menu.Append("导出主题 (&O)", self.on_export_theme, theme, icon="theme/export.png")
         menu.AppendSeparator()
-        menu.Append("导出指针 (&C)", self.on_export_theme_cursors, theme)
+        menu.Append("导出指针 (&C)", self.on_export_theme_cursors, theme, icon="theme/export_cursor.png")
         menu.AppendSeparator()
-        menu.Append("删除 (&D)", self.on_delete_theme, theme)
+        menu.Append("删除 (&D)", self.on_delete_theme, theme, icon="action/delete.png")
         self.PopupMenu(menu)
 
 
@@ -142,17 +142,18 @@ class ThemeSelector(PublicThemeSelector):
             return
 
         menu = EtcMenu()
-        menu.Append("添加 (&A)", self.on_add_theme)
-        menu.Append("合成主题 (&M)", self.on_create_theme)
+        menu.Append("添加 (&A)", self.on_add_theme, icon="theme/add.png")
+        menu.Append("合成主题 (&M)", self.on_create_theme, icon="theme/merge.png")
         menu.AppendSeparator()
-        menu.Append("导入主题 (&I)", self.on_import_theme)
+        menu.Append("导入主题 (&I)", self.on_import_theme, icon="theme/import.png")
         menu.AppendSeparator()
-        menu.Append("打开主题文件夹 (&O)", self.on_open_theme_folder)
+        item = menu.Append("打开主题文件夹 (&O)", self.on_open_theme_folder)
         menu.AppendSeparator()
-        menu.Append("清空所有主题 (&D)", self.on_clear_all_theme)
-        self.PopupMenu(menu)
+        menu.Append("清空所有主题 (&D)", self.on_clear_all_theme, icon="action/delete.png")
 
-        theme_manager.save()  # 经过测试，这行代码会在执行完菜单项里所绑定的函数过后才会之心
+        item.SetBitmap(wx.ArtProvider.GetBitmap(wx.ART_FOLDER))
+
+        self.PopupMenu(menu)
 
     def exchange_item(self, index: int, offset: int):
         if not (0 <= index + offset < self.GetItemCount()):

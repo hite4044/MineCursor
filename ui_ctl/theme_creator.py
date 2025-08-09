@@ -4,12 +4,14 @@ from lib.data import CursorTheme
 from lib.resources import theme_manager
 from ui.theme_creator import ThemeCreatorUI, CursorsSelectorUI, SourceThemeCursorListUI, NewThemeCursorListUI
 from ui_ctl.public_list_ctl import PublicThemeSelector, EVT_THEME_SELECTED
+from widget.win_icon import set_multi_size_icon
 
 
 class ThemeCreator(ThemeCreatorUI):
     def __init__(self, parent: wx.Window):
         super().__init__(parent)
         self.ok_btn.Bind(wx.EVT_BUTTON, self.on_ok)
+        set_multi_size_icon(self, "assets/icons/theme/merge.png")
 
     def on_ok(self, _):
         theme = self.main_panel.new_cursors.active_theme

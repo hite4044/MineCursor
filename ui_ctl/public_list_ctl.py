@@ -92,7 +92,10 @@ class ProjectDataDialog(DataDialog):
                          *self.canvas_params,
                          DataLineParam("kind", "类型", DataLineType.CHOICE, kind,
                                        enum_names=CURSOR_KIND_NAME_OFFICIAL))
-        set_multi_size_icon(self, r"assets/icons/add_project.png")
+        if is_create:
+            self.set_icon("project/add.png")
+        else:
+            self.set_icon("project/edit_info.png")
 
     def get_result(self) -> tuple[str | str, str | None, int | tuple[int, int], CursorKind]:
         datas = self.datas
@@ -136,6 +139,7 @@ class ProjectCopyDialog(DataDialog):
                          DataLineParam("kind", "类型", DataLineType.CHOICE, project.kind,
                                        enum_names=CURSOR_KIND_NAME_OFFICIAL)
                          )
+        self.set_icon("project/copy.png")
 
     def get_result(self) -> CursorProject:
         data_dict = deepcopy(self.project.to_dict())
@@ -155,6 +159,7 @@ class ProjectMoveThemeDialog(DataDialog):
                                            getattr(self.themes_enum_cls, theme.id): \
                                                f"{theme.name} ({len(theme.projects)}-cur)" \
                                            for theme in theme_manager.themes}))
+        self.set_icon("project/move.png")
 
     def get_result(self) -> CursorTheme:
         return self.enum_to_theme_map[self.datas["theme"]]
@@ -262,37 +267,37 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
             return
 
         menu = EtcMenu()
-        menu.Append("添加项目 (&A)", self.menu_add_project)
+        menu.Append("添加项目 (&A)", self.menu_add_project, icon="project/add.png")
         menu.AppendSeparator()
         if len(self.cursors_has_deleted) != 0:
-            menu.Append("撤销操作 (&Z)", self.undo_action)
+            menu.Append("撤销操作 (&Z)", self.undo_action, icon="action/undo.png")
             menu.AppendSeparator()
-        menu.Append("清空所有项目 (&D)", self.menu_clear_all_projects)
+        menu.Append("清空所有项目 (&D)", self.menu_clear_all_projects, icon="action/delete.png")
         self.PopupMenu(menu)
 
     def on_item_menu(self, event: wx.ListEvent):  # 当鼠标右键某个项目时触发
         active_project = self.active_theme.projects[event.GetIndex()]
         projects = [self.active_theme.projects[i] for i in self.get_select_items()]
         menu = EtcMenu()
-        menu.Append("添加项目 (&A)", self.menu_add_project)
+        menu.Append("添加项目 (&A)", self.menu_add_project, icon="project/add.png")
         menu.AppendSeparator()
-        menu.Append("编辑项目 (&E)" + mk_end(projects), self.menu_edit_projects, projects)
-        menu.Append("编辑项目信息 (&I)" + mk_end(projects), self.menu_edit_project_info, projects, active_project)
+        menu.Append("编辑项目 (&E)" + mk_end(projects), self.menu_edit_projects, projects, icon="project/edit.png")
+        menu.Append("编辑项目信息 (&I)" + mk_end(projects), self.menu_edit_project_info, projects, active_project, icon="project/edit_info.png")
         if len(projects) == 1 and len(self.active_theme.projects) != 1:
             menu.AppendSeparator()
             if event.GetIndex() != 0:
-                menu.Append("向上移动 (&W)", self.move_project, event.GetIndex(), -1)
+                menu.Append("向上移动 (&W)", self.move_project, event.GetIndex(), -1, icon="action/up.png")
             if event.GetIndex() != len(self.active_theme.projects) - 1:
-                menu.Append("向下移动 (&S)", self.move_project, event.GetIndex(), 1)
+                menu.Append("向下移动 (&S)", self.move_project, event.GetIndex(), 1, icon="action/down.png")
         if len(projects) == 1:
             menu.AppendSeparator()
-            menu.Append("复制项目 (&C)", self.menu_copy_project, active_project)
+            menu.Append("复制项目 (&C)", self.menu_copy_project, active_project, icon="project/copy.png")
         menu.AppendSeparator()
-        menu.Append("移动至其他主题 (&M)" + mk_end(projects), self.move_project_to_theme, projects)
+        menu.Append("移动至其他主题 (&M)" + mk_end(projects), self.move_project_to_theme, projects, icon="project/move.png")
         if len(self.cursors_has_deleted) != 0:
-            menu.Append("撤销操作 (&Z)", self.undo_action)
+            menu.Append("撤销操作 (&Z)", self.undo_action, icon="action/undo.png")
         menu.AppendSeparator()
-        menu.Append("删除 (&D)" + mk_end(projects), self.menu_delete_projects, projects)
+        menu.Append("删除 (&D)" + mk_end(projects), self.menu_delete_projects, projects, icon="action/delete.png")
 
         self.PopupMenu(menu)
 

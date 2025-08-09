@@ -438,10 +438,10 @@ class CursorProject:
 @dataclass()
 class CursorTheme:
     name: str
-    type: ThemeType = ThemeType.NORMAL
     base_size: int = 32
     author: str = "Unknow"
     description: str = "None"
+    type: ThemeType = ThemeType.NORMAL
     projects: list[CursorProject] = field(default_factory=list)
 
     id: str = field(default_factory=generate_id)

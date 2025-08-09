@@ -81,7 +81,7 @@ class RateEditor(wx.Frame):
     def update_data(self, row=None, col=None, value=None):
         if row is not None:
             self.rates[row] = int(value)
-            self.list.SetItem(row, 1, f"{int(value) / 60 * 1000:.2f} ms")
+            self.list.SetItem(row, 1, f"{int(value) / 60 * 1000:.1f} ms")
         else:
             self.full_data()
         self.apply_to_project()

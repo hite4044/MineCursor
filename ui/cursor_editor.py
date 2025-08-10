@@ -21,7 +21,7 @@ ID_SCALE = 5
 
 class CursorEditorUI(wx.Frame):
     def __init__(self, parent: wx.Window, project: CursorProject):
-        super().__init__(parent, size=(1320, 720),
+        super().__init__(parent, size=(1220, 720),
                          title=f"光标项目编辑器 - {project.name if project.name else project.kind.kind_name}")
         self.SetFont(ft(11))
 

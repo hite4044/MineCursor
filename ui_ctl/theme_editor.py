@@ -174,11 +174,8 @@ class ThemeSelector(PublicThemeSelector):
             menu.AppendSeparator()
             menu.Append("撤销 (&Z)", self.undo, icon="action/undo.png")
         menu.AppendSeparator()
-        item = menu.Append("打开主题文件夹 (&O)", self.on_open_theme_folder)
-        menu.AppendSeparator()
+        menu.Append("打开主题文件夹 (&O)", self.on_open_theme_folder, icon="action/open_data_dir.png")
         menu.Append("清空所有主题 (&D)", self.on_clear_all_theme, icon="action/delete.png")
-
-        item.SetBitmap(wx.ArtProvider.GetBitmap(wx.ART_FOLDER))
 
         self.PopupMenu(menu)
 

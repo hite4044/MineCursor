@@ -111,7 +111,7 @@ class ThemeSelector(PublicThemeSelector):
     def __init__(self, parent: wx.Window):
         super().__init__(parent)
 
-        self.themes_has_deleted: list[list[tuple[int, CursorTheme]]] = []
+        self.themes_has_deleted: list[list[tuple[int, CursorTheme]]] = [[(0, theme)] for theme in theme_manager.deleted_themes]
         self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_menu)
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu)
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
@@ -130,8 +130,13 @@ class ThemeSelector(PublicThemeSelector):
         if len(self.themes_has_deleted) == 0:
             return
         stacks = self.themes_has_deleted.pop(-1)
-        for index, project in stacks[::-1]:
-            theme_manager.themes.insert(index, project)
+        for index, theme in stacks[::-1]:
+            theme_manager.themes.insert(index, theme)
+            theme_manager.deleted_themes.remove(theme)
+            try:
+                os.remove(theme_manager.theme_file_mapping.pop(theme))
+            except FileNotFoundError:
+                pass
         self.reload_themes()
 
     def on_item_menu(self, event: wx.ListEvent):
@@ -165,6 +170,9 @@ class ThemeSelector(PublicThemeSelector):
         menu.Append("合成主题 (&M)", self.on_create_theme, icon="theme/merge.png")
         menu.AppendSeparator()
         menu.Append("导入主题 (&I)", self.on_import_theme, icon="theme/import.png")
+        if len(self.themes_has_deleted) != 0:
+            menu.AppendSeparator()
+            menu.Append("撤销 (&Z)", self.undo, icon="action/undo.png")
         menu.AppendSeparator()
         item = menu.Append("打开主题文件夹 (&O)", self.on_open_theme_folder)
         menu.AppendSeparator()
@@ -212,13 +220,14 @@ class ThemeSelector(PublicThemeSelector):
         logger.info(f"删除主题: {first_theme}")
         indexes: list[int] = [{v: k for k, v in self.line_theme_mapping.items()}[theme] for theme in [first_theme]]
         self.themes_has_deleted.append([(line, element) for line, element in zip(indexes[::-1], [first_theme][::-1])])
+        theme_manager.deleted_themes.append(first_theme)
         theme_manager.remove_theme(first_theme)
         self.reload_themes()
 
     def on_drop_theme(self, _, __, filenames: list[str]):
         for file_path in filenames:
             if isfile(file_path):
-                theme_manager.load_theme_file(file_path)
+                theme_manager.load_theme(file_path)
         self.reload_themes()
 
     def on_export_theme(self, theme: CursorTheme):
@@ -249,7 +258,7 @@ class ThemeSelector(PublicThemeSelector):
                                style=wx.FD_OPEN)
         if dialog.ShowModal() == wx.ID_OK:
             file_path = dialog.GetPath()
-            theme_manager.load_theme_file(file_path)
+            theme_manager.load_theme(file_path)
             self.reload_themes()
 
     @staticmethod

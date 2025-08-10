@@ -5,7 +5,7 @@ from os import rename
 from os.path import join, basename, isfile
 from typing import Callable
 
-from lib.data import CursorTheme, data_file_manager
+from lib.data import CursorTheme, data_file_manager, WorkFileManager, backup_themes_manager
 from lib.log import logger
 
 HEX_PATTERN = re.compile("^#([A-Fa-f0-9]+)$")
@@ -34,6 +34,7 @@ def get_dir_all_themes(dir_path: str):
 class ThemeManager:
     def __init__(self):
         self.themes: list[CursorTheme] = []
+        self.deleted_themes: list[CursorTheme] = []
         self.theme_file_mapping: dict[CursorTheme, str] = {}
         self.callbacks: dict[ThemeAction, list[Callable[[CursorTheme], None]]] = {}
         self.load()
@@ -43,24 +44,40 @@ class ThemeManager:
         _, _, file_names = next(os.walk(data_file_manager.work_dir))
         for file_name in file_names:
             file_path = str(join(data_file_manager.work_dir, file_name))
-            self.load_theme_file(file_path)
+            self.load_theme(file_path)
+
+        _, _, file_names = next(os.walk(backup_themes_manager.work_dir))
+        for file_name in file_names:
+            file_path = str(join(backup_themes_manager.work_dir, file_name))
+            theme = self.load_theme_file(file_path)
+            self.theme_file_mapping[theme] = file_path
+            self.deleted_themes.append(theme)
 
     def save(self):
         logger.info("正在保存主题")
-        themes_id_mapping = get_dir_all_themes(data_file_manager.work_dir)
-        for theme in self.themes:
+        self.save_themes(data_file_manager, self.themes)
+        self.save_themes(backup_themes_manager, self.deleted_themes)
+
+    def save_themes(self, parent_dir: WorkFileManager, themes: list[CursorTheme]):
+        themes_id_mapping = get_dir_all_themes(parent_dir.work_dir)
+        for theme in themes:
             if theme.id in themes_id_mapping:
                 os.remove(themes_id_mapping[theme.id])
-            file_path = str(join(data_file_manager.work_dir, f"MineCursor Theme_{theme.id}_{theme.name}.mctheme"))
+            file_path = str(join(parent_dir.work_dir, f"MineCursor Theme_{theme.id}_{theme.name}.mctheme"))
+            self.theme_file_mapping[theme] = file_path
             self.save_theme_file(file_path, theme)
 
-    def load_theme_file(self, file_path: str):
-        with open(file_path, "r", encoding="utf-8") as f:
-            data = eval(f.read())
-        theme = CursorTheme.from_dict(data)
+    def load_theme(self, file_path: str):
+        theme = self.load_theme_file(file_path)
         logger.info(f"已加载主题: {theme}")
         self.add_theme(theme)
         self.theme_file_mapping[theme] = file_path
+
+    @staticmethod
+    def load_theme_file(file_path: str) -> CursorTheme:
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = eval(f.read())
+        return CursorTheme.from_dict(data)
 
     @staticmethod
     def save_theme_file(file_path: str, theme: CursorTheme):

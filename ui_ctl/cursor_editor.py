@@ -22,7 +22,7 @@ class CursorEditor(CursorEditorUI):
     def __init__(self, parent: wx.Window | None, project: CursorProject):
         timer = Counter(create_start=True)
         super().__init__(parent, project)
-        set_multi_size_icon(self, "assets\icons\cursor_editor.png")
+        set_multi_size_icon(self, "assets\icons\project\edit.png")
         self.project = project
         self.b_canvas_size = self.project.raw_canvas_size
         self.b_output_size = self.project.canvas_size

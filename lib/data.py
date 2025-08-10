@@ -524,3 +524,4 @@ class AssetsChoicerAssetInfo:
 source_load_manager = SourceLoadManager()
 cursors_file_manager = WorkFileManager(r"Mine Cursor\Theme Cursors")
 data_file_manager = WorkFileManager(r"Mine Cursor\Theme Data")
+backup_themes_manager = WorkFileManager(r"Mine Cursor\Deleted Theme Backup")

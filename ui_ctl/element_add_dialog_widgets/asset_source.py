@@ -26,7 +26,7 @@ def translate_item_icon(image: Image.Image) -> Image.Image:
         return image.crop((1, 1, 17, 17))
     t_width = min(image.width, 16)
     t_height = min(image.height, 16)
-    image = image.resize((t_width, t_height), Resampling.NEAREST)
+    image = image.resize((t_width, t_height), Resampling.BICUBIC)
     if image.size == (16, 16):
         return image
     base = Image.new("RGBA", (16, 16))
@@ -82,7 +82,7 @@ class ElementSelectList(ElementSelectListUI):
         self.assets_tree.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.on_select_item)
         self.assets_tree.Bind(wx.EVT_LEFT_DOWN, self.on_click)
         self.assets_tree.Bind(wx.EVT_RIGHT_DOWN, self.on_menu)
-        self.assets_tree.Expand(self.assets.recommend_roots[0])  # 再次展开触发加载缩略图
+        self.assets_tree.Expand(self.assets.assets_roots[0])  # 再次展开触发加载缩略图
 
     def on_menu(self, event: wx.MouseEvent):
         event.Skip()
@@ -113,7 +113,7 @@ class ElementSelectList(ElementSelectListUI):
         if root in self.loaded_roots:
             return
         root_parent = self.assets_tree.GetItemParent(root)
-        if self.real_root != root_parent and root not in self.assets.recommend_roots:  # 必须是根节点的子节点
+        if self.real_root != root_parent and root not in self.assets.assets_roots:  # 必须是根节点的子节点
             return
         for child in get_item_children(self.assets_tree, root):
             try:

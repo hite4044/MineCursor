@@ -50,12 +50,12 @@ class PublicThemeSelector(PublicThemeSelectorUI):
         theme_manager.save()
 
     def load_all_theme(self):
+        self.DeleteAllItems()
+        self.line_theme_mapping.clear()
         for theme in theme_manager.themes:
             self.append_theme(theme)
 
     def reload_themes(self):
-        self.DeleteAllItems()
-        self.line_theme_mapping.clear()
         self.load_all_theme()
 
         theme_manager.save()  # 经过测试，这行代码会在执行完菜单项里所绑定的函数过后才会之心

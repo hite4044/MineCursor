@@ -111,12 +111,28 @@ class ThemeSelector(PublicThemeSelector):
     def __init__(self, parent: wx.Window):
         super().__init__(parent)
 
+        self.themes_has_deleted: list[list[tuple[int, CursorTheme]]] = []
         self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_menu)
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu)
+        self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self.load_all_theme()
         target = ThemeFileDropTarget()
         target.on_drop_theme = self.on_drop_theme
         self.SetDropTarget(target)
+
+    def on_key_down(self, event: wx.KeyEvent):
+        if event.GetKeyCode() == ord("Z") and event.GetModifiers() == wx.MOD_CONTROL:
+            self.undo()
+        else:
+            event.Skip()
+
+    def undo(self):
+        if len(self.themes_has_deleted) == 0:
+            return
+        stacks = self.themes_has_deleted.pop(-1)
+        for index, project in stacks[::-1]:
+            theme_manager.themes.insert(index, project)
+        self.reload_themes()
 
     def on_item_menu(self, event: wx.ListEvent):
         theme = self.line_theme_mapping[event.GetIndex()]
@@ -130,6 +146,9 @@ class ThemeSelector(PublicThemeSelector):
         menu.Append("导出主题 (&O)", self.on_export_theme, theme, icon="theme/export.png")
         menu.AppendSeparator()
         menu.Append("导出指针 (&C)", self.on_export_theme_cursors, theme, icon="theme/export_cursor.png")
+        if len(self.themes_has_deleted) != 0:
+            menu.AppendSeparator()
+            menu.Append("撤销 (&Z)", self.undo, icon="action/undo.png")
         menu.AppendSeparator()
         menu.Append("删除 (&D)", self.on_delete_theme, theme, icon="action/delete.png")
         self.PopupMenu(menu)
@@ -189,9 +208,11 @@ class ThemeSelector(PublicThemeSelector):
             self.reload_themes()
             theme_manager.renew_theme(theme)
 
-    def on_delete_theme(self, theme: CursorTheme):
-        logger.info(f"删除主题: {theme}")
-        theme_manager.remove_theme(theme)
+    def on_delete_theme(self, first_theme: CursorTheme):
+        logger.info(f"删除主题: {first_theme}")
+        indexes: list[int] = [{v: k for k, v in self.line_theme_mapping.items()}[theme] for theme in [first_theme]]
+        self.themes_has_deleted.append([(line, element) for line, element in zip(indexes[::-1], [first_theme][::-1])])
+        theme_manager.remove_theme(first_theme)
         self.reload_themes()
 
     def on_drop_theme(self, _, __, filenames: list[str]):

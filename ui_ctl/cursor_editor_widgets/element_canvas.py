@@ -38,7 +38,7 @@ class ElementCanvas(ElementCanvasUI):
     def __init__(self, parent: wx.Window, project: CursorProject):
         super().__init__(parent, project)
         self.active_element: CursorElement | None = None
-        self.scale = 10.0
+        self.scale = {1.0: 16.0, 2.0: 8.0}.get(project.scale, 10.0)
         self.scale_index: int = EC_SCALE_LEVEL.index(self.scale)
         self.x_offset: float = 0.5
         self.y_offset: float = 0.5

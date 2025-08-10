@@ -119,6 +119,7 @@ class ElementSelectList(ElementSelectListUI):
             try:
                 image_io = BytesIO(self.zip_file.read(self.assets_map[child]))
             except KeyError:  # 适配推荐树
+                logger.error(f"错误路径: {self.assets_map[child]}")
                 continue
             try:
                 pil_image = translate_item_icon(Image.open(image_io))

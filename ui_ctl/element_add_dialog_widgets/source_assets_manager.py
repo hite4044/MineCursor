@@ -59,8 +59,8 @@ ROOT_LOADING_WAYS = {
     "particle": AssetRootLoadWay.FLAT_EXPAND,
 }
 
-NUM_PATTER = re.compile(r'\d+$')
-ANIM_FRAME_PATTER = re.compile(r"\d+\.\w+$")
+NUM_PATTER = re.compile(r'_?\d+')
+ANIM_FRAME_PATTER = re.compile(r'\d+\.\w+$')
 
 
 class DirTree:
@@ -215,9 +215,9 @@ class SourceAssetsManager:
             full_path = info.filename
             filename = info.filename.split("/")[-1]
 
-            if re.match(ANIM_FRAME_PATTER, filename):  # 如果文件名以数字结尾
+            if re.findall(ANIM_FRAME_PATTER, filename):  # 如果文件名以数字结尾
                 no_num_path = re.sub(NUM_PATTER, "", full_path)
-                number = int(re.findall(NUM_PATTER, filename)[0])
+                number = int(re.findall(NUM_PATTER, filename)[0].lstrip("_"))
                 if no_num_path not in animation_frames:
                     animation_frames[no_num_path] = {number: full_path}
                 else:
@@ -229,25 +229,26 @@ class SourceAssetsManager:
             if len(frames) == 1:  # 只有一帧, pass
                 animation_frames.pop(no_num_path)
                 continue
-            numbers = [number for number, _ in frames]
-            numbers_to_paths = {number: path for number, path in frames}
+            numbers = [number for number, _ in frames.items()]
             numbers.sort()
             if list(range(len(frames))) != numbers:  # 不是有序序列, pass
                 animation_frames.pop(no_num_path)
                 continue
-            # 删除所有帧的路径, 并在原位置添加一个无序号的路径
-            paths = [numbers_to_paths[number] for number in numbers]
-            first_index = asset_list.index(paths[0])
-            [asset_list.remove(path) for path in paths]
+            # 删除+更新
+            first_index = asset_list.index(frames[0])
+            [asset_list.remove(path) for path in frames.values()]
             asset_list.insert(first_index, no_num_path)
+            # 替换排序过的帧列表
+            paths = [frames[number] for number in numbers]
             animation_frames[no_num_path] = {number: path for number, path in zip(numbers, paths)}
 
         # 填充数据
         for file_path in asset_list:
             if file_path in animation_frames:  # 加载动画帧
                 animation_root = self.tree_ctrl.AppendItem(root_item, file_path.split("/")[-1])  # 文件名当标签
-                assets_map[animation_root] = animation_frames[file_path][0][1]  # 使用第一帧作为动画根节点的缩略图
-                for _, frame_path in animation_frames[file_path]:
+                self.assets_roots.append(animation_root)
+                assets_map[animation_root] = animation_frames[file_path][0]  # 使用第一帧作为动画根节点的缩略图
+                for _, frame_path in animation_frames[file_path].items():
                     filename = frame_path.split("/")[-1]
                     item = self.tree_ctrl.AppendItem(animation_root, filename)
                     assets_map[item] = frame_path

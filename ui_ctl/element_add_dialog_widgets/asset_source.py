@@ -131,11 +131,9 @@ class ElementSelectList(ElementSelectListUI):
 
     def on_click(self, event: wx.MouseEvent):
         event.Skip()
-        wx.CallLater(100, self.on_click_delay)
-
-    def on_click_delay(self):
-        if self.assets_tree.GetSelection().IsOk():
-            self.load_item(self.assets_tree.GetSelection())
+        item, flag = self.assets_tree.HitTest(event.GetPosition())
+        if flag in [wx.TREE_HITTEST_ONITEMICON, wx.TREE_HITTEST_ONITEMLABEL]:
+            self.load_item(item)
 
     def on_select_item(self, event: wx.TreeEvent):
         event.Skip()

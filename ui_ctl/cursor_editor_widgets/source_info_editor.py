@@ -83,15 +83,15 @@ class SourceInfoEditDialog(wx.Dialog):
 
     def on_menu(self, event: wx.ListEvent | wx.MouseEvent):
         menu = EtcMenu()
-        menu.Append("添加 (&A)", self.on_add)
+        menu.Append("添加 (&A)", self.on_add, icon="element/add.png")
         menu.AppendSeparator()
         if isinstance(event, wx.ListEvent):
             event.Veto()
             index = event.GetIndex()
-            menu.Append("上移 (&W)", self.exchange_item, index, -1)
-            menu.Append("下移 (&S)", self.exchange_item, index, 1)
+            menu.Append("上移 (&W)", self.exchange_item, index, -1, icon="action/up.png")
+            menu.Append("下移 (&S)", self.exchange_item, index, 1, icon="action/down.png")
             menu.AppendSeparator()
-        menu.Append("删除 (&D)", self.on_delete)
+        menu.Append("删除 (&D)", self.on_delete, icon="action/delete.png")
         self.PopupMenu(menu)
 
     def on_apply(self, _):

@@ -102,7 +102,7 @@ class ElementListCtrl(ElementListCtrlUI):
         if len(self.elements_has_deleted) == -1:
             menu.Append("撤销 (&Z)", self.undo, icon="action/undo.png")
         menu.AppendSeparator()
-        menu.Append("删除 (&D)" + mk_end(elements), self.remove_elements, elements, "action/delete.png")
+        menu.Append("删除 (&D)" + mk_end(elements), self.remove_elements, elements, icon="action/delete.png")
 
         self.PopupMenu(menu)
 

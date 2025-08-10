@@ -99,15 +99,17 @@ class DirTree:
                 crt_root.files.append(filename)
         return root_dir
 
-    def full_data(self, tree_ctrl: wx.TreeCtrl, root: wx.TreeItemId, image_list: wx.ImageList,
+    def full_data(self, tree_ctrl: wx.TreeCtrl, root: wx.TreeItemId, assets_roots: list[wx.TreeItemId],
                   dir_path: str = "", assets_map: dict[wx.TreeItemId, str] = None):
         if assets_map is None:
             assets_map: dict[wx.TreeItemId, str] = {}
             dir_path = f"{self.name}"
-        # wx.ArtProvider.GetBitmap(wx.ART_NEW_DIR)
+
+        assets_roots.append(root)
+
         for dir_name, dir_tree in self.dirs.items():
             dir_root = tree_ctrl.AppendItem(root, dir_name)
-            dir_tree.full_data(tree_ctrl, dir_root, image_list, f"{dir_path}/{dir_name}", assets_map)
+            dir_tree.full_data(tree_ctrl, dir_root, assets_roots, f"{dir_path}/{dir_name}", assets_map)
         for file_name in self.files:
             fp = f"{dir_path}/{file_name}"
             item = tree_ctrl.AppendItem(root, file_name)
@@ -126,7 +128,7 @@ class SourceAssetsManager:
         self.file = ZipFile(source_file)
         self.assets_tree = {}
         self.item_to_asset_map = {}
-        self.recommend_roots: list[wx.TreeItemId] = []
+        self.assets_roots: list[wx.TreeItemId] = []
         self.source: AssetSource | None = None
 
         self.real_root = self.tree_ctrl.GetRootItem()
@@ -168,6 +170,7 @@ class SourceAssetsManager:
                 root_files_map[root_name].append(info)
 
         # Step2 -> 加载根节点
+        self.assets_roots.clear()
         assets_maps: list[dict[wx.TreeItemId, str]] = []
         for root_name in ["推荐"] + root_names:
             image = self.image_list.Add(wx.Bitmap(ROOT_IMAGES[root_name]))
@@ -180,10 +183,9 @@ class SourceAssetsManager:
     def load_recommend_root(self, root_item: wx.TreeItemId):
         assets_map: dict[wx.TreeItemId, str] = {}
         recommend_data: RecommendData = self.current_recommend()
-        self.recommend_roots.clear()
 
         def load_sub_root(root: wx.TreeItemId, files_t: list[str]):  # 加载一个文件列表到一个节点
-            self.recommend_roots.append(root)
+            self.assets_roots.append(root)
             for fp in files_t:
                 item_t = self.tree_ctrl.AppendItem(root, fp.split("/")[-1])
                 assets_map[item_t] = fp
@@ -264,5 +266,5 @@ class SourceAssetsManager:
             assets_map = self.load_flat_expand_root(root_item, filelist)
         elif way == AssetRootLoadWay.AS_TREE:  # 这个写的爽, 啥也不用做直接开始遍历
             dir_tree = DirTree.load(root_name, filelist)
-            assets_map = dir_tree.full_data(self.tree_ctrl, root_item, self.image_list)
+            assets_map = dir_tree.full_data(self.tree_ctrl, root_item, self.assets_roots)
         return assets_map

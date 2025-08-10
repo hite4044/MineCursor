@@ -121,7 +121,7 @@ class MutilProjectDataDialog(DataDialog):
             DataLineParam("scale", "缩放", DataLineType.FLOAT, scale)
         ]
         super().__init__(parent, "添加指针项目", *self.params)
-        set_multi_size_icon(self, r"assets/icons/add_project.png")
+        self.set_icon("project/add.png")
 
         self.entries[1].set_depend(self.entries[0])
         self.entries[2].set_depend(self.entries[0])

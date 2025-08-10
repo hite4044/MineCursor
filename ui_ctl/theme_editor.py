@@ -52,7 +52,7 @@ class ThemeApplyDialog(DataDialog):
                                        "可能会导致重启后光标大小改变\n"
                                        "除非系统设置里光标大小为1, 而且鼠标指针的大小为32的倍数\n"
                                        "如果鼠标指针太小, 请到系统设置中设置大小后, 再到MineCursor里应用"))
-        set_multi_size_icon(self, r"assets/icons/apply_theme.png")
+        self.set_icon("theme/apply.png")
 
     def get_result(self) -> tuple[SchemesType, CursorLostType, bool]:
         datas = self.datas

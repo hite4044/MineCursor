@@ -76,11 +76,13 @@ class ElementSelectList(ElementSelectListUI):
         self.assets_map: dict[wx.TreeItemId, str] = {}
         self.loaded_roots: list[wx.TreeItemId] = []
         self.dir_image_list: wx.ImageList | None = None
+
         self.load_source()
         self.assets_tree.Bind(wx.EVT_TREE_ITEM_EXPANDING, self.on_expand_root)
         self.assets_tree.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.on_select_item)
         self.assets_tree.Bind(wx.EVT_LEFT_DOWN, self.on_click)
         self.assets_tree.Bind(wx.EVT_RIGHT_DOWN, self.on_menu)
+        self.assets_tree.Expand(self.assets.recommend_roots[0])  # 再次展开触发加载缩略图
 
     def on_menu(self, event: wx.MouseEvent):
         event.Skip()
@@ -105,7 +107,7 @@ class ElementSelectList(ElementSelectListUI):
         self.assets_map = assets_map
         self.zip_file = self.assets.file
 
-    def on_expand_root(self, event: wx.TreeEvent):
+    def on_expand_root(self, event: wx.TreeEvent):  # 展开根节点时, 加载根节点下所有节点的缩略图
         event.Skip()
         root = event.GetItem()
         if root in self.loaded_roots:

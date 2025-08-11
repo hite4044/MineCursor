@@ -1,6 +1,7 @@
 import wx
 
 from lib.data import CursorElement, ProcessStep
+from ui_ctl.cursor_editor_widgets.events import ProjectUpdatedEvent
 
 STEP_NAME_MAP = {
     ProcessStep.CROP: "裁剪",
@@ -14,6 +15,7 @@ class StepEditor(wx.Dialog):
     def __init__(self, parent: wx.Window, element: CursorElement):
         super().__init__(parent, title="步骤编辑")
         self.SetFont(parent.GetFont())
+        self.parent = parent
         self.element = element
         self.element.proc_step = list(element.proc_step)
 
@@ -33,6 +35,8 @@ class StepEditor(wx.Dialog):
             self.element.proc_step[index1]
         self.list.SetString(index1, STEP_NAME_MAP[self.element.proc_step[index1]])
         self.list.SetString(index2, STEP_NAME_MAP[self.element.proc_step[index2]])
+        event = ProjectUpdatedEvent()
+        wx.PostEvent(self.parent, event)
 
     def on_key(self, event: wx.KeyEvent):
         item_selected = self.list.GetSelection() if self.list.GetSelection() != wx.NOT_FOUND else None

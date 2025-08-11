@@ -81,7 +81,8 @@ class ImageElementSourceUI(wx.Panel):
 
         self.path_entry = wx.TextCtrl(self)
         self.chs_file_btn = wx.Button(self, label="选择")
-        self.file_drag_wnd = CenteredText(self, label="拖放图片文件至此", size=(-1, 300))
+        self.load_paste_board = wx.Button(self, label="加载剪切板")
+        self.file_drag_wnd = CenteredText(self, label="拖放图片文件至此", size=(350, 175), style=wx.SIMPLE_BORDER)
         self.name = StringEntry(self, "元素名称")
         self.resize_width = IntEntry(self, "缩放至宽度")
         self.resize_height = IntEntry(self, "缩放至高度")
@@ -93,10 +94,12 @@ class ImageElementSourceUI(wx.Panel):
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         fp_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        fp_sizer.Add(CenteredText(self, label="文件路径: "), 0, wx.EXPAND)
         fp_sizer.Add(self.path_entry, 1, wx.EXPAND)
         fp_sizer.Add(self.chs_file_btn, 0, wx.EXPAND)
+        fp_sizer.Add(self.load_paste_board, 0, wx.EXPAND)
         sizer.Add(fp_sizer, 0, wx.EXPAND)
-        sizer.Add(self.file_drag_wnd)
+        sizer.Add(self.file_drag_wnd, 0, wx.TOP | wx.BOTTOM, 5)
         grid_sizer = wx.FlexGridSizer(4, 2, 5, 5)
         entries = [
             self.name,
@@ -110,6 +113,7 @@ class ImageElementSourceUI(wx.Panel):
         sizer.Add(grid_sizer)
         sizer.Add(self.preview_bitmap)
         self.SetSizer(sizer)
+
 
 
 class ElementSelectListUI(wx.SplitterWindow):

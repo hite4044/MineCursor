@@ -1,7 +1,7 @@
 from os.path import isfile
 
 import wx
-from PIL import Image
+from PIL import Image, ImageGrab
 from PIL.Image import Resampling
 
 from lib.data import CursorElement, AssetSourceInfo, AssetType
@@ -39,6 +39,7 @@ class ImageElementSource(ImageElementSourceUI):
         self.resize_resample.set_value(Resampling.BICUBIC)
         self.path_entry.Bind(wx.EVT_KILL_FOCUS, self.on_path_entry_focus_out)
         self.chs_file_btn.Bind(wx.EVT_BUTTON, self.on_chs_file)
+        self.load_paste_board.Bind(wx.EVT_BUTTON, self.on_load_paste_board)
 
         entries = [
             self.resize_width,
@@ -48,22 +49,27 @@ class ImageElementSource(ImageElementSourceUI):
         for entry in entries:
             entry.Bind(EVT_DATA_UPDATE, self.on_data_change)
 
+    def on_load_paste_board(self, _=None):
+        image = ImageGrab.grabclipboard()
+        if isinstance(image, Image.Image):
+            self.load_image(image)
+
     def on_chs_file(self, _):
         fp = wx.FileSelector("选择一个图像文件",
                              wildcard="图像文件|*.jpg;*.jpeg;*.png;*.gif;*.cur;*.ico;*.bmp;*.jiff|所有文件 (*.*)|*.*",
                              flags=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,
                              parent=self)
         if fp:
-            self.load_image(fp)
+            self.load_local_file(fp)
 
     def on_path_entry_focus_out(self, event: wx.FocusEvent):
         event.Skip()
-        self.load_image(self.path_entry.GetValue())
+        self.load_local_file(self.path_entry.GetValue())
 
     def on_drop(self, filenames: list[str]):
-        self.load_image(filenames[0])
+        self.load_local_file(filenames[0])
 
-    def load_image(self, fp):
+    def load_local_file(self, fp):  # 加载一个本地文件
         if not isfile(fp):
             return False
         try:
@@ -71,14 +77,18 @@ class ImageElementSource(ImageElementSourceUI):
         except Exception as e:
             assert e is not None
             return False
+        return self.load_image(image)
+
+    def load_image(self, image):  # 加载一个Image.Image对象
         self.active_image = image
         self.resize_width.set_value(image.width)
         self.resize_height.set_value(image.height)
+        self.on_data_change()
         return True
 
-    def on_data_change(self, _):
+    def on_data_change(self, _=None):
         if self.active_image is None:
-            if not self.load_image(self.path_entry.GetValue()):
+            if not self.load_local_file(self.path_entry.GetValue()):
                 return
 
         image = self.active_image.copy()

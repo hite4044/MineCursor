@@ -126,6 +126,7 @@ class SourceInfoEditDialog(wx.Dialog):
             if self.image_source.get_element():
                 element = self.image_source.get_element()
                 self.element.source_infos[self.active_index] = element.source_infos[0]
+                self.element.frames[self.active_index] = element.source_infos[0].load_frame()
             else:
                 return
         self.load_source_lc()
@@ -187,6 +188,8 @@ class SourceInfoEditDialog(wx.Dialog):
             self.image_source.resize_width.set_value(source_info.size[0])
             self.image_source.resize_height.set_value(source_info.size[1])
             self.image_source.preview_bitmap.SetBitmap(PilImg2WxImg(source_info.image).ConvertToBitmap())
+            self.image_source.active_image = source_info.image.copy()
+            self.notebook.switch_page(2)
 
     def load_source_lc(self):
         name_map = {
@@ -202,9 +205,9 @@ class SourceInfoEditDialog(wx.Dialog):
             if source_info.type == AssetType.ZIP_FILE:
                 self.source_lc.SetItem(i, 2, source_info.source_path)
             elif source_info.type == AssetType.RECT:
-                self.source_lc.SetItem(i, 2, f"{source_info.color} {source_info.size}")
+                self.source_lc.SetItem(i, 2, f"{source_info.color} {source_info.size[0]}x{source_info.size[1]}")
             elif source_info.type == AssetType.IMAGE:
-                self.source_lc.SetItem(i, 2, f"{source_info.size[0]}x{source_info.size[1]}")
+                self.source_lc.SetItem(i, 2, f"Image: {source_info.size[0]}x{source_info.size[1]}")
 
         self.source_lc.Unbind(wx.EVT_LIST_ITEM_SELECTED)
         self.source_lc.Select(item)

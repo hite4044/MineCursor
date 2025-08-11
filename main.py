@@ -1,6 +1,8 @@
-import wx
 import faulthandler
 
+faulthandler.enable()
+
+import wx
 from ui_ctl.theme_editor import ThemeEditor
 
 if __name__ == "__main__":

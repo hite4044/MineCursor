@@ -10,7 +10,7 @@ class RateEditor(wx.Frame):
         super().__init__(parent, title="帧率编辑", size=(320, 670), style=wx.DEFAULT_FRAME_STYLE)
         assert project.frame_count is not None
         self.SetFont(parent.GetFont())
-        set_multi_size_icon(self, "project/rate_editor.png")
+        set_multi_size_icon(self, "assets/icons/project/rate_editor.png")
 
         self.project = project
         self.rates = []

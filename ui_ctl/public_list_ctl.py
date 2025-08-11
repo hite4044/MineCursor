@@ -85,7 +85,7 @@ class ProjectDataDialog(DataDialog):
             DataLineParam("size_width", "画布宽", DataLineType.INT, size[0]),
             DataLineParam("size_height", "画布高", DataLineType.INT, size[1]),
         ]
-        super().__init__(parent, "添加指针项目",
+        super().__init__(parent, "添加指针项目" if is_create else "编辑指针项目信息",
                          DataLineParam("name", "项目名称", DataLineType.STRING, name if name else ""),
                          DataLineParam("external_name", "展示名称", DataLineType.STRING,
                                        external_name if external_name else ""),
@@ -120,7 +120,7 @@ class MutilProjectDataDialog(DataDialog):
             DataLineParam("edit_scale", "编辑缩放", DataLineType.BOOL, False),
             DataLineParam("scale", "缩放", DataLineType.FLOAT, scale)
         ]
-        super().__init__(parent, "添加指针项目", *self.params)
+        super().__init__(parent, "编辑指针项目信息", *self.params)
         self.set_icon("project/add.png")
 
         self.entries[1].set_depend(self.entries[0])

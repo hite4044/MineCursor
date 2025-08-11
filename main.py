@@ -2,6 +2,10 @@ import faulthandler
 
 faulthandler.enable()
 
+import ctypes
+
+ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("MineCursor")
+
 import wx
 from ui_ctl.theme_editor import ThemeEditor
 

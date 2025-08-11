@@ -10,7 +10,7 @@ from widget.win_icon import set_multi_size_icon
 from ui_ctl.cursor_editor_widgets.element_canvas import ElementCanvas
 from ui_ctl.cursor_editor_widgets.element_list_ctrl import ElementListCtrl
 from ui_ctl.cursor_editor_widgets.events import EVT_PROJECT_UPDATED, EVT_ELEMENT_SELECTED, EVT_SCALE_UPDATED, \
-    ElementSelectedEvent, ScaleUpdatedEvent
+    ElementSelectedEvent, ScaleUpdatedEvent, EVT_FRAME_COUNTER_CHANGE, EVT_ANIMATION_MODE_CHANGE
 from ui_ctl.cursor_editor_widgets.info_editor import InfoEditor
 
 
@@ -30,6 +30,8 @@ class CursorEditor(CursorEditorUI):
 
         self.canvas.Bind(wx.EVT_MOTION, self.on_mouse_move)
         self.canvas.Bind(wx.EVT_LEAVE_WINDOW, self.on_mouse_leave)
+        self.canvas.Bind(EVT_FRAME_COUNTER_CHANGE, self.on_frame_counter_change)
+        self.Bind(EVT_ANIMATION_MODE_CHANGE, self.on_animation_mode_change)
         self.Bind(EVT_ELEMENT_SELECTED, self.on_element_selected)
         self.Bind(EVT_PROJECT_UPDATED, self.on_project_updated)
         self.Bind(EVT_SCALE_UPDATED, self.on_scale_updated)
@@ -40,6 +42,14 @@ class CursorEditor(CursorEditorUI):
     def on_close(event: wx.CloseEvent):
         event.Skip()
         theme_manager.save()
+
+    def on_frame_counter_change(self, event):
+        if self.project.is_ani_cursor:
+            self.info_editor.proj_editor.on_frame_counter_change(event)
+
+    def on_animation_mode_change(self, event):
+        if self.project.is_ani_cursor:
+            self.canvas.on_animation_mode_change(event)
 
     def on_mouse_move(self, event: wx.MouseEvent):
         event.Skip()

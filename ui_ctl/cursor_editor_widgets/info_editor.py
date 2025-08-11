@@ -8,11 +8,13 @@ from ui.cursor_editor import InfoEditorUI, ElementInfoEditorUI, ProjectInfoEdito
 from ui_ctl.cursor_editor_widgets.rate_editor import RateEditor
 from ui_ctl.cursor_editor_widgets.step_editor import StepEditor
 from widget.data_entry import DataEntryEvent, DataEntry, EVT_DATA_UPDATE, BoolEntry
-from ui_ctl.cursor_editor_widgets.events import ProjectUpdatedEvent
+from ui_ctl.cursor_editor_widgets.events import ProjectUpdatedEvent, FrameCounterChangeEvent, AnimationModeChangeEvent, \
+    AnimationMode
 
 
 class InfoEditor(InfoEditorUI):
     element_editor: 'ElementInfoEditor'
+    proj_editor: 'ProjectInfoEditor'
 
     def __init__(self, parent: wx.Window, project: CursorProject):
         super().__init__(parent, project)
@@ -154,6 +156,7 @@ class ElementInfoEditor(ElementInfoEditorUI):
 class ProjectInfoEditor(ProjectInfoEditorUI):
     def __init__(self, parent: wx.Window, project: CursorProject):
         super().__init__(parent, project)
+        self.updating_slider = False
         create_cfg_bind(self.name, project, "name", process_none_string=True)
         create_cfg_bind(self.external_name, project, "external_name", process_none_string=True)
         create_cfg_bind(self.kind, project, "kind")
@@ -175,7 +178,34 @@ class ProjectInfoEditor(ProjectInfoEditorUI):
 
         self.resample_type.Bind(wx.EVT_CHOICE, on_choice)
 
+        self.frame_count.Bind(EVT_DATA_UPDATE, self.on_frame_count_change)
+        self.ani_mode_reset_btn.Bind(wx.EVT_BUTTON, self.on_reset_ani_mode)
+        self.frame_counter_slider.SetMax(self.project.frame_count)
+        self.frame_counter_slider.Bind(wx.EVT_SLIDER, self.on_slider_slide)
+
         self.open_rate_editor_btn.Bind(wx.EVT_BUTTON, self.open_rate_editor)
+
+    def on_reset_ani_mode(self, _):
+        event = AnimationModeChangeEvent(AnimationMode.NORMAL)
+        wx.PostEvent(self, event)
+
+    def on_slider_slide(self, _):
+        if self.updating_slider:
+            return
+        frame_index = self.frame_counter_slider.GetValue()
+        event = AnimationModeChangeEvent(AnimationMode.MANUAL, frame_index)
+        wx.PostEvent(self, event)
+        self.frame_counter_text.SetLabel(str(frame_index))
+
+    def on_frame_counter_change(self, event: FrameCounterChangeEvent):
+        self.frame_counter_text.SetLabel(str(event.frame_counter))
+        self.updating_slider = True
+        self.frame_counter_slider.SetValue(event.frame_counter)
+        self.updating_slider = False
+
+    def on_frame_count_change(self, event: DataEntryEvent):
+        event.Skip()
+        self.frame_counter_slider.SetMax(event.data)
 
     def open_rate_editor(self, _):
         if not self.project.is_ani_cursor:

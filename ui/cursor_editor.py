@@ -2,10 +2,12 @@ from typing import cast
 
 import wx
 from PIL.Image import Resampling
+from wx.core import EVT_SLIDER
 
 from lib.cursor.setter import CURSOR_KIND_NAME_OFFICIAL
 from lib.data import CursorProject, ReverseWay
 from lib.ui_interface import ui_class
+from ui_ctl.cursor_editor_widgets.events import AnimationModeChangeEvent, AnimationMode
 from widget.center_text import CenteredText
 from widget.data_entry import IntEntry, FloatEntry, DataEntry, StringEntry, BoolEntry, EnumEntry
 from widget.font import ft
@@ -314,7 +316,15 @@ class ProjectInfoEditorUI(wx.Panel):
 
         self.open_rate_editor_btn = wx.Button(self, label="编辑帧间隔")
 
-        grid_sizer = wx.FlexGridSizer(9, 2, 5, 5)
+        self.frame_counter_text = CenteredText(self, label="0", x_center=False, y_center=False)
+        self.ani_mode_reset_btn = wx.Button(self, label="R")
+        self.frame_counter_slider = wx.Slider(self)
+        self.ani_mode_reset_btn.SetMaxSize((int(str(self.ani_mode_reset_btn.GetTextExtent("R")[0])) + 9, -1))
+        cnt_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        cnt_sizer.Add(self.frame_counter_text, 1, wx.EXPAND)
+        cnt_sizer.Add(self.ani_mode_reset_btn, 0)
+
+        grid_sizer = wx.FlexGridSizer(10, 2, 5, 5)
         grid_sizer.AddGrowableCol(1, 1)
         widget_list = [
             self.name,
@@ -325,7 +335,8 @@ class ProjectInfoEditorUI(wx.Panel):
             self.frame_count,
             self.ani_rate,
             (CenteredText(self, label="缩放方法: "), self.resample_type),
-            (wx.Window(self), self.open_rate_editor_btn)
+            (wx.Window(self), self.open_rate_editor_btn),
+            (cnt_sizer, self.frame_counter_slider)
         ]
         for item in widget_list:
             if isinstance(item, tuple):
@@ -335,6 +346,7 @@ class ProjectInfoEditorUI(wx.Panel):
                 grid_sizer.Add(item.label, 0, wx.EXPAND)
                 grid_sizer.Add(item.entry, 1, wx.EXPAND)
         sizer.Add(grid_sizer, 1, wx.EXPAND | wx.ALL, 5)
+
         self.SetSizer(sizer)
 
         self.Bind(wx.EVT_COLLAPSIBLEPANE_CHANGED, self.on_collapse)

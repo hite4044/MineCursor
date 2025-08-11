@@ -12,7 +12,8 @@ from lib.image_pil2wx import PilImg2WxImg
 from lib.log import logger
 from lib.render import render_project_frame
 from ui.cursor_editor import ElementCanvasUI
-from ui_ctl.cursor_editor_widgets.events import ElementSelectedEvent, ScaleUpdatedEvent, ProjectUpdatedEvent
+from ui_ctl.cursor_editor_widgets.events import ElementSelectedEvent, ScaleUpdatedEvent, ProjectUpdatedEvent, \
+    AnimationModeChangeEvent, AnimationMode, FrameCounterChangeEvent
 
 EC_HOTSPOT_LEN = 5
 EC_SCALE_LEVEL = [
@@ -79,6 +80,19 @@ class ElementCanvas(ElementCanvasUI):
 
         if project.is_ani_cursor:
             self.animation_thread.start()
+
+    def on_animation_mode_change(self, event: AnimationModeChangeEvent):
+        if event.mode == AnimationMode.NORMAL:
+            if not self.animation_thread.is_alive():
+                self.animation_thread = threading.Thread(target=self.frame_thread, daemon=True)
+                self.animation_stop_flag.clear()
+                self.animation_thread.start()
+        elif event.mode == AnimationMode.MANUAL:
+            if self.animation_thread.is_alive():
+                self.animation_stop_flag.set()
+                self.animation_thread.join()
+            self.frame_index = event.frame_index
+            self.Refresh()
 
     def on_destroy(self, event: wx.WindowDestroyEvent):
         event.Skip()
@@ -243,6 +257,8 @@ class ElementCanvas(ElementCanvasUI):
         self.frame_index += 1
         if self.frame_index >= self.project.frame_count:
             self.frame_index = 0
+        event = FrameCounterChangeEvent(self.frame_index)
+        wx.PostEvent(self, event)
 
     def on_paint(self, _):
         size = self.GetClientSize()

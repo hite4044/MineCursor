@@ -496,11 +496,12 @@ class AssetSources(Enum):
     MINECRAFT_25W32A = AssetSource("Minecraft 25w32a (1.21.9)",
                                    "minecraft-textures-25w32a",
                                    r"assets/sources/25w32a/textures.zip")
+
     DEFAULT = MINECRAFT_25W32A
 
     @staticmethod
     def get_source_by_id(target_id: str) -> AssetSource | None:
-        for source_member in AssetSources.__members__.values():
+        for source_member in AssetSources.members().values():
             source = source_member.value
             assert isinstance(source, AssetSource)
             if target_id == source.id:
@@ -508,11 +509,25 @@ class AssetSources(Enum):
         raise ValueError(f"未找到id为 [{target_id}] 的素材源")
 
     @staticmethod
+    def members():
+        mem_iter = iter(AssetSources.__members__.items())
+        result = {}
+        while True:
+            try:
+                name, source = next(mem_iter)
+            except StopIteration:
+                break
+            if name == "DEFAULT":
+                continue
+            result[name] = source
+        return result
+
+    @staticmethod
     def get_sources() -> list[AssetSource]:
-        members = AssetSources.__members__.copy()
-        members.pop("DEFAULT")
+        members = AssetSources.members()
         sources = list(member.value for member in members.values())
         return sources
+
 
 
 @dataclass

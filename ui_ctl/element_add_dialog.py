@@ -37,9 +37,10 @@ class ElementAddDialog(ElementAddDialogUI):
         super().__init__(parent)
         self.element: CursorElement | None = None
         source: AssetSource
-        for source in AssetSources.get_sources():
+        for nam, source_enum in AssetSources.members().items():
+            source = source_enum.value
             selector = ui_class(ElementSelectListUI)(self.sources_notebook, source, cursor_kind)
-            self.sources_notebook.AddPage(selector, source.name)
+            self.sources_notebook.AddPage(selector, source.name, select=(source_enum == AssetSources.DEFAULT))
         self.rect_element_source = RectElementSource(self.sources_notebook)
         self.image_element_source = ImageElementSource(self.sources_notebook)
         self.sources_notebook.AddPage(self.rect_element_source, "矩形")

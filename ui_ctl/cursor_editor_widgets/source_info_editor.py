@@ -34,7 +34,7 @@ class SourceInfoEditDialog(wx.Dialog):
         self.mc_source = C_ElementSelectList(self.notebook, AssetSources.DEFAULT.value, proj_kind)
         self.rect_source = RectElementSource(self.notebook)
         self.image_source = ImageElementSource(self.notebook)
-        self.apply_btn = wx.Button(right_panel, label="应用")
+        self.apply_btn = wx.Button(right_panel, label="应用到所选源信息")
 
         self.notebook.add_page(self.mc_source)
         self.notebook.add_page(self.rect_source)

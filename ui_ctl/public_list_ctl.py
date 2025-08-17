@@ -17,7 +17,6 @@ from ui_ctl.cursor_editor import CursorEditor
 from ui_ctl.cursor_editor_widgets.element_list_ctrl import ElementListCtrl
 from widget.data_dialog import DataLineParam, DataDialog, DataLineType
 from widget.ect_menu import EtcMenu
-from widget.win_icon import set_multi_size_icon
 
 mcEVT_THEME_SELECTED = wx.NewEventType()
 EVT_THEME_SELECTED = wx.PyEventBinder(mcEVT_THEME_SELECTED)

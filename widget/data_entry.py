@@ -65,12 +65,12 @@ class DataEntry(wx.Panel):
 
         if use_sizer:
             self.sizer = wx.BoxSizer(wx.HORIZONTAL)
-            self.sizer.Add(self.label, 0, wx.ALIGN_CENTER_VERTICAL)
+            self.sizer.Add(self.label, 0, wx.EXPAND)
             self.sizer.AddSpacer(8)
             self.sizer.Add(self.entry, 1, wx.EXPAND)
             self.SetSizer(self.sizer)
 
-        self.label.SetMinSize((-1, 28))
+        # self.label.SetMinSize((-1, 28))
         self.entry.SetMinSize((-1, 28))
 
     def Bind(self, event, handler, *args):

@@ -8,28 +8,34 @@ class CenteredText(wx.Window):
             self,
             parent,
             id_=wx.ID_ANY,
-            label=wx.EmptyString,
+            label="",
             pos=wx.DefaultPosition,
             size=wx.DefaultSize,
             style=0,
-            name=wx.StaticTextNameStr,
+            name="MineCursor.CenteredText",
             x_center=True,
             y_center=True,
     ):
         super().__init__(parent, id_, pos, size, style, name)
-        self.SetLabel(label)
+        size = self.SetLabel(label)
+        self.SetSize(size)
+        self.SetInitialSize(size)
         self.Bind(wx.EVT_PAINT, self.on_paint)
         self.x_center = x_center
         self.y_center = y_center
 
-    def SetLabel(self, label):
+    def SetLabel(self, label) -> wx.Size:
         super().SetLabel(label)
         dc = wx.ClientDC(self)
         size = wx.Size(*(dc.GetFullMultiLineTextExtent(label, self.GetFont())[:2]))
-        self.SetSize(size)
-        self.CacheBestSize(size)
         self.SetMinSize(size)
+        self.CacheBestSize(size)
+        self.SetVirtualSize(size)
         self.Refresh()
+        if self.GetSizer():
+            self.GetSizer().Layout()
+        return size
+
 
     def on_paint(self, _):
         dc = wx.PaintDC(self)

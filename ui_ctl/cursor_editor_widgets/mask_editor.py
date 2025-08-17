@@ -5,6 +5,7 @@ from PIL import Image, ImageOps
 from PIL import ImageDraw
 
 from lib.image_pil2wx import PilImg2WxImg
+from widget.center_text import CenteredText
 from widget.win_icon import set_multi_size_icon
 
 mcEVT_SCALE_UPDATED = wx.NewEventType()
@@ -54,13 +55,16 @@ class MaskEditor(wx.Dialog):
         self.bar.SetStatusText("缩放: 800%", ID_SCALE)
         self.reset = wx.Button(self.editor, label="重置")
         self.show_grid = wx.CheckBox(self.editor, label="显示网格", style=wx.CHK_3STATE | wx.CHK_ALLOW_3RD_STATE_FOR_USER)
+        self.color_value_label = CenteredText(self.editor, label="255")
+        self.color_slider = wx.Slider(self.editor, value=0xFF, maxValue=0xFF)
         self.ok = wx.Button(self.editor, label="确定")
         self.cancel = wx.Button(self.editor, label="取消")
         self.show_grid.Set3StateValue(wx.CHK_UNDETERMINED)
 
         btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
         btn_sizer.Add(self.reset, 0, wx.EXPAND)
-        btn_sizer.AddStretchSpacer()
+        btn_sizer.Add(self.color_value_label, 0, wx.EXPAND)
+        btn_sizer.Add(self.color_slider, 1, wx.EXPAND)
         btn_sizer.Add(self.show_grid, 0, wx.EXPAND)
         btn_sizer.AddSpacer(5)
         btn_sizer.Add(self.ok, 0, wx.EXPAND)
@@ -84,6 +88,12 @@ class MaskEditor(wx.Dialog):
 
         self.b_canvas = mask.size
         self.Bind(wx.EVT_CLOSE, self.on_close)
+        self.color_slider.Bind(wx.EVT_SLIDER, self.on_set_draw_color)
+
+    def on_set_draw_color(self, _):
+        value = self.color_slider.GetValue()
+        self.editor.draw_color = value
+        self.color_value_label.SetLabel(str(value))
 
     def on_switch_show_grid(self, _):
         state = self.show_grid.Get3StateValue()
@@ -220,6 +230,7 @@ class MaskEditorPanel(wx.Window):
         self.draw_or_clear = True
         self.last_draw_position: tuple[int, int] | None = None
         self.draw_color: int = 0xFF
+        self.current_color: int = 0xFF
         self.drag_offset: tuple[int, int] | None = None
         self.scale = 8.0
         self.scale_index = 21
@@ -271,12 +282,12 @@ class MaskEditorPanel(wx.Window):
             else:
                 self.is_drawing = True
                 self.draw_or_clear = True
-                self.draw_color = 0xFF
+                self.current_color = self.draw_color
                 event.Dragging = lambda: True
         elif event.RightDown() and self.translate_local_position(event.GetX(), event.GetY()):
             self.is_drawing = True
             self.draw_or_clear = False
-            self.draw_color = 0x00
+            self.current_color = 0x00
             event.Dragging = lambda: True
         if event.Dragging():
             if self.drag_offset:
@@ -293,7 +304,7 @@ class MaskEditorPanel(wx.Window):
                 if cvs_pos and cvs_pos != self.last_draw_position:
                     if self.last_draw_position is None:
                         self.last_draw_position = cvs_pos
-                    self.mask_draw.line((self.last_draw_position, cvs_pos), fill=self.draw_color)
+                    self.mask_draw.line((self.last_draw_position, cvs_pos), fill=self.current_color)
                     self.last_draw_position = cvs_pos
                     self.clear_cache()
         elif event.LeftUp() or event.RightUp():

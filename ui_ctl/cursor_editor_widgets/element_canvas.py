@@ -1,5 +1,4 @@
-import threading
-import time
+from time import perf_counter
 from typing import cast
 from typing import cast as type_cast
 
@@ -15,6 +14,48 @@ from lib.render import render_project_frame
 from ui.cursor_editor import ElementCanvasUI
 from ui_ctl.cursor_editor_widgets.events import ElementSelectedEvent, ScaleUpdatedEvent, ProjectUpdatedEvent, \
     AnimationModeChangeEvent, AnimationMode, FrameCounterChangeEvent
+
+
+class AnimationManager:
+    def __init__(self, parent: wx.Window):
+        self.timer = wx.Timer(parent)
+        self.frame_time_cbk = lambda: 0.0
+        self.frame_call_cbk = lambda: None
+        self.last_frame_time = 1 / 60
+        self.last_update = perf_counter()
+
+        self.offsets_sum = 0
+        self.offsets_count = 0
+
+        parent.Bind(wx.EVT_TIMER, self.on_evt_timer, self.timer)
+
+    def is_alive(self):
+        return self.timer.IsRunning()
+
+    def on_evt_timer(self, _):
+        self.frame_call_cbk()
+        frame_time = self.frame_time_cbk()
+        self.timer.StartOnce(int(max(0.0, frame_time - self.get_offset()) * 1000))
+        self.last_frame_time = frame_time
+
+    def get_offset(self):
+        crt_time = perf_counter()
+        if self.offsets_count > 4:
+            self.offsets_sum /= 2
+            self.offsets_count /= 2
+
+        self.offsets_sum += (crt_time - self.last_update) - self.last_frame_time
+        self.offsets_count += 1
+        self.last_update = crt_time
+        return self.offsets_sum / self.offsets_count
+
+
+    def start(self):
+        self.on_evt_timer(None)
+
+    def stop(self):
+        if self.timer.IsRunning():
+            self.timer.Stop()
 
 
 EC_HOTSPOT_LEN = 5
@@ -69,8 +110,8 @@ class ElementCanvas(ElementCanvasUI):
         self.last_index = 0
         self.drag_offset: tuple[int, int] | None = None
         self.cvs_drag_offset: tuple[int, int] | None = None
-        self.animation_thread = threading.Thread(target=self.frame_thread, daemon=True)
-        self.animation_stop_flag = threading.Event()
+        self.animation_manager = AnimationManager(self)
+        self.fps_monitor = FPSMonitor()
 
         self.SetDoubleBuffered(True)
 
@@ -81,28 +122,26 @@ class ElementCanvas(ElementCanvasUI):
         self.Bind(wx.EVT_MOUSEWHEEL, self.on_scroll)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.on_destroy)
 
+        self.animation_manager.frame_call_cbk = self.frame_call
+        self.animation_manager.frame_time_cbk = self.get_frame_time
         if project.is_ani_cursor:
-            self.animation_thread.start()
+            self.animation_manager.start()
 
     def on_animation_mode_change(self, event: AnimationModeChangeEvent):
         self.animation_mode = event.mode
         if event.mode == AnimationMode.NORMAL:
-            if not self.animation_thread.is_alive():
-                self.animation_thread = threading.Thread(target=self.frame_thread, daemon=True)
-                self.animation_stop_flag.clear()
-                self.animation_thread.start()
+            if not self.animation_manager.is_alive():
+                self.animation_manager.start()
         elif event.mode == AnimationMode.MANUAL:
-            if self.animation_thread.is_alive():
-                self.animation_stop_flag.set()
-                self.animation_thread.join()
+            if self.animation_manager.is_alive():
+                self.animation_manager.stop()
             self.frame_index = event.frame_index
             self.Refresh()
 
     def on_destroy(self, event: wx.WindowDestroyEvent):
         event.Skip()
-        if self.animation_thread.is_alive():
-            self.animation_stop_flag.set()
-            self.animation_thread.join()
+        if self.animation_manager.is_alive():
+            self.animation_manager.stop()
 
     def set_element(self, element: CursorElement | None):
         self.active_element = element
@@ -114,13 +153,11 @@ class ElementCanvas(ElementCanvasUI):
             self.active_element = None
         self.Refresh()
         if self.project.is_ani_cursor:
-            if not self.animation_thread.is_alive() and self.animation_mode == AnimationMode.NORMAL:
-                self.animation_thread = threading.Thread(target=self.frame_thread, daemon=True)
-                self.animation_stop_flag.clear()
-                self.animation_thread.start()
+            if not self.animation_manager.is_alive() and self.animation_mode == AnimationMode.NORMAL:
+                self.animation_manager.start()
         else:
-            if self.animation_thread.is_alive():
-                self.animation_stop_flag.set()
+            if self.animation_manager.is_alive():
+                self.animation_manager.stop()
             self.frame_index = 0
 
     def clear_frame_cache(self):
@@ -238,19 +275,10 @@ class ElementCanvas(ElementCanvasUI):
     def on_size(self, _):
         self.Refresh()
 
-    def frame_thread(self):
-        monitor = FPSMonitor()
-        last_update = time.perf_counter()
-        frame_time = self.get_frame_time()
-        while not self.animation_stop_flag.is_set():
-            if time.perf_counter() - last_update > frame_time:
-                proc_timer = time.perf_counter()
-                self.update_frame()
-                self.frame_add()
-                monitor.count()
-                frame_time = self.get_frame_time()
-                last_update = time.perf_counter() - max(0.0, time.perf_counter() - proc_timer)
-            time.sleep(0.01)
+    def frame_call(self):
+        self.update_frame()
+        self.frame_add()
+        self.fps_monitor.count()
 
     def update_frame(self):
         try:

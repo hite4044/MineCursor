@@ -160,7 +160,7 @@ class ElementSelectList(ElementSelectListUI):
             try:
                 paths.sort(key=lambda v: int(re.findall(NUM_PATTER, v.split('.')[0])[0]))
             except IndexError:
-                print(paths)
+                logger.error(f"找不到数字: {paths}")
                 raise
             children: list[wx.TreeItemId] = [mapping[path] for path in paths]
 

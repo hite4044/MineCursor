@@ -54,6 +54,7 @@ class MaskEditor(wx.Dialog):
         self.bar.SetStatusText("", ID_NONE)
         self.bar.SetStatusText("缩放: 800%", ID_SCALE)
         self.reset = wx.Button(self.editor, label="重置")
+        self.clear_btn = wx.Button(self.editor, label="清空")
         self.show_grid = wx.CheckBox(self.editor, label="显示网格", style=wx.CHK_3STATE | wx.CHK_ALLOW_3RD_STATE_FOR_USER)
         self.color_value_label = CenteredText(self.editor, label="255")
         self.color_slider = wx.Slider(self.editor, value=0xFF, maxValue=0xFF)
@@ -63,8 +64,12 @@ class MaskEditor(wx.Dialog):
 
         btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
         btn_sizer.Add(self.reset, 0, wx.EXPAND)
+        btn_sizer.AddSpacer(5)
+        btn_sizer.Add(self.clear_btn, 0, wx.EXPAND)
+        btn_sizer.AddSpacer(5)
         btn_sizer.Add(self.color_value_label, 0, wx.EXPAND)
         btn_sizer.Add(self.color_slider, 1, wx.EXPAND)
+        btn_sizer.AddSpacer(5)
         btn_sizer.Add(self.show_grid, 0, wx.EXPAND)
         btn_sizer.AddSpacer(5)
         btn_sizer.Add(self.ok, 0, wx.EXPAND)
@@ -80,15 +85,24 @@ class MaskEditor(wx.Dialog):
         self.SetSizer(sizer)
 
         self.reset.Bind(wx.EVT_BUTTON, self.on_reset)
+        self.clear_btn.Bind(wx.EVT_BUTTON, self.on_clear)
         self.show_grid.Bind(wx.EVT_CHECKBOX, self.on_switch_show_grid)
         self.ok.Bind(wx.EVT_BUTTON, self.on_ok)
         self.cancel.Bind(wx.EVT_BUTTON, self.on_cancel)
+        self.color_slider.Bind(wx.EVT_SLIDER, self.on_set_draw_color)
         self.Bind(EVT_POSITION_UPDATED, self.on_position_updated)
         self.Bind(EVT_SCALE_UPDATED, self.on_scale_updated)
 
         self.b_canvas = mask.size
         self.Bind(wx.EVT_CLOSE, self.on_close)
-        self.color_slider.Bind(wx.EVT_SLIDER, self.on_set_draw_color)
+
+    def on_clear(self, _):
+        ret = wx.MessageBox("确定要清空吗？", "清空", wx.YES_NO)
+        if ret == wx.YES:
+             self.editor.mask = Image.new("L", self.editor.mask.size, 0)
+             self.editor.mask_draw = ImageDraw.ImageDraw(self.editor.mask)
+             self.editor.clear_cache()
+             self.editor.Refresh()
 
     def on_set_draw_color(self, _):
         value = self.color_slider.GetValue()

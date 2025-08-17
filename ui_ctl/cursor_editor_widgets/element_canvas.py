@@ -10,10 +10,12 @@ from PIL.Image import Resampling
 from lib.data import CursorProject, CursorElement, Position
 from lib.image_pil2wx import PilImg2WxImg
 from lib.log import logger
+from lib.perf import FPSMonitor
 from lib.render import render_project_frame
 from ui.cursor_editor import ElementCanvasUI
 from ui_ctl.cursor_editor_widgets.events import ElementSelectedEvent, ScaleUpdatedEvent, ProjectUpdatedEvent, \
     AnimationModeChangeEvent, AnimationMode, FrameCounterChangeEvent
+
 
 EC_HOTSPOT_LEN = 5
 EC_SCALE_LEVEL = [
@@ -62,7 +64,7 @@ class ElementCanvas(ElementCanvasUI):
         self.y_offset: float = 0.5
         self.frame_index = -1
         self.frames: dict[int, Image.Image] = {}
-        self.scaled_frame_cache: dict[int, wx.Bitmap] = {}  # 在不同缩放值下的DC内容缓存
+        self.scaled_frame_cache: dict[int, wx.GraphicsBitmap] = {}  # 在不同缩放值下的DC内容缓存
         self.last_point = None
         self.last_index = 0
         self.drag_offset: tuple[int, int] | None = None
@@ -200,7 +202,7 @@ class ElementCanvas(ElementCanvasUI):
                 self.x_offset = max(0 - canvas_pad_x, min(1 + canvas_pad_x, self.x_offset))
                 self.y_offset = max(0 - canvas_pad_y, min(1 + canvas_pad_y, self.y_offset))
                 logger.debug(f"画布偏移更新 -> {self.x_offset}, {self.y_offset}")
-            elif self.active_element: # 启动元素的拖动
+            elif self.active_element:  # 启动元素的拖动
                 ele_pos = self.active_element.position
                 self.drag_offset = (pos[0] - ele_pos.x, pos[1] - ele_pos.y)
                 logger.debug(f"元素拖动开始 -> {self.active_element}")
@@ -237,34 +239,46 @@ class ElementCanvas(ElementCanvasUI):
         self.Refresh()
 
     def frame_thread(self):
+        monitor = FPSMonitor()
+        last_update = time.perf_counter()
+        frame_time = self.get_frame_time()
         while not self.animation_stop_flag.is_set():
-            timer = time.perf_counter()
-            self.update_frame()
-            if self.project.ani_rates:
-                try:
-                    wait_time = self.project.ani_rates[self.frame_index] / 60
-                except IndexError:
-                    wait_time = self.project.ani_rate / 60
-            else:
-                wait_time = self.project.ani_rate / 60
-            self.animation_stop_flag.wait(timeout=max(0.0, wait_time - (time.perf_counter() - timer)))
+            if time.perf_counter() - last_update > frame_time:
+                proc_timer = time.perf_counter()
+                self.update_frame()
+                self.frame_add()
+                monitor.count()
+                frame_time = self.get_frame_time()
+                last_update = time.perf_counter() - max(0.0, time.perf_counter() - proc_timer)
+            time.sleep(0.01)
 
     def update_frame(self):
-        if self.frame_index >= self.project.frame_count:
-            self.frame_index = 0
         try:
-            self.Refresh()
+            wx.CallAfter(self.Refresh)
         except RuntimeError:
             return
-        self.frame_index += 1
-        if self.frame_index >= self.project.frame_count:
-            self.frame_index = 0
+
+    def get_frame_time(self):
+        if self.project.ani_rates:
+            try:
+                return self.project.ani_rates[self.frame_index] / 60
+            except IndexError:
+                return self.project.ani_rate / 60
+        else:
+            return self.project.ani_rate / 60
+
+    def frame_add(self, frame_delta: int = 1):
+        if self.frame_index + frame_delta >= self.project.frame_count:
+            self.frame_index = frame_delta - ((self.project.frame_count - 1) - self.frame_index)
+        else:
+            self.frame_index += frame_delta
         event = FrameCounterChangeEvent(self.frame_index)
         wx.PostEvent(self, event)
 
     def on_paint(self, _):
         size = self.GetClientSize()
         dc = wx.PaintDC(self)
+        gc = wx.GraphicsContext.Create(dc)
 
         # 获取缩放后的帧
         if self.frame_index not in self.frames or self.frame_index not in self.scaled_frame_cache:
@@ -276,40 +290,44 @@ class ElementCanvas(ElementCanvasUI):
                 resample=Resampling.BOX
             )
             image = PilImg2WxImg(current_frame)
-            bitmap = image.ConvertToBitmap()
+            bitmap = gc.CreateBitmap(image.ConvertToBitmap())
             self.scaled_frame_cache[self.frame_index] = bitmap
         else:
-            bitmap = wx.Bitmap(self.scaled_frame_cache[self.frame_index])
+            bitmap = self.scaled_frame_cache[self.frame_index]
 
         # 计算画布绘制坐标 + 绘制 + 绘制画布边框
-        cvs_x = int(size.width * self.x_offset - bitmap.GetWidth() / 2)
-        cvs_y = int(size.height * self.y_offset - bitmap.GetHeight() / 2)
-        dc.DrawBitmap(bitmap, cvs_x, cvs_y)
-        dc.DrawLineList([
-            (cvs_x, cvs_y, cvs_x, cvs_y + bitmap.GetHeight()),
-            (cvs_x, cvs_y + bitmap.GetHeight(), cvs_x + bitmap.GetWidth(), cvs_y + bitmap.GetHeight()),
-            (cvs_x + bitmap.GetWidth(), cvs_y + bitmap.GetHeight(), cvs_x + bitmap.GetWidth(), cvs_y),
-            (cvs_x + bitmap.GetWidth(), cvs_y, cvs_x, cvs_y),
+        width, height = self.get_canvas_size()
+        cvs_x = int(size.width * self.x_offset - width / 2)
+        cvs_y = int(size.height * self.y_offset - height / 2)
+        gc.DrawBitmap(bitmap, cvs_x, cvs_y, width, height)
+        gc.DrawLines([
+            wx.Point2D(cvs_x, cvs_y),
+            wx.Point2D(cvs_x, cvs_y + height),
+            wx.Point2D(cvs_x + width, cvs_y + height),
+            wx.Point2D(cvs_x + width, cvs_y),
         ])
 
         # 绘制热点 (十字)
         center = Position(*self.translate_canvas_position(*self.project.center_pos))
-        line_hor = (center.x - EC_HOTSPOT_LEN, center.y, center.x + EC_HOTSPOT_LEN + 1, center.y)
-        line_ver = (center.x, center.y - EC_HOTSPOT_LEN, center.x, center.y + EC_HOTSPOT_LEN + 1)
-        dc.SetPen(wx.Pen(wx.RED))
-        dc.DrawLine(*line_hor)
-        dc.DrawLine(*line_ver)
+        line_hor = [wx.Point2D(center.x - EC_HOTSPOT_LEN, center.y),
+                    wx.Point2D(center.x + EC_HOTSPOT_LEN + 1, center.y)]
+        line_ver = [wx.Point2D(center.x, center.y - EC_HOTSPOT_LEN),
+                    wx.Point2D(center.x, center.y + EC_HOTSPOT_LEN + 1)]
+        gc.SetPen(gc.CreatePen(wx.Pen(wx.RED)))
+        gc.DrawLines(line_hor)
+        gc.DrawLines(line_ver)
 
         # 绘制元素外框
         if self.active_element:
-            dc.SetPen(wx.Pen(wx.RED))
             raw_rect = self.active_element.final_rect
             corner1 = self.translate_canvas_position(raw_rect[0], raw_rect[1])
             corner2 = self.translate_canvas_position(raw_rect[0] + raw_rect[2], raw_rect[1] + raw_rect[3])
-            dc.DrawLine(corner1.x, corner1.y, corner2.x, corner1.y)
-            dc.DrawLine(corner2.x, corner1.y, corner2.x, corner2.y)
-            dc.DrawLine(corner2.x, corner2.y, corner1.x, corner2.y)
-            dc.DrawLine(corner1.x, corner2.y, corner1.x, corner1.y)
+            gc.DrawLines([
+                wx.Point2D(corner1.x, corner1.y),
+                wx.Point2D(corner2.x, corner1.y),
+                wx.Point2D(corner2.x, corner2.y),
+                wx.Point2D(corner1.x, corner2.y)
+            ])
 
     def render_frame(self):
         if self.frame_index == -1:  # 无动画
@@ -325,22 +343,17 @@ class ElementCanvas(ElementCanvasUI):
         """将窗口里一个点的坐标转化为画布上鼠标的坐标, 超出绘制的画布范围则返回None"""
         if not self.scaled_frame_cache:
             return None
-        bitmap: wx.Bitmap = next(iter(self.scaled_frame_cache.values()))
+        width, height = self.get_canvas_size()
         cvs_x, cvs_y = self.get_canvas_position()
-        canvas_rect = wx.Rect(cvs_x, cvs_y, bitmap.GetWidth(), bitmap.GetHeight())
+        canvas_rect = wx.Rect(cvs_x, cvs_y, width, height)
         if not canvas_rect.Contains(position[0], position[1]) and check_border:
             return None
-        return (int((position[0] - cvs_x) / bitmap.GetWidth() * self.project.raw_canvas_size[0]),
-                int((position[1] - cvs_y) / bitmap.GetHeight() * self.project.raw_canvas_size[1]))
+        return (int((position[0] - cvs_x) / width * self.project.raw_canvas_size[0]),
+                int((position[1] - cvs_y) / height * self.project.raw_canvas_size[1]))
 
     def get_canvas_size(self) -> tuple[int, int]:
-        if self.frames:
-            frame = next(iter(self.frames.values()))
-        else:
-            frame = render_project_frame(self.project, 0)
-            self.frames[0] = frame
-        scaled_size = (int(frame.width * self.scale), int(frame.height * self.scale))
-        return scaled_size
+        size = self.project.canvas_size
+        return int(size[0] * self.scale), int(size[1] * self.scale)
 
     def get_canvas_position(self) -> tuple[int, int]:
         if not self.scaled_frame_cache:

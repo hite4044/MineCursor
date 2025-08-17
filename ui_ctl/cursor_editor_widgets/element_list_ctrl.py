@@ -122,7 +122,7 @@ class ElementListCtrl(ElementListCtrlUI):
         menu.AppendSeparator()
         menu.Append("清空 (&D)", self.on_remove_all_elements, icon="action/delete.png")
         menu.AppendSeparator()
-        menu.Append("导出 (&O)", self.output_file, icon="project/export.png")
+        menu.Append("导出 (&O)", self.output_file, self.project, icon="project/export.png")
 
         self.PopupMenu(menu)
 
@@ -156,11 +156,13 @@ class ElementListCtrl(ElementListCtrlUI):
             self.rebuild_control()
             self.send_project_updated()
 
-    def output_file(self):
-        wildcard = "动态光标 (*.ani)|*.ani" if self.project.is_ani_cursor else "静态光标 (*.cur)|*.cur"
-        end_fix = ".ani" if self.project.is_ani_cursor else ".cur"
-        default_name = self.project.kind.kind_name if self.project.name is None else self.project.name
-        dialog = wx.FileDialog(self, "选择保存路径", defaultFile=default_name + end_fix, wildcard=wildcard,
+    @staticmethod
+    def output_file(project: CursorProject):
+        wildcard = "动态光标 (*.ani)|*.ani" if project.is_ani_cursor else "静态光标 (*.cur)|*.cur"
+        end_fix = ".ani" if project.is_ani_cursor else ".cur"
+        default_name = project.kind.kind_name if project.name is None else project.name
+        dialog = wx.FileDialog(wx.GetActiveWindow(), "选择保存路径", defaultFile=default_name + end_fix,
+                               wildcard=wildcard,
                                style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
         if dialog.ShowModal() != wx.ID_OK:
             return
@@ -169,32 +171,32 @@ class ElementListCtrl(ElementListCtrlUI):
 
         def get_text(action: str, use_num: bool = True):
             if use_num:
-                return action + " ({}/" + str(self.project.frame_count) + ")..."
+                return action + " ({}/" + str(project.frame_count) + ")..."
             return action + "..."
 
         render_text = get_text("渲染中")
         progress_dialog = wx.ProgressDialog("导出进度", render_text.format(0))
         frames = []
-        generator = render_project_gen(self.project)
-        progress_dialog.SetRange(self.project.frame_count)
+        generator = render_project_gen(project)
+        progress_dialog.SetRange(project.frame_count)
         for i, frame in enumerate(generator):
             progress_dialog.Update(i, render_text.format(i))
             frames.append(frame)
 
-        if not self.project.is_ani_cursor:
+        if not project.is_ani_cursor:
             progress_dialog.SetRange(1)
             progress_dialog.Update(0, "写入cur文件...")
-            write_cur(frames[0], self.project.center_pos, path)
+            write_cur(frames[0], project.center_pos, path)
             progress_dialog.Update(1)
         else:
-            gen = write_ani(path, frames, self.project)
+            gen = write_ani(path, frames, project)
             while True:
                 try:
                     msg, index = next(gen)
                 except StopIteration:
                     break
                 if index != -1:
-                    new_msg = f"{msg} ({index}/{self.project.frame_count})..."
+                    new_msg = f"{msg} ({index}/{project.frame_count})..."
                 else:
                     new_msg = f"{msg}..."
                     progress_dialog.SetRange(1)

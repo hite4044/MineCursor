@@ -14,6 +14,7 @@ from lib.render import render_project_frame
 from lib.resources import theme_manager
 from ui.public_list_ctl import PublicThemeCursorListUI, PublicThemeSelectorUI
 from ui_ctl.cursor_editor import CursorEditor
+from ui_ctl.cursor_editor_widgets.element_list_ctrl import ElementListCtrl
 from widget.data_dialog import DataLineParam, DataDialog, DataLineType
 from widget.ect_menu import EtcMenu
 from widget.win_icon import set_multi_size_icon
@@ -298,6 +299,9 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
             menu.Append("撤销操作 (&Z)", self.undo_action, icon="action/undo.png")
         menu.AppendSeparator()
         menu.Append("删除 (&D)" + mk_end(projects), self.menu_delete_projects, projects, icon="action/delete.png")
+        if len(projects) == 1:
+            menu.AppendSeparator()
+            menu.Append("导出指针 (&O)", ElementListCtrl.output_file, active_project, icon="project/export.png")
 
         self.PopupMenu(menu)
 

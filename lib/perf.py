@@ -15,7 +15,7 @@ def output_perf(func):
 class FPSMonitor:
     def __init__(self, cnt_times: int = 60):
         self.count_times = cnt_times
-        self.fps_list = [0]
+        self.fps_list = [0.0]
         self.fps_count = 1
         self.last_output = perf_counter()
         self.last_count = perf_counter()

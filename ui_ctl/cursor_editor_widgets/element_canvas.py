@@ -55,6 +55,7 @@ class ElementCanvas(ElementCanvasUI):
     def __init__(self, parent: wx.Window, project: CursorProject):
         super().__init__(parent, project)
         self.active_element: CursorElement | None = None
+        self.animation_mode = AnimationMode.NORMAL
         self.scale = {1.0: 16.0, 2.0: 8.0}.get(project.scale, 10.0)
         self.scale_index: int = EC_SCALE_LEVEL.index(self.scale)
         self.x_offset: float = 0.5
@@ -82,6 +83,7 @@ class ElementCanvas(ElementCanvasUI):
             self.animation_thread.start()
 
     def on_animation_mode_change(self, event: AnimationModeChangeEvent):
+        self.animation_mode = event.mode
         if event.mode == AnimationMode.NORMAL:
             if not self.animation_thread.is_alive():
                 self.animation_thread = threading.Thread(target=self.frame_thread, daemon=True)
@@ -110,7 +112,7 @@ class ElementCanvas(ElementCanvasUI):
             self.active_element = None
         self.Refresh()
         if self.project.is_ani_cursor:
-            if not self.animation_thread.is_alive():
+            if not self.animation_thread.is_alive() and self.animation_mode == AnimationMode.NORMAL:
                 self.animation_thread = threading.Thread(target=self.frame_thread, daemon=True)
                 self.animation_stop_flag.clear()
                 self.animation_thread.start()

@@ -202,7 +202,7 @@ class ProjectInfoEditor(ProjectInfoEditorUI):
 
         self.frame_count.Bind(EVT_DATA_UPDATE, self.on_frame_count_change)
         self.ani_mode_reset_btn.Bind(wx.EVT_BUTTON, self.on_reset_ani_mode)
-        self.frame_counter_slider.SetMax(self.project.frame_count)
+        self.frame_counter_slider.SetMax(self.project.frame_count - 1)
         self.frame_counter_slider.Bind(wx.EVT_SLIDER, self.on_slider_slide)
 
         self.open_rate_editor_btn.Bind(wx.EVT_BUTTON, self.open_rate_editor)

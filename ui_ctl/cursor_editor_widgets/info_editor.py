@@ -69,20 +69,39 @@ class ElementInfoEditor(ElementInfoEditorUI):
         self.active_element: CursorElement | None = None
         self.open_step_editor_btn.Bind(wx.EVT_BUTTON, self.open_step_editor)
 
+        self.resample_type.Bind(wx.EVT_CHOICE, self.on_resample_changed)
+        self.mask_color.Bind(wx.EVT_COLOURPICKER_CHANGED, self.on_pick_mask_color)
+        self.mask_color_reset_btn.Bind(wx.EVT_BUTTON, self.on_reset_mask_color)
+
+    def send_update(self):
+        event = ProjectUpdatedEvent()
+        wx.PostEvent(self, event)
+
     def open_step_editor(self, _):
         if self.active_element:
             StepEditor(self, self.active_element).Show()
-            event = ProjectUpdatedEvent()
-            wx.PostEvent(self, event)
 
-    def set_element(self, element: CursorElement):
-
-        def on_choice(event: wx.CommandEvent):
-            event.Skip()
-            element.resample = list(self.resample_map.keys())[self.resample_type.GetSelection()]
+    def on_resample_changed(self, event: wx.CommandEvent):
+        event.Skip()
+        if self.active_element:
+            self.active_element.resample = list(self.resample_map.keys())[self.resample_type.GetSelection()]
             event = ProjectUpdatedEvent()
             wx.PostEvent(self.resample_type, event)
 
+    def on_pick_mask_color(self, event: wx.ColourPickerEvent):
+        event.Skip()
+        if self.active_element:
+            clr = event.GetColour()
+            self.active_element.mask_color = clr.GetRed(), clr.GetGreen(), clr.GetBlue()
+            self.send_update()
+
+    def on_reset_mask_color(self, _):
+        if self.active_element:
+            self.active_element.mask_color = None
+            self.set_element(self.active_element)
+            self.send_update()
+
+    def set_element(self, element: CursorElement):
         create_cfg_bind(self.name, element, "name")
         create_cfg_bind(self.pos_x, element, "position.x")
         create_cfg_bind(self.pos_y, element, "position.y")
@@ -116,8 +135,6 @@ class ElementInfoEditor(ElementInfoEditorUI):
             self.frame_start.entry.Unbind(EVT_DATA_UPDATE)
             self.frame_inv.entry.Unbind(EVT_DATA_UPDATE)
             self.frame_length.entry.Unbind(EVT_DATA_UPDATE)
-        self.resample_type.Unbind(wx.EVT_CHOICE)
-        self.resample_type.Bind(wx.EVT_CHOICE, on_choice)
 
         self.name.set_value(element.name)
         self.pos_x.set_value(element.position.x)
@@ -145,6 +162,11 @@ class ElementInfoEditor(ElementInfoEditorUI):
         else:
             self.animation_panel.Hide()
         self.resample_type.SetSelection(list(self.resample_map.values()).index(self.resample_map[element.resample]))
+        if element.mask_color is None:
+            pick_btn: wx.BitmapButton = self.mask_color.GetPickerCtrl()
+            pick_btn.SetBitmap(wx.Bitmap("assets/NULL.png"))
+        else:
+            self.mask_color.SetColour(wx.Colour(*element.mask_color))
         self.active_element = element
         self.Layout()
 

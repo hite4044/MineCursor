@@ -241,6 +241,7 @@ class CursorElement:
         self.reverse_way: ReverseWay = ReverseWay.BOTH
         self.resample: Image.Resampling = resample
         self.mask: Image.Image | None = None
+        self.mask_color: tuple[int, int, int] | None = None
 
         self.enable_key_ani: bool = False
         self.animation_key_data: AnimationKeyData = AnimationKeyData()
@@ -315,6 +316,8 @@ class CursorElement:
         }
         if self.mask:
             data["mask"] = (self.mask.size, b64encode(self.mask.tobytes()).decode("utf-8"))
+        if self.mask_color:
+            data["mask_color"] = list(self.mask_color)
         return data
 
     @staticmethod
@@ -336,6 +339,7 @@ class CursorElement:
                 element.mask = Image.frombytes("L", data["mask"][0], data["mask"][1])
             else:
                 element.mask = Image.frombytes("L", data["mask"][0], b64decode(data["mask"][1]))
+        element.mask_color = tuple(data.get("mask_color")) if data.get("mask_color") else None
         element.animation_start_offset = data.get("animation_start_offset", element.animation_start_offset)
         element.loop_animation = data.get("loop_animation", element.loop_animation)
         element.reverse_animation = data.get("reverse_animation", element.reverse_animation)

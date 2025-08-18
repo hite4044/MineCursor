@@ -240,16 +240,27 @@ class ElementInfoEditorUI(wx.ScrolledWindow):
         self.animation_frames_count: StringEntry = ret[7]
 
         self.resample_map = RESAMPLE_MAP
-        self.res_panel = wx.BoxSizer(wx.HORIZONTAL)
         self.resample_type = wx.Choice(self, choices=list(self.resample_map.values()))
         self.resample_type.SetSelection(0)
-        self.res_panel.Add(CenteredText(self, label="缩放方法: "), 0, wx.EXPAND)
-        self.res_panel.AddSpacer(5)
-        self.res_panel.Add(self.resample_type, 1, wx.EXPAND)
-        sizer.Add(self.res_panel, 0, wx.EXPAND | wx.ALL, 5)
+
+        self.mask_color = wx.ColourPickerCtrl(self)
+        self.mask_color_reset_btn = wx.Button(self, label="R")
+        self.mask_color_reset_btn.SetMaxSize((int(str(self.mask_color_reset_btn.GetTextExtent("R")[0])) + 9, -1))
+
+        mask_color_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        mask_color_sizer.Add(self.mask_color_reset_btn, 0, wx.EXPAND)
+        mask_color_sizer.Add(self.mask_color, 1, wx.EXPAND)
+        sub_sizer = wx.FlexGridSizer(2, 2, 5, 5)
+        sub_sizer.AddGrowableCol(1, 1)
+        sub_sizer.Add(CenteredText(self, label="遮罩颜色"), 0, wx.EXPAND)
+        sub_sizer.Add(mask_color_sizer, 1, wx.EXPAND)
+        sub_sizer.Add(CenteredText(self, label="缩放方法"), 0, wx.EXPAND)
+        sub_sizer.Add(self.resample_type, 1, wx.EXPAND)
+        sizer.Add(sub_sizer, 0, wx.EXPAND | wx.ALL, 5)
 
         self.open_step_editor_btn = wx.Button(self, label="编辑渲染步骤")
         sizer.Add(self.open_step_editor_btn, 0, wx.EXPAND | wx.ALL, 5)
+
 
         self.SetSizer(sizer)
         self.SetScrollRate(0, 30)

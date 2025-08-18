@@ -32,6 +32,7 @@ def render_project_frame(project: CursorProject, frame: int) -> Image.Image:
     timer = Counter(create_start=True)
     canvas = Image.new("RGBA", project.raw_canvas_size, (255, 255, 255, 0))
     for element in project.elements[::-1]:
+        # 提取元素帧
         element_frames = len(element.frames)
         if frame < element.animation_start_offset:
             continue
@@ -44,8 +45,15 @@ def render_project_frame(project: CursorProject, frame: int) -> Image.Image:
             frame_index = temp_index % element_frames
             if element.reverse_animation:
                 frame_index = element_frames - frame_index - 1
-
         item = element.frames[frame_index]
+
+        # 按需填色
+        if element.mask_color is not None:
+            item_mask = item.convert("L")
+            item = Image.new("RGBA", item.size, element.mask_color + (0,))
+            item.putalpha(item_mask)
+
+        # 按顺序进行操作
         left_step = copy(list(element.proc_step))
         x_off = y_off = 0
         while len(left_step) != 0:

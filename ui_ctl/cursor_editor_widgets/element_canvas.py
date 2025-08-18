@@ -328,11 +328,13 @@ class ElementCanvas(ElementCanvasUI):
         cvs_x = int(size.width * self.x_offset - width / 2)
         cvs_y = int(size.height * self.y_offset - height / 2)
         gc.DrawBitmap(bitmap, cvs_x, cvs_y, width, height)
+        gc.SetPen(gc.CreatePen(wx.Pen(wx.BLACK)))
         gc.DrawLines([
             wx.Point2D(cvs_x, cvs_y),
             wx.Point2D(cvs_x, cvs_y + height),
             wx.Point2D(cvs_x + width, cvs_y + height),
             wx.Point2D(cvs_x + width, cvs_y),
+            wx.Point2D(cvs_x, cvs_y),
         ])
 
         # 绘制热点 (十字)
@@ -354,7 +356,8 @@ class ElementCanvas(ElementCanvasUI):
                 wx.Point2D(corner1.x, corner1.y),
                 wx.Point2D(corner2.x, corner1.y),
                 wx.Point2D(corner2.x, corner2.y),
-                wx.Point2D(corner1.x, corner2.y)
+                wx.Point2D(corner1.x, corner2.y),
+                wx.Point2D(corner1.x, corner1.y)
             ])
 
     def render_frame(self):

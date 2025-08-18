@@ -137,7 +137,6 @@ class AssetSourceInfo:
                 "size": list(self.size),
                 "image": b64encode(image_io.getvalue()).decode("utf-8")
             }
-        raise RuntimeError(f"炸死你！({self.type}")
 
     @staticmethod
     def from_dict(data: dict):
@@ -162,7 +161,6 @@ class AssetSourceInfo:
                 size=image.size,
                 image=image
             )
-        raise RuntimeError(f"炸死你！({asset_type}")
 
     def load_frame(self) -> Image.Image:
         if self.type == AssetType.ZIP_FILE:
@@ -435,7 +433,7 @@ class CursorProject:
         return None
 
 
-@dataclass()
+@dataclass
 class CursorTheme:
     name: str
     base_size: int = 32

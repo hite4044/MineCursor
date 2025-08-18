@@ -22,6 +22,7 @@ class DataEntryEvent(wx.PyCommandEvent):
 
 
 class DataEntry(wx.Panel):
+    entry: wx.TextCtrl | wx.CheckBox | wx.Choice
     def __init__(self, parent: wx.Window, label: str,
                  data_type: Type[str | int | float | bool | Enum],
                  limits: tuple[int | float, int | float] | None = None, enum_names: dict[Enum, str] | None = None,
@@ -87,6 +88,7 @@ class DataEntry(wx.Panel):
         wx.PostEvent(self.entry, event)
 
     def on_start_edit(self, event: wx.Event):
+        assert isinstance(self.entry, wx.TextCtrl)
         event.Skip()
         if issubclass(self.data_type, Enum):
             return

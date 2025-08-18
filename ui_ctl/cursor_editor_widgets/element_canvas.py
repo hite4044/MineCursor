@@ -203,7 +203,7 @@ class ElementCanvas(ElementCanvasUI):
         if event.LeftUp():
             if self.drag_offset:
                 logger.debug("拖动结束")
-                self.drag_offset = None
+                self.drag_offset: tuple[int, int] | None = None
                 wx.PostEvent(self.GetParent(), ProjectUpdatedEvent())
                 self.post_element_selected(self.active_element)
             if self.cvs_drag_offset:
@@ -241,7 +241,7 @@ class ElementCanvas(ElementCanvasUI):
                 logger.debug(f"画布偏移更新 -> {self.x_offset}, {self.y_offset}")
             elif self.active_element:  # 启动元素的拖动
                 ele_pos = self.active_element.position
-                self.drag_offset = (pos[0] - ele_pos.x, pos[1] - ele_pos.y)
+                self.drag_offset: tuple[int, int] | None = (pos[0] - ele_pos.x, pos[1] - ele_pos.y)
                 logger.debug(f"元素拖动开始 -> {self.active_element}")
             else:
                 return

@@ -1,3 +1,4 @@
+import json
 import os
 import re
 from enum import Enum
@@ -76,13 +77,13 @@ class ThemeManager:
     @staticmethod
     def load_theme_file(file_path: str) -> CursorTheme:
         with open(file_path, "r", encoding="utf-8") as f:
-            data = eval(f.read())
+            data = json.loads(f.read())
         return CursorTheme.from_dict(data)
 
     @staticmethod
     def save_theme_file(file_path: str, theme: CursorTheme):
         logger.debug(f"保存主题至: {basename(file_path)}")
-        data_string = str(theme.to_dict())
+        data_string = json.dumps(theme.to_dict(), ensure_ascii=False)
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(data_string)
 

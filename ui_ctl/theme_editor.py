@@ -236,7 +236,9 @@ class ThemeSelector(PublicThemeSelector):
         self.reload_themes()
 
     def on_export_theme(self, theme: CursorTheme):
-        dialog = wx.FileDialog(self, "导出主题", wildcard="MineCursor 主题文件 (*.mctheme)|*.mctheme", style=wx.FD_SAVE)
+        dialog = wx.FileDialog(self, "导出主题",
+                               wildcard="MineCursor 主题文件 (*.mctheme)|*.mctheme|MineCursor 主题文件 (*json)|*json",
+                               style=wx.FD_SAVE)
         if dialog.ShowModal() == wx.ID_OK:
             file_path = dialog.GetPath()
             theme_manager.save_theme_file(file_path, theme)

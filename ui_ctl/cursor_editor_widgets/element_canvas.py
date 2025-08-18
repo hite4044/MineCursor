@@ -295,11 +295,11 @@ class ElementCanvas(ElementCanvasUI):
         else:
             return self.project.ani_rate / 60
 
-    def frame_add(self, frame_delta: int = 1):
-        if self.frame_index + frame_delta >= self.project.frame_count:
-            self.frame_index = frame_delta - ((self.project.frame_count - 1) - self.frame_index)
+    def frame_add(self):
+        if self.frame_index + 1 >= self.project.frame_count:
+            self.frame_index = 0
         else:
-            self.frame_index += frame_delta
+            self.frame_index += 1
         event = FrameCounterChangeEvent(self.frame_index)
         wx.PostEvent(self, event)
 

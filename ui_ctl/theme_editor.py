@@ -1,4 +1,5 @@
 import os
+import re
 from enum import Enum
 from os import makedirs
 from os.path import join, isfile
@@ -13,7 +14,7 @@ from lib.cursor.inst_ini_gen import CursorInstINIGenerator
 from lib.cursor.setter import CURSOR_KIND_NAME_OFFICIAL, CursorKind, CursorsInfo, set_cursors_progress, SchemesType, \
     CR_INFO_FIELD_MAP, CursorData
 from lib.cursor.writer import write_cursor_progress
-from lib.data import CursorTheme, cursors_file_manager, data_file_manager
+from lib.data import CursorTheme, cursors_file_manager, data_file_manager, INVALID_FILENAME_CHAR
 from lib.log import logger
 from lib.render import render_project
 from lib.resources import theme_manager, ThemeAction
@@ -111,7 +112,8 @@ class ThemeSelector(PublicThemeSelector):
     def __init__(self, parent: wx.Window):
         super().__init__(parent)
 
-        self.themes_has_deleted: list[list[tuple[int, CursorTheme]]] = [[(0, theme)] for theme in theme_manager.deleted_themes]
+        self.themes_has_deleted: list[list[tuple[int, CursorTheme]]] = [[(0, theme)] for theme in
+                                                                        theme_manager.deleted_themes]
         self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_menu)
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu)
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
@@ -158,7 +160,6 @@ class ThemeSelector(PublicThemeSelector):
         menu.Append("删除 (&D)", self.on_delete_theme, theme, icon="action/delete.png")
         self.PopupMenu(menu)
 
-
     def on_menu(self, event: wx.MouseEvent):
         index = cast(tuple[int, int], self.HitTest(event.GetPosition()))[0]
         if index != -1:
@@ -197,6 +198,10 @@ class ThemeSelector(PublicThemeSelector):
         dialog = ThemeDataDialog(self, True, self.get_theme_default_name())
         if dialog.ShowModal() == wx.ID_OK:
             name, base_size, author, description = dialog.get_result()
+            if re.findall(INVALID_FILENAME_CHAR, name):
+                wx.MessageBox(f"主题名 [{name}] 中的非法字符已替换为下划线\n(为了保存主题文件)", "主题名中的非法字符",
+                              wx.OK | wx.ICON_WARNING)
+            name = re.sub(INVALID_FILENAME_CHAR, "_", name)
             theme = CursorTheme(name, base_size, author, description)
             theme_manager.add_theme(theme)
             self.reload_themes()
@@ -206,7 +211,10 @@ class ThemeSelector(PublicThemeSelector):
         dialog = ThemeDataDialog(self, False, theme.name, theme.base_size, theme.author, theme.description)
         if dialog.ShowModal() == wx.ID_OK:
             name, base_size, author, description = dialog.get_result()
-            theme.name = name
+            if re.findall(INVALID_FILENAME_CHAR, name):
+                wx.MessageBox(f"主题名 [{name}] 中的非法字符已替换为下划线\n(为了保存主题文件)", "主题名中的非法字符",
+                              wx.OK | wx.ICON_WARNING)
+            theme.name = re.sub(INVALID_FILENAME_CHAR, "_", name)
             theme.base_size = base_size
             theme.author = author
             theme.description = description

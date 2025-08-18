@@ -1,5 +1,6 @@
 import os.path
 import random
+import re
 from base64 import b64encode, b64decode
 from dataclasses import dataclass, field
 from enum import Enum
@@ -13,6 +14,8 @@ from PIL import Image
 
 from lib.cursor.setter import CursorKind
 
+
+INVALID_FILENAME_CHAR = re.compile(r'[<>:"/\\|?*]')
 
 def generate_id(length: int = 4):
     return hex(int.from_bytes(random.randbytes(length), "big"))[2:]

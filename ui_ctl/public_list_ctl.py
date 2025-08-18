@@ -1,3 +1,4 @@
+import re
 from copy import deepcopy
 from enum import Enum
 from typing import cast
@@ -7,7 +8,7 @@ from PIL.Image import Resampling
 
 from lib.clipboard import ClipBoard
 from lib.cursor.setter import CURSOR_KIND_NAME_CUTE, CURSOR_KIND_NAME_OFFICIAL, CursorKind
-from lib.data import CursorTheme, CursorProject
+from lib.data import CursorTheme, CursorProject, INVALID_FILENAME_CHAR
 from lib.image_pil2wx import PilImg2WxImg
 from lib.log import logger
 from lib.render import render_project_frame
@@ -45,7 +46,10 @@ class PublicThemeSelector(PublicThemeSelectorUI):
             self.reload_themes()
 
     def on_data_changed(self, row: int, col: int, value: str):
-        self.line_theme_mapping[row].name = value
+        if re.findall(INVALID_FILENAME_CHAR, value):
+            wx.MessageBox(f"主题名 [{value}] 中的非法字符已替换为下划线\n(为了保存主题文件)", "主题名中的非法字符",
+                          wx.OK | wx.ICON_WARNING)
+        self.line_theme_mapping[row].name = re.sub(INVALID_FILENAME_CHAR, "_", value)
         theme_manager.renew_theme(self.line_theme_mapping[row])
         theme_manager.save()
 

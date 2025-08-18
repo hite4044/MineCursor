@@ -281,19 +281,19 @@ class CursorElement:
         if target_frame == 0:
             return 0
         index = 0
-        last_frame = 0
+        clac_cnt = 0
         while True:
             data = self.animation_data[index]
             timer_frame += data.frame_delay
             index += 1
             if index >= len(self.animation_data):
                 index = 0
-                if frame == last_frame:
-                    raise RuntimeError("不对劲, 动画无限循环了")
-                last_frame = frame
             if timer_frame > target_frame:
                 return frame
             frame += data.index_increment
+            clac_cnt += 1
+            if clac_cnt > 1000:
+                raise RuntimeError("动画帧查找次数过多")
 
     def to_dict(self):
         data = {

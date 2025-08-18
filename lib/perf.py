@@ -1,6 +1,8 @@
 from time import perf_counter
 from typing import Union
 
+from lib.log import logger
+
 
 def output_perf(func):
     def warp(*args, **kwargs):
@@ -37,7 +39,7 @@ class FPSMonitor:
 
         if crt_time - self.last_output > 1.0:
             self.last_output = crt_time
-            print(f"{self.fps:.2f}")
+            logger.debug(f"帧率: {self.fps:.2f}")
 
 
 class Counter:

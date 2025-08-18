@@ -88,7 +88,6 @@ class DataEntry(wx.Panel):
         wx.PostEvent(self.entry, event)
 
     def on_start_edit(self, event: wx.Event):
-        assert isinstance(self.entry, wx.TextCtrl)
         event.Skip()
         if issubclass(self.data_type, Enum):
             return

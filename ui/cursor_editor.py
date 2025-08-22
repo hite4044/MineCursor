@@ -182,7 +182,8 @@ class ElementInfoEditorUI(wx.ScrolledWindow):
         super().__init__(parent, size=(200, -1))
         widget_groups: list[GroupData] = [
             (("位置", False), ((IntEntry, "X"), (IntEntry, "Y"))),
-            (("缩放", False), ((FloatEntry, "X"), (FloatEntry, "Y"))),
+            (("旋转", False), ((FloatEntry, "旋转角度"), (EnumEntry, "旋转采样", RESAMPLE_MAP))),
+            (("缩放", False), ((FloatEntry, "X"), (FloatEntry, "Y"), (EnumEntry, "缩放采样", RESAMPLE_MAP))),
             (("裁剪", True), ((IntEntry, "上"), (IntEntry, "下"), (IntEntry, "左"), (IntEntry, "右"))),
             (("翻转", True), ((BoolEntry, "左右翻转"), (BoolEntry, "上下翻转"), (EnumEntry, "翻转顺序", {
                 ReverseWay.X_FIRST: "先翻转X轴",
@@ -210,25 +211,27 @@ class ElementInfoEditorUI(wx.ScrolledWindow):
         self.pos_x: IntEntry = ret[0]
         self.pos_y: IntEntry = ret[1]
 
-        self.rotation = FloatEntry(self, "旋转角度", use_sizer=True)
-        sizer.Add(self.rotation, 0, wx.EXPAND | wx.ALL, 5)
-
         ret = load_group(widget_groups[1])
-        self.scale_x: FloatEntry = ret[0]
-        self.scale_y: FloatEntry = ret[1]
+        self.rotation: FloatEntry = ret[0]
+        self.rotate_resample: EnumEntry = ret[1]
 
         ret = load_group(widget_groups[2])
+        self.scale_x: FloatEntry = ret[0]
+        self.scale_y: FloatEntry = ret[1]
+        self.scale_resample: EnumEntry = ret[2]
+
+        ret = load_group(widget_groups[3])
         self.crop_up: IntEntry = ret[0]
         self.crop_down: IntEntry = ret[1]
         self.crop_left: IntEntry = ret[2]
         self.crop_right: IntEntry = ret[3]
 
-        ret = load_group(widget_groups[3])
+        ret = load_group(widget_groups[4])
         self.reverse_x: BoolEntry = ret[0]
         self.reverse_y: BoolEntry = ret[1]
         self.reverse_way: EnumEntry = ret[2]
 
-        ret = load_group(widget_groups[4])
+        ret = load_group(widget_groups[5])
         self.animation_panel: wx.CollapsiblePane = cast(wx.CollapsiblePane, sizer.GetChildren()[-1].Window)
         self.animation_start_offset: IntEntry = ret[0]
         self.loop_animation: BoolEntry = ret[1]
@@ -240,22 +243,15 @@ class ElementInfoEditorUI(wx.ScrolledWindow):
         self.animation_frames_count: StringEntry = ret[7]
 
         self.resample_map = RESAMPLE_MAP
-        self.resample_type = wx.Choice(self, choices=list(self.resample_map.values()))
-        self.resample_type.SetSelection(0)
 
         self.mask_color = wx.ColourPickerCtrl(self)
         self.mask_color_reset_btn = wx.Button(self, label="R")
         self.mask_color_reset_btn.SetMaxSize((int(str(self.mask_color_reset_btn.GetTextExtent("R")[0])) + 9, -1))
 
-        mask_color_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        mask_color_sizer.Add(self.mask_color_reset_btn, 0, wx.EXPAND)
-        mask_color_sizer.Add(self.mask_color, 1, wx.EXPAND)
-        sub_sizer = wx.FlexGridSizer(2, 2, 5, 5)
-        sub_sizer.AddGrowableCol(1, 1)
+        sub_sizer = wx.BoxSizer(wx.HORIZONTAL)
         sub_sizer.Add(CenteredText(self, label="遮罩颜色"), 0, wx.EXPAND)
-        sub_sizer.Add(mask_color_sizer, 1, wx.EXPAND)
-        sub_sizer.Add(CenteredText(self, label="缩放方法"), 0, wx.EXPAND)
-        sub_sizer.Add(self.resample_type, 1, wx.EXPAND)
+        sub_sizer.Add(self.mask_color_reset_btn, 0, wx.EXPAND)
+        sub_sizer.Add(self.mask_color, 1, wx.EXPAND)
         sizer.Add(sub_sizer, 0, wx.EXPAND | wx.ALL, 5)
 
         self.open_step_editor_btn = wx.Button(self, label="编辑渲染步骤")

@@ -226,7 +226,8 @@ class CursorElement:
                  crop_margins: Margins = None,
                  reverse_x: bool = False,
                  reverse_y: bool = False,
-                 resample: Image.Resampling = Image.Resampling.NEAREST):
+                 resample: Image.Resampling = Image.Resampling.NEAREST,
+                 scale_resample: Image.Resampling = Image.Resampling.NEAREST):
         if source_infos is None:
             source_infos = []
         self.name: str = name
@@ -239,6 +240,7 @@ class CursorElement:
         self.reverse_x: bool = reverse_x
         self.reverse_y: bool = reverse_y
         self.reverse_way: ReverseWay = ReverseWay.BOTH
+        self.scale_resample: Image.Resampling = scale_resample
         self.resample: Image.Resampling = resample
         self.mask: Image.Image | None = None
         self.mask_color: tuple[int, int, int] | None = None
@@ -306,6 +308,7 @@ class CursorElement:
             "reverse_x": self.reverse_x,
             "reverse_y": self.reverse_y,
             "reverse_way": self.reverse_way.value,
+            "scale_resample": self.scale_resample.value,
             "resample": self.resample.value,
             "animation_start_offset": self.animation_start_offset,
             "loop_animation": self.loop_animation,
@@ -332,7 +335,8 @@ class CursorElement:
             crop_margins=Margins.load(data["crop_margins"]),
             reverse_x=data["reverse_x"],
             reverse_y=data["reverse_y"],
-            resample=Image.Resampling(data["resample"])
+            resample=Image.Resampling(data["resample"]),
+            scale_resample=Image.Resampling(data.get("scale_resample", Image.Resampling.NEAREST)),
         )
         if "mask" in data:
             if isinstance(data["mask"][1], bytes):

@@ -69,7 +69,6 @@ class ElementInfoEditor(ElementInfoEditorUI):
         self.active_element: CursorElement | None = None
         self.open_step_editor_btn.Bind(wx.EVT_BUTTON, self.open_step_editor)
 
-        self.resample_type.Bind(wx.EVT_CHOICE, self.on_resample_changed)
         self.mask_color.Bind(wx.EVT_COLOURPICKER_CHANGED, self.on_pick_mask_color)
         self.mask_color_reset_btn.Bind(wx.EVT_BUTTON, self.on_reset_mask_color)
 
@@ -80,13 +79,6 @@ class ElementInfoEditor(ElementInfoEditorUI):
     def open_step_editor(self, _):
         if self.active_element:
             StepEditor(self, self.active_element).Show()
-
-    def on_resample_changed(self, event: wx.CommandEvent):
-        event.Skip()
-        if self.active_element:
-            self.active_element.resample = list(self.resample_map.keys())[self.resample_type.GetSelection()]
-            event = ProjectUpdatedEvent()
-            wx.PostEvent(self.resample_type, event)
 
     def on_pick_mask_color(self, event: wx.ColourPickerEvent):
         event.Skip()
@@ -108,6 +100,8 @@ class ElementInfoEditor(ElementInfoEditorUI):
         create_cfg_bind(self.rotation, element, "rotation")
         create_cfg_bind(self.scale_x, element, "scale.x")
         create_cfg_bind(self.scale_y, element, "scale.y")
+        create_cfg_bind(self.rotate_resample, element, "resample")
+        create_cfg_bind(self.scale_resample, element, "scale_resample")
         create_cfg_bind(self.crop_up, element, "crop_margins.up")
         create_cfg_bind(self.crop_down, element, "crop_margins.down")
         create_cfg_bind(self.crop_left, element, "crop_margins.left")
@@ -140,8 +134,10 @@ class ElementInfoEditor(ElementInfoEditorUI):
         self.pos_x.set_value(element.position.x)
         self.pos_y.set_value(element.position.y)
         self.rotation.set_value(element.rotation)
+        self.rotate_resample.set_value(element.resample)
         self.scale_x.set_value(element.scale.x)
         self.scale_y.set_value(element.scale.y)
+        self.scale_resample.set_value(element.scale_resample)
         self.crop_up.set_value(element.crop_margins.up)
         self.crop_down.set_value(element.crop_margins.down)
         self.crop_left.set_value(element.crop_margins.left)
@@ -161,7 +157,7 @@ class ElementInfoEditor(ElementInfoEditorUI):
             self.animation_panel.Show()
         else:
             self.animation_panel.Hide()
-        self.resample_type.SetSelection(list(self.resample_map.values()).index(self.resample_map[element.resample]))
+
         if element.mask_color is None:
             pick_btn: wx.BitmapButton = self.mask_color.GetPickerCtrl()
             pick_btn.SetBitmap(wx.BitmapBundle(wx.Bitmap("assets/NULL.png")))

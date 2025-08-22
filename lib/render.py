@@ -78,7 +78,7 @@ def render_project_frame(project: CursorProject, frame: int) -> Image.Image:
             elif step == ProcessStep.SCALE and element.scale != NONE_SCALE:
                 item = item.resize((int(item.width * element.scale[0]),
                                     int(item.height * element.scale[1])),
-                                   element.resample)
+                                   element.scale_resample)
 
             elif step == ProcessStep.ROTATE and element.rotation != 0:
                 size = item.size

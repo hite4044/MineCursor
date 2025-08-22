@@ -3,7 +3,7 @@ from typing import cast as type_cast
 import wx
 from PIL import Image
 
-from lib.clipboard import ClipBoard
+from lib.clipboard import PUBLIC_ELEMENT_CLIPBOARD
 from lib.cursor.writer import write_cur, write_ani
 from lib.data import CursorProject, CursorElement
 from lib.image_pil2wx import PilImg2WxImg
@@ -36,17 +36,17 @@ class ElementListCtrl(ElementListCtrlUI):
         for element in project.elements:
             self.add_element(element)
 
-        self.clip = ClipBoard(self, self.clip_on_get_data, self.clip_on_set_data)
+        self.clip = PUBLIC_ELEMENT_CLIPBOARD(self, self.clip_on_get_data, self.clip_on_set_data)
 
     def clip_on_get_data(self):
         item = self.GetFirstSelected()
-        return None if item == -1 else self.get_element_by_index(item).id
+        return None if item == -1 else self.get_element_by_index(item).to_dict()
 
-    def clip_on_set_data(self, element_id: str):
-        if element := self.project.find_element(element_id):
-            self.project.elements.append(element.copy())
-            self.rebuild_control()
-            self.send_project_updated()
+    def clip_on_set_data(self, element_data: dict):
+        element = CursorElement.from_dict(element_data)
+        self.project.elements.append(element.copy())
+        self.rebuild_control()
+        self.send_project_updated()
 
     def on_key_down(self, event: wx.KeyEvent):
         if event.GetKeyCode() == wx.WXK_DELETE:

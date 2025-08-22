@@ -50,7 +50,7 @@ def create_cfg_bind(widget: DataEntry,
             setattr(next_attr, attr_name2, event.data)
             setattr(obj, attr_name, next_attr)
         else:
-            if process_none_string and event.data == "None":
+            if process_none_string and event.data == "":
                 setattr(obj, cfg_path, None)
             else:
                 setattr(obj, cfg_path, event.data)
@@ -164,7 +164,7 @@ class ElementInfoEditor(ElementInfoEditorUI):
         self.resample_type.SetSelection(list(self.resample_map.values()).index(self.resample_map[element.resample]))
         if element.mask_color is None:
             pick_btn: wx.BitmapButton = self.mask_color.GetPickerCtrl()
-            pick_btn.SetBitmap(wx.Bitmap("assets/NULL.png"))
+            pick_btn.SetBitmap(wx.BitmapBundle(wx.Bitmap("assets/NULL.png")))
         else:
             self.mask_color.SetColour(wx.Colour(*element.mask_color))
         self.active_element = element

@@ -296,9 +296,9 @@ class ProjectInfoEditorUI(wx.Panel):
             return load_group_raw(defines, sizer, self)
 
         self.name: StringEntry = StringEntry(self, "名称")
-        self.name.set_value(str(project.name))
+        self.name.set_value(project.name if project.name is not None else "")
         self.external_name: StringEntry = StringEntry(self, "外部名称")
-        self.external_name.set_value(str(project.external_name))
+        self.external_name.set_value(project.external_name if project.external_name is not None else "")
         self.kind: EnumEntry = EnumEntry(self, "指针类型", CURSOR_KIND_NAME_OFFICIAL)
         self.kind.set_value(project.kind)
 

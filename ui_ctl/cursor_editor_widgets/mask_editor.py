@@ -99,7 +99,7 @@ class MaskEditor(wx.Dialog):
     def on_clear(self, _):
         ret = wx.MessageBox("确定要清空吗？", "清空", wx.YES_NO)
         if ret == wx.YES:
-             self.editor.mask = Image.new("L", self.editor.mask.size, 0)
+             self.mask = self.editor.mask = Image.new("L", self.editor.mask.size, 255)
              self.editor.mask_draw = ImageDraw.ImageDraw(self.editor.mask)
              self.editor.clear_cache()
              self.editor.Refresh()

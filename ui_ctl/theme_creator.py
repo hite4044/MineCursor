@@ -3,7 +3,7 @@ import wx
 from lib.data import CursorTheme
 from lib.resources import theme_manager
 from ui.theme_creator import ThemeCreatorUI, CursorsSelectorUI, SourceThemeCursorListUI, NewThemeCursorListUI
-from ui_ctl.public_list_ctl import PublicThemeSelector, EVT_THEME_SELECTED
+from ui_ctl.public_list_ctl import EVT_THEME_SELECTED, PublicThemeSelector
 from widget.win_icon import set_multi_size_icon
 
 
@@ -20,7 +20,7 @@ class ThemeCreator(ThemeCreatorUI):
 
 
 class CursorsSelector(CursorsSelectorUI):
-    theme_selector: 'PublicThemeSelector'
+    theme_selector: PublicThemeSelector
     source_cursors: 'SourceThemeCursorList'
     new_cursors: 'NewThemeCursorList'
 
@@ -47,21 +47,23 @@ class SourceThemeCursorList(SourceThemeCursorListUI):
         self.drop_source.DoDragDrop(True)
 
 
-class NewThemeCursorList(NewThemeCursorListUI):
-    class DropTarget(wx.TextDropTarget):
-        def __init__(self, cbk):
-            wx.TextDropTarget.__init__(self)
-            self.cbk = cbk
+class DropTarget(wx.TextDropTarget):
+    def __init__(self, cbk):
+        wx.TextDropTarget.__init__(self)
+        self.cbk = cbk
 
-        def OnDropText(self, x, y, data):
-            self.cbk(data)
-            return True
+    def OnDropText(self, x, y, data):
+        self.cbk(data)
+        return True
+
+
+class NewThemeCursorList(NewThemeCursorListUI):
 
     def __init__(self, parent: wx.Window):
         super().__init__(parent)
         self.active_theme = CursorTheme("新鼠标主题", 32)
 
-        self.drop_target = self.DropTarget(self.OnDropText)
+        self.drop_target = DropTarget(self.OnDropText)
         self.SetDropTarget(self.drop_target)
 
     def OnDropText(self, data: str):

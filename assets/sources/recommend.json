@@ -7,12 +7,10 @@
         "item/stone_sword.png",
         "item/carrot.png",
         "item/amethyst_shard.png",
-        "item/bamboo.png",
-        "item/blaze_rod.png",
         "item/wooden_sword.png",
         "item/iron_sword.png",
         "item/stick.png",
-        "item/arrow.png",
-        "item/spectral_arrow.png"
+        "item/touch.png",
+        "item/arrow.png"
     ]
 }

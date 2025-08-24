@@ -82,6 +82,7 @@ class PublicThemeSelector(PublicThemeSelectorUI):
 class ProjectDataDialog(DataDialog):
     def __init__(self, parent: wx.Window | None, is_create: bool = True,
                  name: str = "", external_name: str = "", size: int | tuple[int, int] = 32,
+                 scale: float = 2.0,
                  kind: CursorKind = CursorKind.ARROW):
         self.canvas_params = [
             DataLineParam("canvas_size", "画布尺寸", DataLineType.INT, size),
@@ -94,6 +95,7 @@ class ProjectDataDialog(DataDialog):
                          DataLineParam("external_name", "展示名称", DataLineType.STRING,
                                        external_name if external_name else ""),
                          *self.canvas_params,
+                         DataLineParam("scale", "缩放", DataLineType.FLOAT, scale),
                          DataLineParam("kind", "类型", DataLineType.CHOICE, kind,
                                        enum_names=CURSOR_KIND_NAME_OFFICIAL))
         if is_create:
@@ -101,16 +103,16 @@ class ProjectDataDialog(DataDialog):
         else:
             self.set_icon("project/edit_info.png")
 
-    def get_result(self) -> tuple[str | str, str | None, int | tuple[int, int], CursorKind]:
+    def get_result(self) -> tuple[str | str, str | None, int | tuple[int, int], float, CursorKind]:
         datas = self.datas
         if len(self.canvas_params) == 1:
             size = datas["canvas_size"]
         else:
             size = (datas["size_width"], datas["size_height"])
-        result = [datas["name"], datas["external_name"] if datas["external_name"] else None, size, datas["kind"]]
+        result = [datas["name"], datas["external_name"] if datas["external_name"] else None, size, datas["scale"], datas["kind"]]
         if datas["name"] == "":
             result[0] = None
-        return cast(tuple[str, str | None, int | tuple[int, int], CursorKind], tuple(result))
+        return cast(tuple[str, str | None, int | tuple[int, int], float, CursorKind], tuple(result))
 
 
 class MutilProjectDataDialog(DataDialog):
@@ -333,10 +335,11 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
             return
         dialog = ProjectDataDialog(self, size=self.active_theme.base_size)
         if dialog.ShowModal() == wx.ID_OK:
-            name, external_name, size, kind = dialog.get_result()
+            name, external_name, size, scale, kind = dialog.get_result()
             project = CursorProject(name, (size, size))
             project.kind = kind
             project.external_name = external_name
+            project.scale = scale
             self.active_theme.projects.append(project)
             self.reload_theme()
 
@@ -352,14 +355,15 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
             return
         if len(projects) == 1:
             project = projects[0]
-            dialog = ProjectDataDialog(self, False, project.name, project.external_name, project.raw_canvas_size,
-                                       project.kind)
+            dialog = ProjectDataDialog(self, False, project.name, project.external_name,
+                                       project.raw_canvas_size, project.scale, project.kind)
             if dialog.ShowModal() == wx.ID_OK:
-                name, external_name, size, kind = dialog.get_result()
+                name, external_name, size, scale, kind = dialog.get_result()
                 project.name = name
                 project.external_name = external_name
                 project.raw_canvas_size = size
                 project.kind = kind
+                project.scale = scale
                 self.reload_theme()
         else:
             dialog = MutilProjectDataDialog(self, active_project.raw_canvas_size, active_project.scale)

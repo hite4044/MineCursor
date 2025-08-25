@@ -40,11 +40,12 @@ class ElementListCtrl(ElementListCtrlUI):
 
     def clip_on_get_data(self):
         item = self.GetFirstSelected()
-        return None if item == -1 else self.get_element_by_index(item).to_dict()
+        return None if item == -1 else [element.to_dict() for element in self.get_select_elements()]
 
-    def clip_on_set_data(self, element_data: dict):
-        element = CursorElement.from_dict(element_data)
-        self.project.elements.append(element.copy())
+    def clip_on_set_data(self, element_datas: list[dict]):
+        for element_data in element_datas:
+            element = CursorElement.from_dict(element_data)
+            self.project.elements.append(element.copy())
         self.rebuild_control()
         self.send_project_updated()
 

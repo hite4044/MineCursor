@@ -40,8 +40,8 @@ class CursorEditor(CursorEditorUI):
 
     @staticmethod
     def on_close(event: wx.CloseEvent):
-        event.Skip()
         theme_manager.save()
+        event.Skip()
 
     def on_frame_counter_change(self, event):
         if self.project.is_ani_cursor:

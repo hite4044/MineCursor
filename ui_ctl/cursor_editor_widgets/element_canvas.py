@@ -139,9 +139,13 @@ class ElementCanvas(ElementCanvasUI):
             self.Refresh()
 
     def on_destroy(self, event: wx.WindowDestroyEvent):
-        event.Skip()
         if self.animation_manager.is_alive():
             self.animation_manager.stop()
+        # 自行销毁缓存Bitmap, 确保在GraphicsContext销毁时, 不会触发内存泄漏
+        for bitmap in self.scaled_frame_cache.values():
+            bitmap.Destroy()
+        self.scaled_frame_cache.clear()
+        event.Skip()
 
     def set_element(self, element: CursorElement | None):
         self.active_element = element

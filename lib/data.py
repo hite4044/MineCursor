@@ -255,6 +255,7 @@ class CursorElement:
         self.proc_step = DEFAULT_PROC_ORDER
         self.final_rect = (0, 0, 16, 16)
         self.final_image = None
+        self.sub_project: CursorProject | None = None
         self.id = int.from_bytes(random.randbytes(4), "big")
 
         self.animation_key_data.frame_length = len(self.frames)
@@ -321,6 +322,8 @@ class CursorElement:
             data["mask"] = (self.mask.size, b64encode(self.mask.tobytes()).decode("utf-8"))
         if self.mask_color:
             data["mask_color"] = list(self.mask_color)
+        if self.sub_project:
+            data["sub_project"] = self.sub_project.to_dict()
         return data
 
     @staticmethod
@@ -351,6 +354,8 @@ class CursorElement:
         element.animation_data = [AnimationFrameData.load(data) for data in data["animation_data"]]
         element.proc_step = [ProcessStep(step) for step in data["proc_step"]]
         element.reverse_way = ReverseWay(data.get("reverse_way", ReverseWay.BOTH.value))
+        if data.get("sub_project"):
+            element.sub_project = CursorProject.from_dict(data["sub_project"])
 
         for source_info in element.source_infos:
             frame = source_info.load_frame()

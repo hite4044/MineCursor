@@ -13,7 +13,7 @@ from lib.data import AssetSources, AssetsChoicerAssetInfo
 from lib.image_pil2wx import PilImg2WxImg
 from lib.log import logger
 from ui.element_add_dialog import ElementSelectListUI, AssetSource
-from ui_ctl.element_add_dialog_widgets.source_assets_manager import SourceAssetsManager
+from ui_ctl.element_sources.source_assets_manager import SourceAssetsManager
 from widget.data_dialog import DataDialog, DataLineParam, DataLineType
 from widget.ect_menu import EtcMenu
 

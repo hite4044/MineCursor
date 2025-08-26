@@ -6,9 +6,9 @@ from lib.cursor.setter import CursorKind
 from lib.data import CursorElement, AssetSources, AssetSourceInfo, AssetType
 from lib.ui_interface import ui_class
 from ui.element_add_dialog import ElementSelectListUI, ElementAddDialogUI, AssetSource
-from ui_ctl.element_add_dialog_widgets.asset_source import ElementSelectList
-from ui_ctl.element_add_dialog_widgets.image_source import ImageElementSource
-from ui_ctl.element_add_dialog_widgets.rect_source import RectElementSource
+from ui_ctl.element_sources.asset_source import ElementSelectList
+from ui_ctl.element_sources.image_source import ImageElementSource
+from ui_ctl.element_sources.rect_source import RectElementSource
 from widget.win_icon import set_multi_size_icon
 
 ROOT_IMAGES = {

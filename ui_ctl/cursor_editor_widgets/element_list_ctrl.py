@@ -5,9 +5,9 @@ from PIL import Image
 
 from lib.clipboard import PUBLIC_ELEMENT_CLIPBOARD
 from lib.cursor.writer import write_cur, write_ani
-from lib.data import CursorProject, CursorElement
+from lib.data import CursorProject, CursorElement, AssetSourceInfo, AssetType, SubProjectFrames
 from lib.image_pil2wx import PilImg2WxImg
-from lib.render import render_project_gen
+from lib.render import render_project_gen, render_project_frame
 from ui.cursor_editor import ElementListCtrlUI
 from ui_ctl.cursor_editor_widgets.events import ProjectUpdatedEvent, ElementSelectedEvent
 from ui_ctl.cursor_editor_widgets.mask_editor import MaskEditor
@@ -31,6 +31,7 @@ class ElementListCtrl(ElementListCtrlUI):
         self.set_processing = False
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_select)
         self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_menu)
+        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_item_active)
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu)
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_down, self)
         for element in project.elements:
@@ -85,6 +86,14 @@ class ElementListCtrl(ElementListCtrlUI):
             first = self.GetNextSelected(first)
         return selections
 
+    def on_item_active(self, event: wx.ListEvent):
+        element = self.get_element_by_index(event.GetIndex())
+        if element.sub_project:
+            from ui_ctl.cursor_editor import CursorEditor
+            element.sub_project.name = element.name
+            editor = CursorEditor(self, element.sub_project)
+            editor.Show()
+
     def on_item_menu(self, event: wx.ListEvent):
         index = event.GetIndex()
         elements = self.get_select_elements()
@@ -99,6 +108,10 @@ class ElementListCtrl(ElementListCtrlUI):
             menu.Append("上移一层 (&W)", self.move_element, index, -1, icon="action/up.png")
             menu.Append("下移一层 (&S)", self.move_element, index, 1, icon="action/down.png")
         menu.AppendSeparator()
+        if len(elements) > 1:
+            menu.Append("创建子项目 (&G)", self.create_sub_project, elements, icon="project/add.png")
+        elif elements[0].sub_project:
+            menu.Append("解散子项目 (&G)", self.extract_sub_project, elements[0], icon="action/delete.png")
         menu.Append("复制 (&C)" + mk_end(elements), self.copy_elements, elements, icon="element/copy.png")
         if len(self.elements_has_deleted) == -1:
             menu.Append("撤销 (&Z)", self.undo, icon="action/undo.png")
@@ -106,6 +119,30 @@ class ElementListCtrl(ElementListCtrlUI):
         menu.Append("删除 (&D)" + mk_end(elements), self.remove_elements, elements, icon="action/delete.png")
 
         self.PopupMenu(menu)
+
+    def create_sub_project(self, elements: list[CursorElement]):
+        # 创建新元素并添加
+        new_element = CursorElement("新子项目", [])
+        new_element.create_sub_project(size=self.project.raw_canvas_size, elements=elements)
+        self.project.elements.append(new_element)
+
+        # 删除旧元素
+        for element in elements:
+            self.project.elements.remove(element)
+
+        self.rebuild_control()
+        self.send_project_updated()
+
+    def extract_sub_project(self, org_element: CursorElement):
+        frame_offset_delta = org_element.animation_start_offset
+        org_index = self.project.elements.index(org_element)
+        for element in org_element.sub_project.elements[::-1]:
+            element.animation_start_offset += frame_offset_delta
+            self.project.elements.insert(org_index, element)
+        self.project.elements.remove(org_element)
+
+        self.rebuild_control()
+        self.send_project_updated()
 
     def copy_elements(self, elements: list[CursorElement]):
         for element in elements[::-1]:

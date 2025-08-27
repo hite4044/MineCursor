@@ -38,14 +38,19 @@ def render_project_frame(project: CursorProject, frame: int) -> Image.Image:
             continue
         if not element.loop_animation and frame - element.animation_start_offset >= element_frames:
             continue
+
         if element_frames == 1:
             frame_index = 0
+            item = element.frames[frame_index]
         else:
-            temp_index = element.get_frame_index(frame)
-            frame_index = temp_index % element_frames
-            if element.reverse_animation:
-                frame_index = element_frames - frame_index - 1
-        item = element.frames[frame_index]
+            if element.sub_project:
+                item = render_project_frame(element.sub_project, frame - element.animation_start_offset)
+            else:
+                temp_index = element.get_frame_index(frame)
+                frame_index = temp_index % element_frames
+                if element.reverse_animation:
+                    frame_index = element_frames - frame_index - 1
+                item = element.frames[frame_index]
 
         # 按需填色
         if element.mask_color is not None:

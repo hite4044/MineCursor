@@ -8,6 +8,7 @@ from lib.ui_interface import ui_class
 from ui.element_add_dialog import ElementSelectListUI, ElementAddDialogUI, AssetSource
 from ui_ctl.element_sources.asset_source import ElementSelectList
 from ui_ctl.element_sources.image_source import ImageElementSource
+from ui_ctl.element_sources.project_source import ProjectSource
 from ui_ctl.element_sources.rect_source import RectElementSource
 from widget.win_icon import set_multi_size_icon
 
@@ -43,26 +44,24 @@ class ElementAddDialog(ElementAddDialogUI):
             self.sources_notebook.AddPage(selector, source.name, select=(source_enum == AssetSources.DEFAULT))
         self.rect_element_source = RectElementSource(self.sources_notebook)
         self.image_element_source = ImageElementSource(self.sources_notebook)
+        self.project_source = ProjectSource(self.sources_notebook)
         self.sources_notebook.AddPage(self.rect_element_source, "矩形")
         self.sources_notebook.AddPage(self.image_element_source, "图像")
+        self.sources_notebook.AddPage(self.project_source, "子项目")
         self.ok.Bind(wx.EVT_BUTTON, self.on_ok)
         self.cancel.Bind(wx.EVT_BUTTON, self.on_close)
         set_multi_size_icon(self, "assets/icons/element/add.png")
 
     def on_ok(self, _):
         if self.sources_notebook.GetCurrentPage() is self.rect_element_source:
-            self.proc_rect_page()
+            self.element = self.rect_element_source.get_element()
         elif self.sources_notebook.GetCurrentPage() is self.image_element_source:
-            self.proc_image_page()
+            self.element = self.image_element_source.get_element()
+        elif self.sources_notebook.GetCurrentPage() is self.project_source:
+            self.element = self.project_source.get_element()
         else:
             self.proc_source_page()
         self.EndModal(wx.ID_OK)
-
-    def proc_image_page(self):
-        self.element = self.image_element_source.get_element()
-
-    def proc_rect_page(self):
-        self.element = self.rect_element_source.get_element()
 
     def proc_source_page(self):
         active_selector: ElementSelectList = self.sources_notebook.GetCurrentPage()

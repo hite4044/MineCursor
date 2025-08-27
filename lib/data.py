@@ -14,8 +14,8 @@ from PIL import Image
 
 from lib.cursor.setter import CursorKind
 
-
 INVALID_FILENAME_CHAR = re.compile(r'[<>:"/\\|?*]')
+
 
 def generate_id(length: int = 4):
     return hex(int.from_bytes(random.randbytes(length), "big"))[2:]
@@ -198,6 +198,20 @@ class ThemeType(Enum):
     FOR_TEMP = 2  # 用作模版
 
 
+class SubProjectFrames(list):
+    def __init__(self, project: 'CursorProject'):
+        super().__init__()
+        from lib.render import render_project_frame
+        self.render_project_frame = render_project_frame
+        self.project = project
+
+    def __getitem__(self, index: int):
+        return self.render_project_frame(self.project, index)
+
+    def __len__(self):
+        return self.project.frame_count
+
+
 @dataclass
 class AnimationKeyData(DataClassSaveLoadMixin):
     frame_start: int = 0
@@ -254,7 +268,7 @@ class CursorElement:
         self.animation_data_index: list[int] = []
         self.proc_step = DEFAULT_PROC_ORDER
         self.final_rect = (0, 0, 16, 16)
-        self.final_image = None
+        self.final_image = Image.new("RGBA", (16, 16))
         self.sub_project: CursorProject | None = None
         self.id = int.from_bytes(random.randbytes(4), "big")
 
@@ -362,7 +376,34 @@ class CursorElement:
             element.frames.append(frame)
 
         element.build_animation_index()
+
+        if element.sub_project:
+            element.frames = SubProjectFrames(element.sub_project)
+
         return element
+
+    def create_sub_project(self, name: str = "新子项目", size: tuple[int, int] = (16, 16),
+                           elements: list['CursorElement'] | None = None):
+        """根据参数为本元素创建一个子项目"""
+        frame_count = 20
+        min_index = 0
+        if elements:
+            min_index = 114514
+            max_index = -114514
+            for element in elements:
+                min_index = min(min_index, element.animation_start_offset)
+                max_index = max(max_index, element.animation_start_offset)
+            frame_count = max_index - min_index
+
+        sub_project = CursorProject(name, size)
+        sub_project.is_ani_cursor = True
+        sub_project.frame_count = frame_count
+        for element in elements:
+            warp_element = element.copy()
+            warp_element.animation_start_offset -= min_index
+            sub_project.elements.append(warp_element)
+        self.sub_project = sub_project
+        self.frames = SubProjectFrames(sub_project)
 
     def copy(self) -> 'CursorElement':
         return CursorElement.from_dict(self.to_dict())
@@ -541,7 +582,6 @@ class AssetSources(Enum):
         members = AssetSources.members()
         sources = list(member.value for member in members.values())
         return sources
-
 
 
 @dataclass

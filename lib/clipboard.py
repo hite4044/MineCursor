@@ -34,7 +34,7 @@ class PublicClipBoard(ClipBoard):
     def __call__(self, window: wx.Window, get_data_func, set_data_func):
         self.callbacks[window.GetHandle()] = get_data_func, set_data_func
         window.Bind(wx.EVT_KEY_DOWN, self.on_key)
-        window.Bind(getattr(wx, "EVT_WINDOW_DESTROY"), self.on_window_destroyed)
+        window.Bind(getattr(wx, "EVT_WINDOW_DESTROY"), self.on_window_destroyed, window)
 
     def on_key(self, event: wx.KeyEvent):
         self.window = event.GetEventObject()

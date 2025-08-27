@@ -5,9 +5,9 @@ from PIL import Image
 
 from lib.clipboard import PUBLIC_ELEMENT_CLIPBOARD
 from lib.cursor.writer import write_cur, write_ani
-from lib.data import CursorProject, CursorElement, AssetSourceInfo, AssetType, SubProjectFrames
+from lib.data import CursorProject, CursorElement
 from lib.image_pil2wx import PilImg2WxImg
-from lib.render import render_project_gen, render_project_frame
+from lib.render import render_project_gen
 from ui.cursor_editor import ElementListCtrlUI
 from ui_ctl.cursor_editor_widgets.events import ProjectUpdatedEvent, ElementSelectedEvent
 from ui_ctl.cursor_editor_widgets.mask_editor import MaskEditor
@@ -29,10 +29,10 @@ class ElementListCtrl(ElementListCtrlUI):
         self.line_mapping = {}
         self.elements_has_deleted: list[list[tuple[int, CursorElement]]] = []
         self.set_processing = False
-        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_select)
-        self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_menu)
-        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_item_active)
-        self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu)
+        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_select, self)
+        self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_menu, self)
+        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_item_active, self)
+        self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu, self)
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_down, self)
         for element in project.elements:
             self.add_element(element)
@@ -92,6 +92,7 @@ class ElementListCtrl(ElementListCtrlUI):
             from ui_ctl.cursor_editor import CursorEditor
             element.sub_project.name = element.name
             editor = CursorEditor(self, element.sub_project)
+            editor.is_sub_project = True
             editor.Show()
 
     def on_item_menu(self, event: wx.ListEvent):
@@ -109,9 +110,9 @@ class ElementListCtrl(ElementListCtrlUI):
             menu.Append("下移一层 (&S)", self.move_element, index, 1, icon="action/down.png")
         menu.AppendSeparator()
         if len(elements) > 1:
-            menu.Append("创建子项目 (&G)", self.create_sub_project, elements, icon="project/add.png")
+            menu.Append("创建子项目 (&G)", self.create_sub_project, elements, icon="element/package.png")
         elif elements[0].sub_project:
-            menu.Append("解散子项目 (&G)", self.extract_sub_project, elements[0], icon="action/delete.png")
+            menu.Append("解散子项目 (&G)", self.extract_sub_project, elements[0], icon="element/unpackage.png")
         menu.Append("复制 (&C)" + mk_end(elements), self.copy_elements, elements, icon="element/copy.png")
         if len(self.elements_has_deleted) == -1:
             menu.Append("撤销 (&Z)", self.undo, icon="action/undo.png")

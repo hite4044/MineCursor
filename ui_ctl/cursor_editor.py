@@ -10,7 +10,7 @@ from widget.win_icon import set_multi_size_icon
 from ui_ctl.cursor_editor_widgets.element_canvas import ElementCanvas
 from ui_ctl.cursor_editor_widgets.element_list_ctrl import ElementListCtrl
 from ui_ctl.cursor_editor_widgets.events import EVT_PROJECT_UPDATED, EVT_ELEMENT_SELECTED, EVT_SCALE_UPDATED, \
-    ElementSelectedEvent, ScaleUpdatedEvent, EVT_FRAME_COUNTER_CHANGE, EVT_ANIMATION_MODE_CHANGE
+    ElementSelectedEvent, ScaleUpdatedEvent, EVT_FRAME_COUNTER_CHANGE, EVT_ANIMATION_MODE_CHANGE, ProjectUpdatedEvent
 from ui_ctl.cursor_editor_widgets.info_editor import InfoEditor
 
 
@@ -18,6 +18,7 @@ class CursorEditor(CursorEditorUI):
     elements_lc: 'ElementListCtrl'
     canvas: 'ElementCanvas'
     info_editor: 'InfoEditor'
+    is_sub_project: bool = False
 
     def __init__(self, parent: wx.Window | None, project: CursorProject):
         timer = Counter(create_start=True)
@@ -38,9 +39,9 @@ class CursorEditor(CursorEditorUI):
         self.Bind(wx.EVT_CLOSE, self.on_close)
         logger.info(f"项目编辑器初始化用时: {timer.endT()}, 项目: {project}")
 
-    @staticmethod
-    def on_close(event: wx.CloseEvent):
-        theme_manager.save()
+    def on_close(self, event: wx.CloseEvent):
+        if not self.is_sub_project:
+            theme_manager.save()
         event.Skip()
 
     def on_frame_counter_change(self, event):
@@ -70,7 +71,8 @@ class CursorEditor(CursorEditorUI):
         else:
             self.b_rect_size = None
 
-    def on_project_updated(self, _):
+    def on_project_updated(self, event: ProjectUpdatedEvent):
+        event.Skip()
         logger.debug("项目数据已更新")
         self.elements_lc.project_updated()
         self.canvas.project_updated()

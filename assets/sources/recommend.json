@@ -10,7 +10,7 @@
         "item/wooden_sword.png",
         "item/iron_sword.png",
         "item/stick.png",
-        "item/touch.png",
+        "block/torch.png",
         "item/arrow.png"
     ]
 }

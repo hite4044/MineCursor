@@ -98,8 +98,11 @@ def render_project_frame(project: CursorProject, frame: int) -> Image.Image:
 
         element.final_rect = (element.position[0] - x_off, element.position[1] - y_off, item.width, item.height)
         element.final_image = item
-        mask = element.mask if element.mask and element.mask.size == item.size else item.getchannel("A")
-        canvas.paste(item, (element.position[0] - x_off, element.position[1] - y_off), mask)
+        if element.mask is None and element.sub_project:
+            canvas.alpha_composite(item, (element.position[0] - x_off, element.position[1] - y_off))
+        else:
+            mask = element.mask if element.mask and element.mask.size == item.size else item.getchannel("A")
+            canvas.paste(item, (element.position[0] - x_off, element.position[1] - y_off), mask)
     scaled_canvas = canvas.resize(project.canvas_size, project.resample)
     logger.debug(f"渲染第{str(frame).zfill(2)}帧耗时: {timer.endT()}")
     return scaled_canvas

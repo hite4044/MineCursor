@@ -223,7 +223,7 @@ class ProjectInfoEditor(ProjectInfoEditorUI):
 
     def on_frame_count_change(self, event: DataEntryEvent):
         event.Skip()
-        self.frame_counter_slider.SetMax(event.data)
+        self.frame_counter_slider.SetMax(event.data - 1)
 
     def open_rate_editor(self, _):
         if not self.project.is_ani_cursor:

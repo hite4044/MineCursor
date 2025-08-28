@@ -32,5 +32,5 @@ class ProjectSource(wx.Panel):
 
     def get_element(self):
         element = CursorElement(self.name.data, [])
-        element.create_sub_project(self.name.data, (self.size_width.data, self.size_height.data))
+        element.create_sub_project(self.name.data, (self.size_width.data, self.size_height.data), [])
         return element

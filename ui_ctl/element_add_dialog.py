@@ -73,6 +73,7 @@ class ElementAddDialog(ElementAddDialogUI):
         else:
             self.proc_source_page()
         self.EndModal(wx.ID_OK)
+        self.Destroy()
 
     def proc_source_page(self):
         active_selector: ElementSelectList = self.sources_notebook.GetCurrentPage()
@@ -90,6 +91,7 @@ class ElementAddDialog(ElementAddDialogUI):
 
     def on_close(self, _):
         self.EndModal(wx.ID_CANCEL)
+        self.Destroy()
 
 
 if __name__ == "__main__":

@@ -7,8 +7,9 @@ import wx
 from PIL.Image import Resampling
 
 from lib.clipboard import ClipBoard
+from lib.config import config
 from lib.cursor.setter import CURSOR_KIND_NAME_CUTE, CURSOR_KIND_NAME_OFFICIAL, CursorKind
-from lib.data import CursorTheme, CursorProject, INVALID_FILENAME_CHAR
+from lib.data import CursorTheme, CursorProject, INVALID_FILENAME_CHAR, ThemeType
 from lib.image_pil2wx import PilImg2WxImg
 from lib.log import logger
 from lib.render import render_project_frame
@@ -30,6 +31,7 @@ class ThemeSelectedEvent(wx.PyCommandEvent):
 
 
 class PublicThemeSelector(PublicThemeSelectorUI):
+    FORCE_FULL_THEME = False
     def __init__(self, parent: wx.Window):
         super().__init__(parent)
         self.clip = ClipBoard(self, self.clip_on_get_copy_data, self.clip_on_set_copy_data)
@@ -57,6 +59,9 @@ class PublicThemeSelector(PublicThemeSelectorUI):
         self.DeleteAllItems()
         self.line_theme_mapping.clear()
         for theme in theme_manager.themes:
+            if not config.show_hidden_themes and not self.FORCE_FULL_THEME:
+                if theme.type != ThemeType.NORMAL:
+                    continue
             self.append_theme(theme)
 
     def reload_themes(self):
@@ -71,6 +76,10 @@ class PublicThemeSelector(PublicThemeSelectorUI):
         self.SetItem(index, 2, theme.author)
         self.SetItem(index, 3, theme.description)
         self.line_theme_mapping[index] = theme
+        if theme.type == ThemeType.FOR_CHOOSE:
+            self.SetItemBackgroundColour(index, wx.Colour(230, 255, 230))
+        elif theme.type == ThemeType.FOR_TEMP:
+            self.SetItemBackgroundColour(index, wx.Colour(230, 230, 255))
 
     def on_item_selected(self, event: wx.ListEvent):
         event.Skip()

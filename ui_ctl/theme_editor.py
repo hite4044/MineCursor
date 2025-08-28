@@ -10,6 +10,7 @@ from typing import cast
 
 import wx
 
+from lib.config import config
 from lib.cursor.inst_ini_gen import CursorInstINIGenerator
 from lib.cursor.setter import CURSOR_KIND_NAME_OFFICIAL, CursorKind, CursorsInfo, set_cursors_progress, SchemesType, \
     CR_INFO_FIELD_MAP, CursorData
@@ -100,7 +101,9 @@ class ThemeEditor(ThemeEditorUI):
 
     @staticmethod
     def on_close(event: wx.CloseEvent):
+        """程序关闭前的动作"""
         theme_manager.save()
+        config.save_config()
         event.Skip()
 
 
@@ -182,10 +185,17 @@ class ThemeSelector(PublicThemeSelector):
             menu.AppendSeparator()
             menu.Append("撤销 (&Z)", self.undo, icon="action/undo.png")
         menu.AppendSeparator()
+        menu.Append("显示隐藏主题 (&H)", self.on_show_hidden_theme,
+                            icon="theme/unshow_hidden.png" if config.show_hidden_themes else "theme/show_hidden.png")
+        menu.AppendSeparator()
         menu.Append("打开主题文件夹 (&O)", self.on_open_theme_folder, icon="action/open_data_dir.png")
         menu.Append("清空所有主题 (&D)", self.on_clear_all_theme, icon="action/delete.png")
 
         self.PopupMenu(menu)
+
+    def on_show_hidden_theme(self):
+        config.show_hidden_themes = not config.show_hidden_themes
+        self.reload_themes()
 
     def exchange_item(self, index: int, offset: int):
         if not (0 <= index + offset < self.GetItemCount()):

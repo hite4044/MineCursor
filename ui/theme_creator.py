@@ -30,6 +30,7 @@ class CursorsSelectorUI(wx.SplitterWindow):
         super().__init__(parent)
 
         self.theme_selector = ui_class(PublicThemeSelectorUI)(self)
+        self.theme_selector.FORCE_FULL_THEME = True
         self.cursors_con = wx.SplitterWindow(self)
         self.source_con = wx.Panel(self.cursors_con)
         self.source_cursors = ui_class(SourceThemeCursorListUI)(self.source_con)

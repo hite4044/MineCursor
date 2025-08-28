@@ -194,8 +194,8 @@ class ReverseWay(Enum):
 
 class ThemeType(Enum):
     NORMAL = 0  # 普通
-    FOR_CHOOSE = 1  # 用作选配
-    FOR_TEMP = 2  # 用作模版
+    PRE_DEFINE = 1  # 用作选配
+    TEMPLATE = 2  # 用作模版
 
 
 class SubProjectFrames(list):
@@ -430,7 +430,7 @@ class CursorProject:
         self.ani_rate: int = 6
         self.ani_rates: list[int] | None = None
 
-        self.id: str = generate_id(2)
+        self.id: str = generate_id(4)
 
     @property
     def frame_delay(self) -> int:

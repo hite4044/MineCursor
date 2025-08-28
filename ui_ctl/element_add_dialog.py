@@ -3,13 +3,14 @@ import re
 import wx
 
 from lib.cursor.setter import CursorKind
-from lib.data import CursorElement, AssetSources, AssetSourceInfo, AssetType
+from lib.data import CursorElement, AssetSources, AssetSourceInfo, AssetType, SubProjectFrames
 from lib.ui_interface import ui_class
 from ui.element_add_dialog import ElementSelectListUI, ElementAddDialogUI, AssetSource
 from ui_ctl.element_sources.asset_source import ElementSelectList
 from ui_ctl.element_sources.image_source import ImageElementSource
 from ui_ctl.element_sources.project_source import ProjectSource
 from ui_ctl.element_sources.rect_source import RectElementSource
+from ui_ctl.element_sources.temp_source import TemplateSource
 from widget.win_icon import set_multi_size_icon
 
 ROOT_IMAGES = {
@@ -43,9 +44,11 @@ class ElementAddDialog(ElementAddDialogUI):
             selector = ui_class(ElementSelectListUI)(self.sources_notebook, source, cursor_kind)
             self.sources_notebook.AddPage(selector, source.name, select=(source_enum == AssetSources.DEFAULT))
         self.rect_element_source = RectElementSource(self.sources_notebook)
+        self.template_source = TemplateSource(self.sources_notebook)
         self.image_element_source = ImageElementSource(self.sources_notebook)
         self.project_source = ProjectSource(self.sources_notebook)
         self.sources_notebook.AddPage(self.rect_element_source, "矩形")
+        self.sources_notebook.AddPage(self.template_source, "模板")
         self.sources_notebook.AddPage(self.image_element_source, "图像")
         self.sources_notebook.AddPage(self.project_source, "子项目")
         self.ok.Bind(wx.EVT_BUTTON, self.on_ok)
@@ -59,6 +62,14 @@ class ElementAddDialog(ElementAddDialogUI):
             self.element = self.image_element_source.get_element()
         elif self.sources_notebook.GetCurrentPage() is self.project_source:
             self.element = self.project_source.get_element()
+        elif self.sources_notebook.GetCurrentPage() is self.template_source:
+            if project := self.template_source.get_project():
+                element = CursorElement(project.name, [])
+                element.sub_project = project
+                element.frames = SubProjectFrames(project)
+                self.element = element
+            else:
+                self.element = None
         else:
             self.proc_source_page()
         self.EndModal(wx.ID_OK)

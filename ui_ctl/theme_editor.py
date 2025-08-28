@@ -75,8 +75,8 @@ class ThemeDataDialog(DataDialog):
                          DataLineParam("type", "主题类型", DataLineType.CHOICE, theme_type,
                                        enum_names={
                                            ThemeType.NORMAL: "普通",
-                                           ThemeType.FOR_CHOOSE: "预设",
-                                           ThemeType.FOR_TEMP: "模版",
+                                           ThemeType.PRE_DEFINE: "预设",
+                                           ThemeType.TEMPLATE: "模版",
                                        }),
                          )
         if is_create:

@@ -76,9 +76,9 @@ class PublicThemeSelector(PublicThemeSelectorUI):
         self.SetItem(index, 2, theme.author)
         self.SetItem(index, 3, theme.description)
         self.line_theme_mapping[index] = theme
-        if theme.type == ThemeType.FOR_CHOOSE:
+        if theme.type == ThemeType.PRE_DEFINE:
             self.SetItemBackgroundColour(index, wx.Colour(230, 255, 230))
-        elif theme.type == ThemeType.FOR_TEMP:
+        elif theme.type == ThemeType.TEMPLATE:
             self.SetItemBackgroundColour(index, wx.Colour(230, 230, 255))
 
     def on_item_selected(self, event: wx.ListEvent):

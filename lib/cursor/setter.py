@@ -246,7 +246,6 @@ def set_cursors_progress(cursors_info: CursorsInfo, scheme_type: SchemesType, sc
                         cursor = LoadImage(None, cursor_data.cursor_path, IMAGE_CURSOR, 0, 0,
                                            LR_LOADFROMFILE | LR_DEFAULTSIZE)
                     except pywintypes.error:  # 发生错误时尝试使用IDC_资源
-                        print(114514)
                         cursor = LoadCursor(None, CURSOR_IDC_MAP.get(cursor_data.kind, IDC_ARROW))
                         cursor = CopyIcon(cursor)
                 path = cursor_data.cursor_path

@@ -1,3 +1,4 @@
+import json
 import os
 import re
 from enum import Enum
@@ -116,6 +117,10 @@ class ThemeFileDropTarget(wx.FileDropTarget):
         if self.on_drop_theme:
             self.on_drop_theme(x, y, filenames)
         return True
+def mk_end(li: list):
+    if len(li) > 1:
+        return f" ({len(li)})"
+    return ""
 
 
 class ThemeSelector(PublicThemeSelector):
@@ -151,23 +156,35 @@ class ThemeSelector(PublicThemeSelector):
                 pass
         self.reload_themes()
 
+    def get_select_items(self) -> list[int]:
+        first = self.GetFirstSelected()
+        selections = []
+        while first != -1:
+            selections.append(first)
+            first = self.GetNextSelected(first)
+        return selections
+
     def on_item_menu(self, event: wx.ListEvent):
         theme = self.line_theme_mapping[event.GetIndex()]
+        themes = [self.line_theme_mapping[index] for index in self.get_select_items()]
         menu = EtcMenu()
         menu.Append("添加 (&A)", self.on_add_theme, icon="theme/add.png")
         menu.Append("合成主题 (&M)", self.on_create_theme, icon="theme/merge.png")
-        menu.AppendSeparator()
-        menu.Append("编辑主题信息 (&E)", self.on_edit_theme, theme, icon="theme/edit_info.png")
+        if len(themes) == 1:
+            menu.AppendSeparator()
+            menu.Append("编辑主题信息 (&E)", self.on_edit_theme, theme, icon="theme/edit_info.png")
         menu.AppendSeparator()
         menu.Append("导入主题 (&I)", self.on_import_theme, icon="theme/import.png")
-        menu.Append("导出主题 (&O)", self.on_export_theme, theme, icon="theme/export.png")
-        menu.AppendSeparator()
-        menu.Append("导出指针 (&C)", self.on_export_theme_cursors, theme, icon="theme/export_cursor.png")
+        menu.Append("导出主题 (&O)" + mk_end(themes), self.on_export_theme, themes, icon="theme/export.png")
+        if len(themes) == 1:
+            menu.AppendSeparator()
+            menu.Append("导出指针 (&C)", self.on_export_theme_cursors, theme, icon="theme/export_cursor.png")
         if len(self.themes_has_deleted) != 0:
             menu.AppendSeparator()
             menu.Append("撤销 (&Z)", self.undo, icon="action/undo.png")
-        menu.AppendSeparator()
-        menu.Append("删除 (&D)", self.on_delete_theme, theme, icon="action/delete.png")
+        if len(themes) == 1:
+            menu.AppendSeparator()
+            menu.Append("删除 (&D)", self.on_delete_theme, theme, icon="action/delete.png")
         self.PopupMenu(menu)
 
     def on_menu(self, event: wx.MouseEvent):
@@ -253,13 +270,18 @@ class ThemeSelector(PublicThemeSelector):
                 theme_manager.load_theme(file_path)
         self.reload_themes()
 
-    def on_export_theme(self, theme: CursorTheme):
-        dialog = wx.FileDialog(self, "导出主题",
+    def on_export_theme(self, themes: list[CursorTheme]):
+        dialog = wx.FileDialog(self, f"导出主题 ({len(themes)}个文件)",
+                               name=themes[0].name,
                                wildcard="MineCursor 主题文件 (*.mctheme)|*.mctheme|MineCursor 主题文件 (*json)|*json",
                                style=wx.FD_SAVE)
         if dialog.ShowModal() == wx.ID_OK:
             file_path = dialog.GetPath()
-            theme_manager.save_theme_file(file_path, theme)
+            file_dir = os.path.dirname(file_path)
+            end_fix = file_path.split(".")[-1]
+            for theme in themes:
+                export_path = os.path.join(file_dir, theme.name + "." + end_fix)
+                theme_manager.save_theme_file(export_path, theme)
 
     def on_export_theme_cursors(self, theme: CursorTheme):
         dialog = wx.DirDialog(self, "导出主题指针", defaultPath=theme.name)
@@ -280,10 +302,18 @@ class ThemeSelector(PublicThemeSelector):
     def on_import_theme(self):
         dialog = wx.FileDialog(self, "导入主题",
                                wildcard="MineCursor 主题文件 (*.mctheme)|*.mctheme|所有文件 (*.*)|*.*",
-                               style=wx.FD_OPEN)
+                               style=wx.FD_OPEN | wx.FD_MULTIPLE)
         if dialog.ShowModal() == wx.ID_OK:
-            file_path = dialog.GetPath()
-            theme_manager.load_theme(file_path)
+            error_paths = []
+            for file_path in dialog.GetFilenames():
+                try:
+                    theme_manager.load_theme(file_path)
+                except (KeyError, json.JSONDecodeError):
+                    error_paths.append(file_path)
+            if error_paths:
+                pf = '\n'.join(error_paths)
+                wx.MessageBox(f"以下主题文件导入失败: \n{pf}",
+                              "导入主题文件失败", wx.OK | wx.ICON_ERROR)
             self.reload_themes()
 
     @staticmethod

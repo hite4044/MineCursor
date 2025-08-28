@@ -12,7 +12,7 @@ class ProjectSource(wx.Panel):
         self.size_width = IntEntry(self, "宽度")
         self.size_height = IntEntry(self, "高度")
 
-        self.name.set_value("名称")
+        self.name.set_value("新子项目")
         self.size_width.set_value(32)
         self.size_height.set_value(32)
 

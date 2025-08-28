@@ -428,8 +428,8 @@ class ThemeCursorList(PublicThemeCursorList):
             wx.CallAfter(self.apply_theme_btn.Enable)
             return
         except Exception as e:
-            logger.error(f"应用主题失败: {e}")
-            wx.MessageBox(f"应用主题失败: {e}", "错误", wx.ICON_ERROR)
+            logger.error(f"应用主题失败: {e.__class__.__name__}: {e}")
+            wx.MessageBox(f"应用主题失败: {e.__class__.__name__}: {e}", "错误", wx.ICON_ERROR)
         wx.CallAfter(dialog.EndModal, wx.ID_OK)
         wx.CallAfter(self.apply_theme_btn.Enable)
 

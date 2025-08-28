@@ -5,11 +5,12 @@ from enum import Enum
 from os.path import expandvars, basename
 from winreg import HKEYType
 
+import pywintypes
 from win32con import IMAGE_CURSOR, LR_LOADFROMFILE, OCR_NORMAL, OCR_APPSTARTING, OCR_WAIT, OCR_CROSS, OCR_IBEAM, OCR_NO, \
     OCR_SIZENS, OCR_SIZEWE, OCR_SIZENWSE, OCR_SIZENESW, OCR_UP, OCR_HAND, OCR_SIZEALL, IDC_ARROW, IDC_HELP, \
     IDC_APPSTARTING, IDC_WAIT, IDC_CROSS, IDC_IBEAM, IDC_SIZENS, IDC_NO, IDC_HAND, IDC_UPARROW, IDC_SIZEWE, \
     IDC_SIZENESW, IDC_SIZEALL
-from win32gui import LoadImage, LoadCursor, CopyIcon, LR_DEFAULTSIZE
+from win32gui import LoadImage, LoadCursor, LR_DEFAULTSIZE
 
 from lib.log import logger
 
@@ -17,7 +18,8 @@ OCR_HELP = 32651
 OCR_PIN = 32671
 OCR_PERSON = 32672
 SetSystemCursor = windll.user32.SetSystemCursor
-SYS_CUR_ROOT = expandvars(r"%SystemRoot%\cursors\aero_")
+CopyIcon = windll.user32.CopyIcon
+SYS_CUR_ROOT = expandvars("%SystemRoot%\\cursors\\")
 
 
 @dataclass
@@ -138,23 +140,23 @@ class CursorsInfo:
     def __init__(self, use_aero: bool = True):
         self.use_aero = use_aero
 
-        self.arrow: CursorData = CursorData("arrow.cur", CursorKind.ARROW, OCR_NORMAL)
-        self.help: CursorData = CursorData("helpsel.cur", CursorKind.HELP, OCR_HELP)
-        self.app_starting: CursorData = CursorData("working.ani", CursorKind.APP_STARTING, OCR_APPSTARTING)
-        self.wait: CursorData = CursorData("busy.ani", CursorKind.WAIT, OCR_WAIT)
+        self.arrow: CursorData = CursorData("aero_arrow.cur", CursorKind.ARROW, OCR_NORMAL)
+        self.help: CursorData = CursorData("aero_helpsel.cur", CursorKind.HELP, OCR_HELP)
+        self.app_starting: CursorData = CursorData("aero_working.ani", CursorKind.APP_STARTING, OCR_APPSTARTING)
+        self.wait: CursorData = CursorData("aero_busy.ani", CursorKind.WAIT, OCR_WAIT)
         self.cross_hair: CursorData = CursorData("", CursorKind.CROSS_HAIR, OCR_CROSS)
         self.text: CursorData = CursorData("", CursorKind.TEXT, OCR_IBEAM)  # 注册表名称: IBeam
-        self.pen: CursorData = CursorData("pen.cur", CursorKind.PEN, -1)
-        self.no: CursorData = CursorData("unavail.cur", CursorKind.NO, OCR_NO)
-        self.size_sn: CursorData = CursorData("ns.cur", CursorKind.SIZE_SN, OCR_SIZENS)
-        self.size_we: CursorData = CursorData("ew.cur", CursorKind.SIZE_WE, OCR_SIZEWE)
-        self.size_nw_se: CursorData = CursorData("nwse.cur", CursorKind.SIZE_NW_SE, OCR_SIZENWSE)
-        self.size_ne_sw: CursorData = CursorData("nesw.cur", CursorKind.SIZE_NE_SW, OCR_SIZENESW)
-        self.size_all: CursorData = CursorData("move.cur", CursorKind.SIZE_ALL, OCR_SIZEALL)
-        self.up_arrow: CursorData = CursorData("up.cur", CursorKind.UP_ARROW, OCR_UP)
-        self.hand: CursorData = CursorData("link.cur", CursorKind.LINK, OCR_HAND)  # 链接选择
-        self.pin: CursorData = CursorData("pin.cur", CursorKind.PIN, OCR_PIN)  # 位置选择
-        self.person: CursorData = CursorData("person.cur", CursorKind.PERSON, OCR_PERSON)  # 个人选择
+        self.pen: CursorData = CursorData("aero_pen.cur", CursorKind.PEN, -1)
+        self.no: CursorData = CursorData("aero_unavail.cur", CursorKind.NO, OCR_NO)
+        self.size_sn: CursorData = CursorData("aero_ns.cur", CursorKind.SIZE_SN, OCR_SIZENS)
+        self.size_we: CursorData = CursorData("aero_ew.cur", CursorKind.SIZE_WE, OCR_SIZEWE)
+        self.size_nw_se: CursorData = CursorData("aero_nwse.cur", CursorKind.SIZE_NW_SE, OCR_SIZENWSE)
+        self.size_ne_sw: CursorData = CursorData("aero_nesw.cur", CursorKind.SIZE_NE_SW, OCR_SIZENESW)
+        self.size_all: CursorData = CursorData("aero_move.cur", CursorKind.SIZE_ALL, OCR_SIZEALL)
+        self.up_arrow: CursorData = CursorData("aero_up.cur", CursorKind.UP_ARROW, OCR_UP)
+        self.hand: CursorData = CursorData("aero_link.cur", CursorKind.LINK, OCR_HAND)  # 链接选择
+        self.pin: CursorData = CursorData("aero_pin.cur", CursorKind.PIN, OCR_PIN)  # 位置选择
+        self.person: CursorData = CursorData("aero_person.cur", CursorKind.PERSON, OCR_PERSON)  # 个人选择
         self.field_names = [
             "arrow",
             "help",
@@ -213,8 +215,10 @@ def set_cursors_progress(cursors_info: CursorsInfo, scheme_type: SchemesType, sc
         # 设置 鼠标指针文件 的路径
         cursor_datas: list[CursorData] = [getattr(cursors_info, field_name) for field_name in cursors_info.field_names]
 
-        # 设置 鼠标主题 包含的鼠标指针 的路径
-        path_text = ",".join([data.cursor_path for data in cursor_datas])
+        # 设置 鼠标主题 包含的鼠标指针 的路径, 总之就是综合考虑 是否使用Aero 指针路径是否为空 指针数据是否默认
+        path_text = ",".join(
+            [("" if (not cursors_info.use_aero and data.is_default) or not data.cursor_path else data.cursor_path) for
+             data in cursor_datas])
         winreg.SetValueEx(schemes_set, full_name, 0, winreg.REG_EXPAND_SZ, path_text)
 
         # 设置当前使用主题
@@ -229,15 +233,22 @@ def set_cursors_progress(cursors_info: CursorsInfo, scheme_type: SchemesType, sc
             logger.info(f"设置 {cursor_data.kind.value} 为 {basename(cursor_data.cursor_path)}")
             if cursor_data.ocr_con == -1:
                 continue
-            if not cursors_info.use_aero and cursor_data.is_default:
+            if not cursors_info.use_aero and cursor_data.is_default:  # 使用IDC资源
                 cursor = LoadCursor(None, CURSOR_IDC_MAP.get(cursor_data.kind, IDC_ARROW))
-                CopyIcon(cursor)
+                cursor = CopyIcon(cursor)
                 path = ""
             else:
-                if raw_size:
-                    cursor = LoadImage(None, cursor_data.cursor_path, IMAGE_CURSOR, cursor_size, cursor_size, LR_LOADFROMFILE)
+                if raw_size:  # 是否使用原大小
+                    cursor = LoadImage(None, cursor_data.cursor_path, IMAGE_CURSOR, cursor_size, cursor_size,
+                                       LR_LOADFROMFILE)
                 else:
-                    cursor = LoadImage(None, cursor_data.cursor_path, IMAGE_CURSOR, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE)
+                    try:
+                        cursor = LoadImage(None, cursor_data.cursor_path, IMAGE_CURSOR, 0, 0,
+                                           LR_LOADFROMFILE | LR_DEFAULTSIZE)
+                    except pywintypes.error:  # 发生错误时尝试使用IDC_资源
+                        print(114514)
+                        cursor = LoadCursor(None, CURSOR_IDC_MAP.get(cursor_data.kind, IDC_ARROW))
+                        cursor = CopyIcon(cursor)
                 path = cursor_data.cursor_path
             winreg.SetValueEx(global_set, cursor_data.kind.value, 0, winreg.REG_EXPAND_SZ, path)
             logger.debug(f"指针句柄: {cursor}")

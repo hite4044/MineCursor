@@ -82,7 +82,7 @@ class ImageElementSourceUI(wx.Panel):
         self.path_entry = wx.TextCtrl(self)
         self.chs_file_btn = wx.Button(self, label="选择")
         self.load_paste_board = wx.Button(self, label="加载剪切板")
-        self.file_drag_wnd = CenteredText(self, label="拖放图片文件至此", size=(350, 175), style=wx.SIMPLE_BORDER)
+        self.file_drag_wnd = CenteredText(self, label="拖放图片文件至此", style=wx.SIMPLE_BORDER)
         self.name = StringEntry(self, "元素名称")
         self.resize_width = IntEntry(self, "缩放至宽度")
         self.resize_height = IntEntry(self, "缩放至高度")
@@ -90,6 +90,8 @@ class ImageElementSourceUI(wx.Panel):
         self.preview_bitmap = wx.StaticBitmap(self)
 
         self.file_drag_wnd.SetFont(ft(24))
+        self.file_drag_wnd.SetSize((350, 175))
+        self.file_drag_wnd.SetMinSize(self.file_drag_wnd.GetSize())
         self.name.set_value("新图像")
 
         sizer = wx.BoxSizer(wx.VERTICAL)

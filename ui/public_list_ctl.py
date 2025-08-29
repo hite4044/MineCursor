@@ -19,7 +19,7 @@ class PublicThemeCursorListUI(wx.ListCtrl):
         btn_sizer.Add(self.apply_theme_btn, 0)
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.AddStretchSpacer()
-        sizer.Add(btn_sizer, 0, wx.EXPAND | wx.ALL, 5)
+        sizer.Add(btn_sizer, 0, wx.EXPAND | wx.ALL, 10)
         self.SetSizer(sizer)
 
 

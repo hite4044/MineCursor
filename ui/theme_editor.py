@@ -17,7 +17,7 @@ class ThemeEditorUI(wx.Frame):
         self.cursor_list = ui_class(ThemeCursorListUI)(self.cursor_list_outbox)
         self.cursor_list_outbox.SetBackgroundColour(self.cursor_list.GetBackgroundColour())
         list_sizer = wx.BoxSizer(wx.VERTICAL)
-        list_sizer.Add(self.cursor_list, 1, wx.EXPAND | wx.TOP | wx.BOTTOM, 15)
+        list_sizer.Add(self.cursor_list, 1, wx.EXPAND | wx.TOP, 15)
         self.cursor_list_outbox.SetSizer(list_sizer)
 
         self.splitter.SplitVertically(self.theme_selector, self.cursor_list_outbox)

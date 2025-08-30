@@ -545,9 +545,9 @@ class AssetSource:
 
 
 class AssetSources(Enum):
-    MINECRAFT_1_21_5 = AssetSource("Minecraft 1.21.5",
-                                   "minecraft-textures-1.21.5",
-                                   r"assets/sources/1.21.5/textures.zip")
+    # MINECRAFT_1_21_5 = AssetSource("Minecraft 1.21.5",
+    #                                "minecraft-textures-1.21.5",
+    #                                r"assets/sources/1.21.5/textures.zip")
     MINECRAFT_25W32A = AssetSource("Minecraft 25w32a (1.21.9)",
                                    "minecraft-textures-25w32a",
                                    r"assets/sources/25w32a/textures.zip")

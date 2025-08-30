@@ -13,7 +13,18 @@ from ui_ctl.cursor_editor_widgets.events import ProjectUpdatedEvent, ElementSele
 from ui_ctl.cursor_editor_widgets.mask_editor import MaskEditor
 from ui_ctl.cursor_editor_widgets.source_info_editor import SourceInfoEditDialog
 from ui_ctl.element_add_dialog import ElementAddDialog
+from widget.data_dialog import DataDialog, DataLineParam, DataLineType
 from widget.ect_menu import EtcMenu
+
+
+class ProjectSizeDialog(DataDialog):
+    def __init__(self, parent: wx.Window, size: int | tuple[int, int]):
+        super().__init__(parent, "修改项目尺寸",
+                         DataLineParam("width", "画布宽", DataLineType.INT, size[0]),
+                         DataLineParam("height", "画布高", DataLineType.INT, size[1]))
+
+    def get_size(self):
+        return self.datas["width"], self.datas["height"]
 
 
 def mk_end(li: list):
@@ -112,6 +123,8 @@ class ElementListCtrl(ElementListCtrlUI):
         if len(elements) > 1:
             menu.Append("创建子项目 (&G)", self.create_sub_project, elements, icon="element/package.png")
         elif elements[0].sub_project:
+            menu.Append("编辑子项目信息 (&P)", self.edit_sub_project_info,
+                        elements[0].sub_project, icon="project/edit_info.png")
             menu.Append("解散子项目 (&G)", self.extract_sub_project, elements[0], icon="element/unpackage.png")
         menu.Append("复制 (&C)" + mk_end(elements), self.copy_elements, elements, icon="element/copy.png")
         if len(self.elements_has_deleted) == -1:
@@ -120,6 +133,12 @@ class ElementListCtrl(ElementListCtrlUI):
         menu.Append("删除 (&D)" + mk_end(elements), self.remove_elements, elements, icon="action/delete.png")
 
         self.PopupMenu(menu)
+
+    def edit_sub_project_info(self, sub_project: CursorProject):
+        dialog = ProjectSizeDialog(self, sub_project.raw_canvas_size)
+        if dialog.ShowModal() == wx.ID_OK:
+            sub_project.raw_canvas_size = dialog.get_size()
+            self.send_project_updated()
 
     def create_sub_project(self, elements: list[CursorElement]):
         # 创建新元素并添加

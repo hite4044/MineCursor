@@ -273,7 +273,7 @@ class ThemeSelector(PublicThemeSelector):
 
     def on_export_theme(self, themes: list[CursorTheme]):
         dialog = wx.FileDialog(self, f"导出主题 ({len(themes)}个文件)",
-                               name=themes[0].name,
+                               defaultFile=f"{themes[0].name}.mctheme",
                                wildcard="MineCursor 主题文件 (*.mctheme)|*.mctheme|MineCursor 主题文件 (*json)|*json",
                                style=wx.FD_SAVE)
         if dialog.ShowModal() == wx.ID_OK:

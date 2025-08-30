@@ -2,15 +2,15 @@ import winreg
 from ctypes import windll
 from dataclasses import dataclass
 from enum import Enum
-from os.path import expandvars, basename
+from os.path import basename
+from os.path import expandvars
 from winreg import HKEYType
 
-import pywintypes
-from win32con import IMAGE_CURSOR, LR_LOADFROMFILE, OCR_NORMAL, OCR_APPSTARTING, OCR_WAIT, OCR_CROSS, OCR_IBEAM, OCR_NO, \
+from win32con import OCR_NORMAL, OCR_APPSTARTING, OCR_WAIT, OCR_CROSS, OCR_IBEAM, OCR_NO, \
     OCR_SIZENS, OCR_SIZEWE, OCR_SIZENWSE, OCR_SIZENESW, OCR_UP, OCR_HAND, OCR_SIZEALL, IDC_ARROW, IDC_HELP, \
     IDC_APPSTARTING, IDC_WAIT, IDC_CROSS, IDC_IBEAM, IDC_SIZENS, IDC_NO, IDC_HAND, IDC_UPARROW, IDC_SIZEWE, \
-    IDC_SIZENESW, IDC_SIZEALL
-from win32gui import LoadImage, LoadCursor, LR_DEFAULTSIZE
+    IDC_SIZENESW, IDC_SIZEALL, SPI_SETCURSORS
+
 
 from lib.log import logger
 
@@ -228,32 +228,41 @@ def set_cursors_progress(cursors_info: CursorsInfo, scheme_type: SchemesType, sc
         winreg.SetValueEx(global_set, "CursorBaseSize", 0, winreg.REG_DWORD, cursor_size)
         winreg.SetValueEx(global_set, "Scheme Source", 0, winreg.REG_DWORD, 1)
 
+        # 后面发现只需要调用SystemParametersInfoW就可以让系统自己加载指针了
+        # 所以现在这个循环只设置注册表指针路径, 不自行设置鼠标指针
+
+        # import pywintypes
+        # from win32api import LoadCursor
+        # from win32con import IMAGE_CURSOR, LR_LOADFROMFILE
+        # from win32gui import LoadImage, LR_DEFAULTSIZE
         for i, cursor_data in enumerate(cursor_datas):
             yield f"设置指针 [{cursor_data.kind.name}]", i
             logger.info(f"设置 {cursor_data.kind.value} 为 {basename(cursor_data.cursor_path)}")
-            if cursor_data.ocr_con == -1:
-                continue
+            # if cursor_data.ocr_con == -1:
+            #     continue
             if not cursors_info.use_aero and cursor_data.is_default:  # 使用IDC资源
-                cursor = LoadCursor(None, CURSOR_IDC_MAP.get(cursor_data.kind, IDC_ARROW))
-                cursor = CopyIcon(cursor)
+                # cursor = LoadCursor(None, CURSOR_IDC_MAP.get(cursor_data.kind, IDC_ARROW))
+                # cursor = CopyIcon(cursor)
                 path = ""
             else:
-                if raw_size:  # 是否使用原大小
-                    cursor = LoadImage(None, cursor_data.cursor_path, IMAGE_CURSOR, cursor_size, cursor_size,
-                                       LR_LOADFROMFILE)
-                else:
-                    try:
-                        cursor = LoadImage(None, cursor_data.cursor_path, IMAGE_CURSOR, 0, 0,
-                                           LR_LOADFROMFILE | LR_DEFAULTSIZE)
-                    except pywintypes.error:  # 发生错误时尝试使用IDC_资源
-                        cursor = LoadCursor(None, CURSOR_IDC_MAP.get(cursor_data.kind, IDC_ARROW))
-                        cursor = CopyIcon(cursor)
+                # if raw_size:  # 是否使用原大小
+                #     cursor = LoadImage(None, cursor_data.cursor_path, IMAGE_CURSOR, cursor_size, cursor_size,
+                #                        LR_LOADFROMFILE)
+                # else:
+                #     try:
+                #         cursor = LoadImage(None, cursor_data.cursor_path, IMAGE_CURSOR, 0, 0,
+                #                            LR_LOADFROMFILE | LR_DEFAULTSIZE)
+                #     except pywintypes.error:  # 发生错误时尝试使用IDC_资源
+                #         cursor = LoadCursor(None, CURSOR_IDC_MAP.get(cursor_data.kind, IDC_ARROW))
+                #         cursor = CopyIcon(cursor)
                 path = cursor_data.cursor_path
             winreg.SetValueEx(global_set, cursor_data.kind.value, 0, winreg.REG_EXPAND_SZ, path)
-            logger.debug(f"指针句柄: {cursor}")
-            ret = SetSystemCursor(cursor, cursor_data.ocr_con)
-            if ret == 0:
-                logger.error(f"设置 {cursor_data.kind.value} 失败")
+            # logger.debug(f"指针句柄: {cursor}")
+            # ret = SetSystemCursor(cursor, cursor_data.ocr_con)
+            # if ret == 0:
+            #     logger.error(f"设置 {cursor_data.kind.value} 失败")
+
+        windll.user32.SystemParametersInfoW(SPI_SETCURSORS, 0, None, 0)
     except OSError:
         yield False, -1
     yield True, -1

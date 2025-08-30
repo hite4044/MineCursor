@@ -50,3 +50,4 @@ class PublicClipBoard(ClipBoard):
         self.callbacks.pop(event.GetWindow().GetHandle())
 
 PUBLIC_ELEMENT_CLIPBOARD = PublicClipBoard()
+PUBLIC_MASK_CLIPBOARD = PublicClipBoard()

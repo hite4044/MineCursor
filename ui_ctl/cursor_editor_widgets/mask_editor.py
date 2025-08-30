@@ -1,11 +1,15 @@
+from enum import Enum
 from typing import cast as type_cast
 
 import wx
 from PIL import Image, ImageOps
 from PIL import ImageDraw
+from PIL.Image import Resampling, Transpose
 
+from lib.clipboard import PUBLIC_MASK_CLIPBOARD
 from lib.image_pil2wx import PilImg2WxImg
 from widget.center_text import CenteredText
+from widget.data_dialog import DataDialog, DataLineParam, DataLineType
 from widget.win_icon import set_multi_size_icon
 
 mcEVT_SCALE_UPDATED = wx.NewEventType()
@@ -24,6 +28,90 @@ class PositionUpdatedEvent(wx.PyCommandEvent):
     def __init__(self, position: tuple[int, int] | None):
         super().__init__(mc_EVT_POSITION_UPDATED, -1)
         self.position = position
+
+
+class ScaleAction(Enum):
+    SCALE_NEAREST = 0
+    SCALE_BILINEAR = 1
+    SCALE_BICUBIC = 2
+
+
+class MaskAction(Enum):
+    ROTATE_RIGHT = 0
+    ROTATE_LEFT = 1
+    SCALE_FLIP_X = 2
+    SCALE_FLIP_Y = 3
+
+
+class MaskScaleDialog(DataDialog):
+    def __init__(self, parent: wx.Window):
+        super().__init__(parent, "复制操作",
+                         DataLineParam("type", "选择操作", DataLineType.CHOICE, Resampling.NEAREST, enum_names={
+                             Resampling.NEAREST: "最近邻",
+                             Resampling.BILINEAR: "双线性",
+                             Resampling.BICUBIC: "三次插值"
+                         }))
+
+    def get_result(self, mask: Image.Image, target_size: tuple[int, int]):
+        return mask.resize(target_size, resample=self.datas["type"])
+
+
+class MaskActionDialog(wx.Dialog):
+    ACTION_MAP = {
+        MaskAction.ROTATE_LEFT: "左转",
+        MaskAction.ROTATE_RIGHT: "右转",
+        MaskAction.SCALE_FLIP_X: "水平翻转",
+        MaskAction.SCALE_FLIP_Y: "垂直翻转"
+    }
+
+    def __init__(self, editor: 'MaskEditor'):
+        super().__init__(editor, title="遮罩操作")
+        self.SetFont(editor.GetFont())
+
+        self.editor = editor
+        self.mask = self.editor.mask
+        self.saved_mask = self.editor.mask.copy()
+        self.end_btn = wx.Button(self, label="完成")
+        self.cancel_btn = wx.Button(self, label="取消")
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        for action, name in self.ACTION_MAP.items():
+            btn = wx.Button(self, label=name, id=action.value)
+            btn.Bind(wx.EVT_BUTTON, self.on_btn, btn)
+            sizer.Add(btn, 0, wx.EXPAND | wx.ALL, 5)
+
+        btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        btn_sizer.AddStretchSpacer()
+        btn_sizer.Add(self.end_btn, 0, wx.EXPAND | wx.ALL, 5)
+        btn_sizer.Add(self.cancel_btn, 0, wx.EXPAND | wx.ALL, 5)
+        sizer.Add(btn_sizer, 0, wx.EXPAND | wx.ALL, 5)
+
+        self.SetSizer(sizer)
+        self.Fit()
+
+        self.end_btn.Bind(wx.EVT_BUTTON, self.on_finish)
+        self.cancel_btn.Bind(wx.EVT_BUTTON, self.on_cancel)
+
+    def on_finish(self, _):
+        self.EndModal(wx.ID_OK)
+
+    def on_cancel(self, _):
+        self.editor.set_mask(self.saved_mask)
+        self.EndModal(wx.ID_CANCEL)
+
+    def on_btn(self, event: wx.Event):
+        self.on_action(MaskAction(event.GetId()))
+
+    def on_action(self, action: MaskAction):
+        if action == MaskAction.ROTATE_RIGHT:
+            self.mask = self.mask.rotate(90)
+        elif action == MaskAction.ROTATE_LEFT:
+            self.mask = self.mask.rotate(-90)
+        elif action == MaskAction.SCALE_FLIP_X:
+            self.mask = self.mask.transpose(Transpose.FLIP_LEFT_RIGHT)
+        elif action == MaskAction.SCALE_FLIP_Y:
+            self.mask = self.mask.transpose(Transpose.FLIP_TOP_BOTTOM)
+        self.editor.set_mask(self.mask)
 
 
 ID_POS = 0
@@ -55,7 +143,9 @@ class MaskEditor(wx.Dialog):
         self.bar.SetStatusText("缩放: 800%", ID_SCALE)
         self.reset = wx.Button(self.editor, label="重置")
         self.clear_btn = wx.Button(self.editor, label="清空")
-        self.show_grid = wx.CheckBox(self.editor, label="显示网格", style=wx.CHK_3STATE | wx.CHK_ALLOW_3RD_STATE_FOR_USER)
+        self.action_btn = wx.Button(self.editor, label="操作")
+        self.show_grid = wx.CheckBox(self.editor, label="显示网格",
+                                     style=wx.CHK_3STATE | wx.CHK_ALLOW_3RD_STATE_FOR_USER)
         self.color_value_label = CenteredText(self.editor, label="255")
         self.color_slider = wx.Slider(self.editor, value=0xFF, maxValue=0xFF)
         self.ok = wx.Button(self.editor, label="确定")
@@ -66,6 +156,8 @@ class MaskEditor(wx.Dialog):
         btn_sizer.Add(self.reset, 0, wx.EXPAND)
         btn_sizer.AddSpacer(5)
         btn_sizer.Add(self.clear_btn, 0, wx.EXPAND)
+        btn_sizer.AddSpacer(5)
+        btn_sizer.Add(self.action_btn, 0, wx.EXPAND)
         btn_sizer.AddSpacer(5)
         btn_sizer.Add(self.color_value_label, 0, wx.EXPAND)
         btn_sizer.Add(self.color_slider, 1, wx.EXPAND)
@@ -85,6 +177,7 @@ class MaskEditor(wx.Dialog):
         self.SetSizer(sizer)
 
         self.reset.Bind(wx.EVT_BUTTON, self.on_reset)
+        self.action_btn.Bind(wx.EVT_BUTTON, self.on_action)
         self.clear_btn.Bind(wx.EVT_BUTTON, self.on_clear)
         self.show_grid.Bind(wx.EVT_CHECKBOX, self.on_switch_show_grid)
         self.ok.Bind(wx.EVT_BUTTON, self.on_ok)
@@ -96,13 +189,36 @@ class MaskEditor(wx.Dialog):
         self.b_canvas = mask.size
         self.Bind(wx.EVT_CLOSE, self.on_close)
 
+        self.clip = PUBLIC_MASK_CLIPBOARD(self.editor, self.get_mask_func, self.set_mask_func)
+
+    def on_action(self, _):
+        dialog = MaskActionDialog(self)
+        dialog.ShowModal()
+
+    def get_mask_func(self):
+        return self.mask.copy()
+
+    def set_mask_func(self, mask: Image.Image):
+        if mask.size != self.mask.size:
+            ret = wx.MessageBox("遮罩大小不一致, 是否直接缩放并继续?", "错误", wx.YES_NO | wx.ICON_WARNING)
+            if ret != wx.YES:
+                return
+            dialog = MaskScaleDialog(self)
+            if not dialog.ShowModal():
+                return
+            mask = dialog.get_result(mask, self.mask.size)
+        self.set_mask(mask)
+
+    def set_mask(self, mask: Image.Image):
+        self.mask = self.editor.mask = mask
+        self.editor.mask_draw = ImageDraw.ImageDraw(self.editor.mask)
+        self.editor.clear_cache()
+        self.editor.Refresh()
+
     def on_clear(self, _):
         ret = wx.MessageBox("确定要清空吗？", "清空", wx.YES_NO)
         if ret == wx.YES:
-             self.mask = self.editor.mask = Image.new("L", self.editor.mask.size, 255)
-             self.editor.mask_draw = ImageDraw.ImageDraw(self.editor.mask)
-             self.editor.clear_cache()
-             self.editor.Refresh()
+            self.set_mask(Image.new("L", self.editor.mask.size, 255))
 
     def on_set_draw_color(self, _):
         value = self.color_slider.GetValue()
@@ -115,11 +231,13 @@ class MaskEditor(wx.Dialog):
         self.editor.Refresh()
 
     def on_close(self, event: wx.CloseEvent):
-        ret = wx.MessageBox("确定要放弃没有保存的遮罩吗？", "确认关闭", wx.YES_NO | wx.ICON_QUESTION)
-        if ret == wx.YES:
-            self.EndModal(wx.ID_CANCEL)
-            self.Destroy()
-            event.Skip()
+        if ImageOps.invert(self.mask) == self.background.getchannel("A"):
+            ret = wx.MessageBox("确定要放弃没有保存的遮罩吗？", "确认关闭", wx.YES_NO | wx.ICON_QUESTION)
+            if ret != wx.YES:
+                return
+        self.EndModal(wx.ID_CANCEL)
+        self.Destroy()
+        event.Skip()
 
     def on_position_updated(self, event: PositionUpdatedEvent):
         self.b_position = event.position
@@ -130,10 +248,7 @@ class MaskEditor(wx.Dialog):
     def on_reset(self, _):
         ret = wx.MessageBox("确定要重置吗？", "重置", wx.YES_NO)
         if ret == wx.YES:
-            self.mask = self.editor.mask = ImageOps.invert(self.background.getchannel("A"))
-            self.editor.mask_draw = ImageDraw.ImageDraw(self.editor.mask)
-            self.editor.clear_cache()
-            self.editor.Refresh()
+            self.set_mask(ImageOps.invert(self.background.getchannel("A")))
 
     def on_ok(self, _):
         self.EndModal(wx.ID_OK)
@@ -229,6 +344,7 @@ def get_alpha_back(size: tuple[int, int]) -> Image.Image:
 
 class MaskEditorPanel(wx.Window):
     GRID_STATE = wx.CHK_UNDETERMINED
+
     def __init__(self, parent: wx.Window, mask: Image.Image, background: Image.Image | None = None):
         super().__init__(parent)
         if background is None:

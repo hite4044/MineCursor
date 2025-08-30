@@ -4,6 +4,8 @@ import wx
 
 from lib.cursor.setter import CursorKind
 from lib.data import CursorElement, AssetSources, AssetSourceInfo, AssetType, SubProjectFrames
+from lib.log import logger
+from lib.perf import Counter
 from lib.ui_interface import ui_class
 from ui.element_add_dialog import ElementSelectListUI, ElementAddDialogUI, AssetSource
 from ui_ctl.element_sources.asset_source import ElementSelectList
@@ -36,6 +38,7 @@ ROOT_TEXTS = {
 
 class ElementAddDialog(ElementAddDialogUI):
     def __init__(self, parent: wx.Window, cursor_kind: CursorKind):
+        timer = Counter()
         super().__init__(parent)
         self.element: CursorElement | None = None
         source: AssetSource
@@ -54,6 +57,7 @@ class ElementAddDialog(ElementAddDialogUI):
         self.ok.Bind(wx.EVT_BUTTON, self.on_ok)
         self.cancel.Bind(wx.EVT_BUTTON, self.on_close)
         set_multi_size_icon(self, "assets/icons/element/add.png")
+        logger.info("元素选择器初始化用时:", timer.endT())
 
     def on_ok(self, _):
         if self.sources_notebook.GetCurrentPage() is self.rect_element_source:

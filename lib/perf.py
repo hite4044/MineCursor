@@ -65,7 +65,7 @@ class Counter:
             return self.results[name]
         elif name is None:
             temp = perf_counter() - self.local_timer
-            self.local_timer = 0
+            self.local_timer = perf_counter()
             return temp
         else:
             raise KeyError(f"Timer {name} does not exist")

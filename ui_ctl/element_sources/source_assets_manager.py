@@ -8,7 +8,7 @@ from zipfile import ZipFile, ZipInfo
 import wx
 
 from lib.cursor.setter import CursorKind
-from lib.data import AssetSource
+from lib.data import AssetSource, source_load_manager
 
 
 class AssetRootLoadWay(Enum):
@@ -149,7 +149,7 @@ class SourceAssetsManager:
     def load_source(self, source: AssetSource, kind: CursorKind):  # 以指定的指针类型加载一个源
         self.source = source
         self.cur_kind = kind
-        self.file = ZipFile(source.textures_zip)
+        self.file = source_load_manager.load_zip(source.id)
         self.item_to_asset_map = {}
 
         # Step1 -> 提取所有根节点

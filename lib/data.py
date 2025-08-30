@@ -564,7 +564,8 @@ class AssetSources(Enum):
         raise ValueError(f"未找到id为 [{target_id}] 的素材源")
 
     @staticmethod
-    def members():
+    def members() -> dict[str, 'AssetSources']:
+        """这个函数过滤了DEFAULT项"""
         mem_iter = iter(AssetSources.__members__.items())
         result = {}
         while True:

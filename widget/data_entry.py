@@ -44,7 +44,7 @@ class DataEntry(wx.Panel):
         elif data_type == bool:
             self.entry = wx.CheckBox(parent)
         elif issubclass(data_type, Enum):
-            self.entry = wx.Choice(parent, choices=list(enum_names.values()))
+            self.entry = wx.Choice(parent, choices=list(enum_names.values()))  # 组件创建性能不佳
             self.entry.Bind(wx.EVT_CHOICE, self.finish_edit)
             for i, enum in enumerate(enum_names):
                 if enum_names[enum] == self.data:

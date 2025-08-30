@@ -16,7 +16,7 @@ from lib.cursor.inst_ini_gen import CursorInstINIGenerator
 from lib.cursor.setter import CURSOR_KIND_NAME_OFFICIAL, CursorKind, CursorsInfo, set_cursors_progress, SchemesType, \
     CR_INFO_FIELD_MAP, CursorData
 from lib.cursor.writer import write_cursor_progress
-from lib.data import CursorTheme, cursors_file_manager, data_file_manager, INVALID_FILENAME_CHAR, ThemeType
+from lib.data import CursorTheme, cursors_file_manager, data_file_manager, INVALID_FILENAME_CHAR, ThemeType, generate_id
 from lib.log import logger
 from lib.render import render_project
 from lib.resources import theme_manager, ThemeAction
@@ -253,13 +253,14 @@ class ThemeSelector(PublicThemeSelector):
             theme.author = author
             theme.description = description
             theme.type = theme_type
-            self.reload_themes()
             theme_manager.renew_theme(theme)
+            self.reload_themes()
 
     def on_delete_theme(self, first_theme: CursorTheme):
         logger.info(f"删除主题: {first_theme}")
         indexes: list[int] = [{v: k for k, v in self.line_theme_mapping.items()}[theme] for theme in [first_theme]]
         self.themes_has_deleted.append([(line, element) for line, element in zip(indexes[::-1], [first_theme][::-1])])
+        first_theme.id = generate_id(4)
         theme_manager.deleted_themes.append(first_theme)
         theme_manager.remove_theme(first_theme)
         self.reload_themes()
@@ -307,7 +308,10 @@ class ThemeSelector(PublicThemeSelector):
             error_paths = []
             for file_path in dialog.GetFilenames():
                 try:
-                    theme_manager.load_theme(file_path)
+                    theme = theme_manager.load_theme_file(file_path)
+                    theme.id = generate_id(4)
+                    logger.info(f"已加载主题: {theme}")
+                    theme_manager.add_theme(theme)
                 except (KeyError, json.JSONDecodeError):
                     error_paths.append(file_path)
             if error_paths:

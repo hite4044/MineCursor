@@ -102,7 +102,7 @@ class ThemeManager:
     def renew_theme(self, theme: CursorTheme):
         if theme not in self.theme_file_mapping:
             return
-        raw_path = self.theme_file_mapping.pop(theme)
+        raw_path = self.theme_file_mapping.pop(theme)[:]
         self.theme_file_mapping[theme] = join(data_file_manager.work_dir,
                                               f"MineCursor Theme_{theme.id}_{theme.name}.mctheme")
         if isfile(raw_path):

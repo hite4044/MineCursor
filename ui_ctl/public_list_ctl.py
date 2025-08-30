@@ -433,6 +433,9 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
         else:
             self.load_projects(theme.projects)
 
+        self.apply_theme_btn.Show(theme.type == ThemeType.NORMAL)
+        self.Layout()
+
     def check_active_theme(self):
         if self.active_theme is None:
             wx.MessageBox("请先选择一个主题", "错误", wx.ICON_ERROR)

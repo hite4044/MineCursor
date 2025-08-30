@@ -22,6 +22,8 @@ class PublicThemeCursorListUI(wx.ListCtrl):
         sizer.Add(btn_sizer, 0, wx.EXPAND | wx.ALL, 10)
         self.SetSizer(sizer)
 
+        self.apply_theme_btn.Hide()
+
 
 class PublicThemeSelectorUI(EditableListCtrl):
     def __init__(self, parent: wx.Window):

@@ -21,8 +21,17 @@ class CenteredText(wx.Window):
         self.SetSize(size)
         self.SetInitialSize(size)
         self.Bind(wx.EVT_PAINT, self.on_paint)
+        self.Bind(wx.EVT_SIZE, self.on_size)
         self.x_center = x_center
         self.y_center = y_center
+
+    def on_size(self, event: wx.SizeEvent):
+        event.Skip()
+        self.Refresh()
+
+    def SetFont(self, font):
+        super().SetFont(font)
+        self.SetLabel(self.GetLabel())
 
     def SetLabel(self, label) -> wx.Size:
         super().SetLabel(label)
@@ -35,7 +44,6 @@ class CenteredText(wx.Window):
         if self.GetSizer():
             self.GetSizer().Layout()
         return size
-
 
     def on_paint(self, _):
         dc = wx.PaintDC(self)

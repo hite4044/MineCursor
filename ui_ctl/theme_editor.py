@@ -21,6 +21,7 @@ from lib.log import logger
 from lib.render import render_project
 from lib.resources import theme_manager, ThemeAction
 from ui.theme_editor import ThemeEditorUI
+from ui_ctl.about_dialog import AboutDialog
 from ui_ctl.public_list_ctl import PublicThemeCursorList, PublicThemeSelector, EVT_THEME_SELECTED
 from ui_ctl.theme_creator import ThemeCreator
 from widget.adv_progress_dialog import AdvancedProgressDialog
@@ -207,8 +208,13 @@ class ThemeSelector(PublicThemeSelector):
         menu.AppendSeparator()
         menu.Append("打开主题文件夹 (&O)", self.on_open_theme_folder, icon="action/open_data_dir.png")
         menu.Append("清空所有主题 (&D)", self.on_clear_all_theme, icon="action/delete.png")
+        menu.Append("关于 (&E)", self.on_show_about_dialog, icon="action/about.png")
 
         self.PopupMenu(menu)
+
+    def on_show_about_dialog(self):
+        dialog = AboutDialog(self)
+        dialog.ShowModal()
 
     def on_show_hidden_theme(self):
         config.show_hidden_themes = not config.show_hidden_themes

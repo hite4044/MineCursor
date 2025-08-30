@@ -46,8 +46,8 @@ class CursorLostType(Enum):
 class ThemeApplyDialog(DataDialog):
     def __init__(self, parent: wx.Window | None, theme: CursorTheme):
         super().__init__(parent, f"应用主题 {theme.name}",
-                         DataLineParam("target", "应用目标", DataLineType.CHOICE, SchemesType.USER,
-                                       enum_names={SchemesType.SYSTEM: "系统", SchemesType.USER: "用户"}),
+                         # DataLineParam("target", "应用目标", DataLineType.CHOICE, SchemesType.USER,
+                         #               enum_names={SchemesType.SYSTEM: "系统", SchemesType.USER: "用户"}),
                          DataLineParam("lost_type", "如何处理缺失光标", DataLineType.CHOICE, CursorLostType.USE_AERO,
                                        enum_names={CursorLostType.USE_IDC_RES: "使用IDC资源",
                                                    CursorLostType.USE_AERO: "使用Aero光标"}),
@@ -59,7 +59,7 @@ class ThemeApplyDialog(DataDialog):
 
     def get_result(self) -> tuple[SchemesType, CursorLostType, bool]:
         datas = self.datas
-        result = (datas["target"], datas["lost_type"], datas["raw_size"])
+        result = (SchemesType.USER, datas["lost_type"], datas["raw_size"])
         return cast(tuple[SchemesType, CursorLostType, bool], result)
 
 

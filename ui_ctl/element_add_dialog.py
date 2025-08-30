@@ -57,7 +57,7 @@ class ElementAddDialog(ElementAddDialogUI):
         self.ok.Bind(wx.EVT_BUTTON, self.on_ok)
         self.cancel.Bind(wx.EVT_BUTTON, self.on_close)
         set_multi_size_icon(self, "assets/icons/element/add.png")
-        logger.info("元素选择器初始化用时:", timer.endT())
+        logger.info(f"元素选择器初始化用时: {timer.endT()}")
 
     def on_ok(self, _):
         if self.sources_notebook.GetCurrentPage() is self.rect_element_source:

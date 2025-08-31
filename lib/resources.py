@@ -1,10 +1,12 @@
 import json
 import os
 import re
+import zlib
 from enum import Enum
+from io import BytesIO
 from os import rename
 from os.path import join, basename, isfile
-from typing import Callable
+from typing import Callable, Any
 
 from lib.data import CursorTheme, data_file_manager, WorkFileManager, backup_themes_manager
 from lib.log import logger
@@ -76,16 +78,33 @@ class ThemeManager:
 
     @staticmethod
     def load_theme_file(file_path: str) -> CursorTheme:
-        with open(file_path, "r", encoding="utf-8") as f:
-            data = json.loads(f.read())
-        return CursorTheme.from_dict(data)
+        with open(file_path, "rb") as f:
+            data = f.read()
+        if data.startswith(b"\x8CMineCursor Theme".zfill(32)):
+            data_io = BytesIO(data)
+            data_io.read(32)
+            header_length = int.from_bytes(data_io.read(8), "big")
+            header: dict[str, Any] = json.loads(data_io.read(header_length))
+
+            if header["type"] == "zip_content":
+                theme_data = zlib.decompress(data_io.read()).decode("utf-8")
+                return CursorTheme.from_dict(json.loads(theme_data))
+            else:
+                raise RuntimeError("未知的主题类型")
+        else:
+            return CursorTheme.from_dict(json.loads(data.decode("utf-8")))
 
     @staticmethod
     def save_theme_file(file_path: str, theme: CursorTheme):
         logger.debug(f"保存主题至: {basename(file_path)}")
         data_string = json.dumps(theme.to_dict(), ensure_ascii=False)
-        with open(file_path, "w", encoding="utf-8") as f:
-            f.write(data_string)
+        header = json.dumps({"type": "zip_content"}).encode("utf-8")
+        with open(file_path, "wb") as f:
+            result = zlib.compress(data_string.encode("utf-8"), 1)
+            f.write(b"\x8CMineCursor Theme".zfill(32))
+            f.write(len(header).to_bytes(8, "big"))
+            f.write(header)
+            f.write(result)
 
     def add_theme(self, theme: CursorTheme):
         self.themes.append(theme)

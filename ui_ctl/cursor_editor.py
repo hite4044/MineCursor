@@ -1,3 +1,5 @@
+from time import perf_counter
+
 import wx
 from PIL import Image
 
@@ -39,6 +41,8 @@ class CursorEditor(CursorEditorUI):
         self.Bind(wx.EVT_CLOSE, self.on_close)
         logger.info(f"项目编辑器初始化用时: {timer.endT()}, 项目: {project}")
 
+        self.last_edit = perf_counter()
+
     def on_close(self, event: wx.CloseEvent):
         if not self.is_sub_project:
             theme_manager.save()
@@ -72,6 +76,10 @@ class CursorEditor(CursorEditorUI):
             self.b_rect_size = None
 
     def on_project_updated(self, event: ProjectUpdatedEvent):
+        if perf_counter() - self.last_edit < 60:
+            self.project.make_time += perf_counter() - self.last_edit
+        self.last_edit = perf_counter()
+
         event.Skip()
         logger.debug("项目数据已更新")
         self.elements_lc.project_updated()

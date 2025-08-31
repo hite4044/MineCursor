@@ -22,7 +22,7 @@ from lib.render import render_project
 from lib.resources import theme_manager, ThemeAction
 from ui.theme_editor import ThemeEditorUI
 from ui_ctl.about_dialog import AboutDialog
-from ui_ctl.public_list_ctl import PublicThemeCursorList, PublicThemeSelector, EVT_THEME_SELECTED
+from ui_ctl.public_list_ctl import PublicThemeCursorList, PublicThemeSelector, EVT_THEME_SELECTED, string_fmt_time
 from ui_ctl.theme_creator import ThemeCreator
 from widget.adv_progress_dialog import AdvancedProgressDialog
 from widget.data_dialog import DataDialog, DataLineParam, DataLineType
@@ -68,7 +68,8 @@ class ThemeDataDialog(DataDialog):
     def __init__(self, parent: wx.Window | None, is_create,
                  name: str = "Cursor Theme", base_size: int = 32,
                  author: str = USER_NAME, description: str = "None",
-                 theme_type: ThemeType = ThemeType.NORMAL):
+                 theme_type: ThemeType = ThemeType.NORMAL,
+                 make_time: float = 0.0):
         super().__init__(parent, "创建主题" if is_create else "编辑主题",
                          DataLineParam("name", "主题名称", DataLineType.STRING, name),
                          DataLineParam("base_size", "基础尺寸", DataLineType.INT, base_size),
@@ -80,6 +81,8 @@ class ThemeDataDialog(DataDialog):
                                            ThemeType.PRE_DEFINE: "预设",
                                            ThemeType.TEMPLATE: "模版",
                                        }),
+                         *([DataLineParam("Explorers - Hinkik", "制作时间", DataLineType.STRING,
+                                          string_fmt_time(make_time))] if not is_create else [])
                          )
         if is_create:
             self.set_icon("theme/add.png")
@@ -118,6 +121,8 @@ class ThemeFileDropTarget(wx.FileDropTarget):
         if self.on_drop_theme:
             self.on_drop_theme(x, y, filenames)
         return True
+
+
 def mk_end(li: list):
     if len(li) > 1:
         return f" ({len(li)})"
@@ -204,7 +209,7 @@ class ThemeSelector(PublicThemeSelector):
             menu.Append("撤销 (&Z)", self.undo, icon="action/undo.png")
         menu.AppendSeparator()
         menu.Append("显示隐藏主题 (&H)", self.on_show_hidden_theme,
-                            icon="theme/unshow_hidden.png" if config.show_hidden_themes else "theme/show_hidden.png")
+                    icon="theme/unshow_hidden.png" if config.show_hidden_themes else "theme/show_hidden.png")
         menu.AppendSeparator()
         menu.Append("打开主题文件夹 (&O)", self.on_open_theme_folder, icon="action/open_data_dir.png")
         menu.Append("清空所有主题 (&D)", self.on_clear_all_theme, icon="action/delete.png")
@@ -248,7 +253,8 @@ class ThemeSelector(PublicThemeSelector):
             self.Select(self.GetItemCount() - 1)
 
     def on_edit_theme(self, theme: CursorTheme):
-        dialog = ThemeDataDialog(self, False, theme.name, theme.base_size, theme.author, theme.description, theme.type)
+        dialog = ThemeDataDialog(self, False, theme.name, theme.base_size, theme.author, theme.description, theme.type,
+                                 theme.make_time)
         if dialog.ShowModal() == wx.ID_OK:
             name, base_size, author, description, theme_type = dialog.get_result()
             if re.findall(INVALID_FILENAME_CHAR, name):

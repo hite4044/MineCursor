@@ -430,6 +430,8 @@ class CursorProject:
         self.ani_rate: int = 6
         self.ani_rates: list[int] | None = None
 
+        self.make_time: float = 0.0
+
         self.id: str = generate_id(4)
 
     @property
@@ -460,6 +462,7 @@ class CursorProject:
             "frame_count": self.frame_count,
             "ani_rate": self.ani_rate,
             "ani_rates": self.ani_rates,
+            "make_time": self.make_time,
         }
 
     @staticmethod
@@ -478,6 +481,7 @@ class CursorProject:
         project.frame_count = data["frame_count"]
         project.ani_rate = data["ani_rate"]
         project.ani_rates = data.get("ani_rates")
+        project.make_time = data.get("make_time", 0)
         return project
 
     def copy(self) -> 'CursorProject':
@@ -534,6 +538,10 @@ class CursorTheme:
         data = self.to_dict()
         data["id"] = generate_id()
         return self.from_dict(data)
+
+    @property
+    def make_time(self):
+        return sum(project.make_time for project in self.projects)
 
 
 @dataclass

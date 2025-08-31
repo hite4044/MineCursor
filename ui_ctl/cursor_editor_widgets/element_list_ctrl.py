@@ -190,6 +190,7 @@ class ElementListCtrl(ElementListCtrlUI):
             return
         if not dialog.element:
             return
+        self.project.make_time += dialog.work_timer
         self.project.add_element(dialog.element)
         self.rebuild_control()
         self.send_project_updated()

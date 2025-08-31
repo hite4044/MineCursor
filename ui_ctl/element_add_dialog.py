@@ -1,4 +1,5 @@
 import re
+from time import perf_counter
 
 import wx
 
@@ -40,6 +41,7 @@ class ElementAddDialog(ElementAddDialogUI):
     def __init__(self, parent: wx.Window, cursor_kind: CursorKind):
         timer = Counter()
         super().__init__(parent)
+        self.Bind(wx.EVT_WINDOW_CREATE, self.on_window_create)
         self.element: CursorElement | None = None
         source: AssetSource
         for nam, source_enum in AssetSources.members().items():
@@ -58,6 +60,21 @@ class ElementAddDialog(ElementAddDialogUI):
         self.cancel.Bind(wx.EVT_BUTTON, self.on_close)
         set_multi_size_icon(self, "assets/icons/element/add.png")
         logger.info(f"元素选择器初始化用时: {timer.endT()}")
+
+        self.last_click = perf_counter()
+        self.work_timer = 0.0
+
+    def on_window_create(self, event: wx.WindowCreateEvent):
+        self.load_click_hook(event.GetWindow())
+
+    def load_click_hook(self, window: wx.Window):
+        window.Bind(wx.EVT_LEFT_DOWN, self.on_click)
+
+    def on_click(self, event: wx.MouseEvent):
+        event.Skip()
+        if perf_counter() - self.last_click < 20:
+            self.work_timer += perf_counter() - self.last_click
+        self.last_click = perf_counter()
 
     def on_ok(self, _):
         if self.sources_notebook.GetCurrentPage() is self.rect_element_source:

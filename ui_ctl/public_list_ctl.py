@@ -20,6 +20,29 @@ from ui_ctl.cursor_editor_widgets.element_list_ctrl import ElementListCtrl
 from widget.data_dialog import DataLineParam, DataDialog, DataLineType
 from widget.ect_menu import EtcMenu
 
+
+def tuple_fmt_time(seconds: float) -> tuple[int, int, int, int]:
+    """转化时间戳至时间元组"""
+    return int(seconds // 3600 // 24), int(seconds // 3600 % 24), int(seconds % 3600 // 60), int(seconds % 60)
+
+
+def string_fmt_time(seconds: float) -> str:
+    """格式化时间戳至字符串"""
+    time_str = ""
+    time_tuple = tuple_fmt_time(seconds)
+    if time_tuple[0] > 0:
+        time_str += f"{time_tuple[0]}d "
+    if time_tuple[1] > 0:
+        time_str += f"{time_tuple[1]}h "
+    if time_tuple[2] > 0:
+        time_str += f"{time_tuple[2]}m "
+    if time_tuple[3] > 0:
+        time_str += f"{time_tuple[3]}s"
+    if time_str:
+        return time_str
+    return "无"
+
+
 mcEVT_THEME_SELECTED = wx.NewEventType()
 EVT_THEME_SELECTED = wx.PyEventBinder(mcEVT_THEME_SELECTED)
 
@@ -32,6 +55,7 @@ class ThemeSelectedEvent(wx.PyCommandEvent):
 
 class PublicThemeSelector(PublicThemeSelectorUI):
     FORCE_FULL_THEME = False
+
     def __init__(self, parent: wx.Window):
         super().__init__(parent)
         self.clip = ClipBoard(self, self.clip_on_get_copy_data, self.clip_on_set_copy_data)
@@ -92,21 +116,24 @@ class ProjectDataDialog(DataDialog):
     def __init__(self, parent: wx.Window | None, is_create: bool = True,
                  name: str = "", external_name: str = "", size: int | tuple[int, int] = 32,
                  scale: float = 2.0,
-                 kind: CursorKind = CursorKind.ARROW):
-        self.canvas_params = [
-            DataLineParam("canvas_size", "画布尺寸", DataLineType.INT, size),
-        ] if is_create else [
-            DataLineParam("size_width", "画布宽", DataLineType.INT, size[0]),
-            DataLineParam("size_height", "画布高", DataLineType.INT, size[1]),
+                 kind: CursorKind = CursorKind.ARROW,
+                 make_time: float = 0.0):
+        params = [
+            DataLineParam("name", "项目名称", DataLineType.STRING, name if name else ""),
+            DataLineParam("external_name", "展示名称", DataLineType.STRING,
+                          external_name if external_name else ""),
+            *([DataLineParam("canvas_size", "画布尺寸", DataLineType.INT, size)]
+              if is_create else [
+                DataLineParam("size_width", "画布宽", DataLineType.INT, size[0]),
+                DataLineParam("size_height", "画布高", DataLineType.INT, size[1]),
+            ]),
+            DataLineParam("scale", "缩放", DataLineType.FLOAT, scale),
+            DataLineParam("kind", "类型", DataLineType.CHOICE, kind,
+                          enum_names=CURSOR_KIND_NAME_OFFICIAL),
+            *([DataLineParam("Special Ability - Empty", "制作时间", DataLineType.STRING,
+                            string_fmt_time(make_time))] if not is_create else []),
         ]
-        super().__init__(parent, "添加指针项目" if is_create else "编辑指针项目信息",
-                         DataLineParam("name", "项目名称", DataLineType.STRING, name if name else ""),
-                         DataLineParam("external_name", "展示名称", DataLineType.STRING,
-                                       external_name if external_name else ""),
-                         *self.canvas_params,
-                         DataLineParam("scale", "缩放", DataLineType.FLOAT, scale),
-                         DataLineParam("kind", "类型", DataLineType.CHOICE, kind,
-                                       enum_names=CURSOR_KIND_NAME_OFFICIAL))
+        super().__init__(parent, "添加指针项目" if is_create else "编辑指针项目信息", *params)
         if is_create:
             self.set_icon("project/add.png")
         else:
@@ -118,7 +145,8 @@ class ProjectDataDialog(DataDialog):
             size = datas["canvas_size"]
         else:
             size = (datas["size_width"], datas["size_height"])
-        result = [datas["name"], datas["external_name"] if datas["external_name"] else None, size, datas["scale"], datas["kind"]]
+        result = [datas["name"], datas["external_name"] if datas["external_name"] else None, size, datas["scale"],
+                  datas["kind"]]
         if datas["name"] == "":
             result[0] = None
         return cast(tuple[str, str | None, int | tuple[int, int], float, CursorKind], tuple(result))
@@ -297,7 +325,8 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
         menu.Append("添加项目 (&A)", self.menu_add_project, icon="project/add.png")
         menu.AppendSeparator()
         menu.Append("编辑项目 (&E)" + mk_end(projects), self.menu_edit_projects, projects, icon="project/edit.png")
-        menu.Append("编辑项目信息 (&I)" + mk_end(projects), self.menu_edit_project_info, projects, active_project, icon="project/edit_info.png")
+        menu.Append("编辑项目信息 (&I)" + mk_end(projects), self.menu_edit_project_info, projects, active_project,
+                    icon="project/edit_info.png")
         if len(projects) == 1 and len(self.active_theme.projects) != 1:
             menu.AppendSeparator()
             if event.GetIndex() != 0:
@@ -308,7 +337,8 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
             menu.AppendSeparator()
             menu.Append("复制项目 (&C)", self.menu_copy_project, active_project, icon="project/copy.png")
         menu.AppendSeparator()
-        menu.Append("移动至其他主题 (&M)" + mk_end(projects), self.move_project_to_theme, projects, icon="project/move.png")
+        menu.Append("移动至其他主题 (&M)" + mk_end(projects), self.move_project_to_theme, projects,
+                    icon="project/move.png")
         if len(self.cursors_has_deleted) != 0:
             menu.Append("撤销操作 (&Z)", self.undo_action, icon="action/undo.png")
         menu.AppendSeparator()
@@ -365,7 +395,7 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
         if len(projects) == 1:
             project = projects[0]
             dialog = ProjectDataDialog(self, False, project.name, project.external_name,
-                                       project.raw_canvas_size, project.scale, project.kind)
+                                       project.raw_canvas_size, project.scale, project.kind, project.make_time)
             if dialog.ShowModal() == wx.ID_OK:
                 name, external_name, size, scale, kind = dialog.get_result()
                 project.name = name

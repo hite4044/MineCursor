@@ -462,8 +462,8 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
             self.DeleteAllItems()
         else:
             self.load_projects(theme.projects)
+            self.apply_theme_btn.Show(theme.type == ThemeType.NORMAL)
 
-        self.apply_theme_btn.Show(theme.type == ThemeType.NORMAL)
         self.Layout()
 
     def check_active_theme(self):

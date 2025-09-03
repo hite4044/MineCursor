@@ -141,7 +141,7 @@ class ProjectDataDialog(DataDialog):
 
     def get_result(self) -> tuple[str | str, str | None, int | tuple[int, int], float, CursorKind]:
         datas = self.datas
-        if len(self.canvas_params) == 1:
+        if datas.get("canvas_size"):
             size = datas["canvas_size"]
         else:
             size = (datas["size_width"], datas["size_height"])

@@ -8,8 +8,10 @@ from os import rename
 from os.path import join, basename, isfile
 from typing import Callable, Any
 
-from lib.data import CursorTheme, data_file_manager, WorkFileManager, backup_themes_manager
+from lib.data import CursorTheme, data_file_manager, WorkFileManager, backup_themes_manager, CursorElement, \
+    AssetSourceInfo, AssetType
 from lib.log import logger
+from lib.render import render_project_frame
 
 HEX_PATTERN = re.compile("^#([A-Fa-f0-9]+)$")
 
@@ -105,6 +107,29 @@ class ThemeManager:
             f.write(len(header).to_bytes(8, "big"))
             f.write(header)
             f.write(result)
+
+    @staticmethod
+    def save_rendered_theme_file(file_path: str, theme: CursorTheme):
+        new_theme = theme.copy()
+        for i, project in enumerate(new_theme.projects):
+            new_project = project.copy()
+            saved_scale = new_project.scale
+            new_project.scale = 1.0
+
+            frame_count = project.frame_count if project.is_ani_cursor else 1
+            frame_element = CursorElement(str("已渲染项目"), [])
+            for f_index in range(frame_count):
+                frame = render_project_frame(new_project, f_index)
+                frame_element.frames.append(frame)
+                frame_element.source_infos.append(AssetSourceInfo(AssetType.IMAGE, image=frame, size=frame.size))
+            frame_element.animation_key_data.frame_length = frame_count
+            frame_element.update_ani_data_by_key_data()
+
+            new_project.elements.clear()
+            new_project.elements.append(frame_element)
+            new_project.scale = saved_scale
+            new_theme.projects[i] = new_project
+        ThemeManager.save_theme_file(file_path, new_theme)
 
     def add_theme(self, theme: CursorTheme):
         self.themes.append(theme)

@@ -284,16 +284,22 @@ class ThemeSelector(PublicThemeSelector):
         self.reload_themes()
 
     def on_export_theme(self, themes: list[CursorTheme]):
-        dialog = wx.FileDialog(self, f"导出主题 ({len(themes)}个文件)",
+        dialog = wx.FileDialog(self, f"导出主题 ({len(themes)}个主题)",
                                defaultFile=f"{themes[0].name}.mctheme",
-                               wildcard="MineCursor 主题文件 (*.mctheme)|*.mctheme|MineCursor 主题文件 (*json)|*json",
+                               wildcard="|".join(["MineCursor 主题文件 (*.mctheme)|*.mctheme",
+                                                  "MineCursor 渲染主题文件 (*.rmctheme)|*.rmctheme"]),
                                style=wx.FD_SAVE)
-        if dialog.ShowModal() == wx.ID_OK:
-            file_path = dialog.GetPath()
-            file_dir = os.path.dirname(file_path)
-            end_fix = file_path.split(".")[-1]
-            for theme in themes:
-                export_path = os.path.join(file_dir, theme.name + "." + end_fix)
+        if dialog.ShowModal() != wx.ID_OK:
+            return
+
+        file_path = dialog.GetPath()
+        file_dir = os.path.dirname(file_path)
+        end_fix = file_path.split(".")[-1]
+        for theme in themes:
+            export_path = os.path.join(file_dir, theme.name + "." + end_fix)
+            if end_fix == "rmctheme":
+                theme_manager.save_rendered_theme_file(export_path, theme)
+            else:
                 theme_manager.save_theme_file(export_path, theme)
 
     def on_export_theme_cursors(self, theme: CursorTheme):
@@ -314,7 +320,9 @@ class ThemeSelector(PublicThemeSelector):
 
     def on_import_theme(self):
         dialog = wx.FileDialog(self, "导入主题",
-                               wildcard="MineCursor 主题文件 (*.mctheme)|*.mctheme|所有文件 (*.*)|*.*",
+                               wildcard="|".join(["MineCursor 主题文件 (*.mctheme)|*.mctheme",
+                                                  "MineCursor 渲染主题文件 (*.rmctheme)|*.rmctheme",
+                                                  "所有文件 (*.*)|*.*"]),
                                style=wx.FD_OPEN | wx.FD_MULTIPLE)
         if dialog.ShowModal() == wx.ID_OK:
             error_paths = []

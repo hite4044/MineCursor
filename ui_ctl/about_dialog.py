@@ -1,7 +1,9 @@
 import webbrowser
 
 import wx
+from PIL import Image
 
+from lib.image_pil2wx import PilImg2WxImg
 from widget.center_text import CenteredText
 from widget.font import ft
 from widget.win_icon import set_multi_size_icon
@@ -13,9 +15,11 @@ INFO = """\
 
 项目开源协议: MPL-2.0
 
-项目引用或使用内容:
-- [Mojang Minecraft](https://www.minecraft.net/)
-- 部分游戏贴图、粒子等内容（遵循[此条款](https://www.minecraft.net/usage-guidelines))
+项目引用或使用内容条款:
+- Mojang Minecraft
+https://www.minecraft.net/
+- 部分游戏贴图、粒子等内容
+https://www.minecraft.net/usage-guidelines
 
 更新日志
 v1.0
@@ -33,6 +37,7 @@ class AboutDialog(wx.Dialog):
         if parent:
             self.SetFont(parent.GetFont())
 
+        self.icon = wx.StaticBitmap(self, bitmap=PilImg2WxImg(Image.open(r"assets\icon.png").resize((128, 128))))
         self.title = CenteredText(self, label=f"MineCursor {VERSION}", x_center=True, y_center=False)
         self.open_project_github = wx.Button(self, label="项目Github主页")
         self.info = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_READONLY)
@@ -41,6 +46,7 @@ class AboutDialog(wx.Dialog):
         self.info.SetValue(INFO)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(self.icon, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, 10)
         sizer.Add(self.title, 0, wx.EXPAND | wx.BOTTOM, 10)
         sizer.Add(self.open_project_github, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
         sizer.Add(self.info, 1, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP | wx.BOTTOM, 10)

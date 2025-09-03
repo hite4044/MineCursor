@@ -8,8 +8,8 @@ from os import rename
 from os.path import join, basename, isfile
 from typing import Callable, Any
 
-from lib.data import CursorTheme, data_file_manager, WorkFileManager, backup_themes_manager, CursorElement, \
-    AssetSourceInfo, AssetType
+from lib.data import CursorTheme, path_theme_data, CursorElement, \
+    AssetSourceInfo, AssetType, path_deleted_theme_data
 from lib.log import logger
 from lib.render import render_project_frame
 
@@ -37,38 +37,30 @@ def get_dir_all_themes(dir_path: str):
 
 
 class ThemeManager:
-    def __init__(self):
+    def __init__(self, dir_path: str):
+        self.root_dir = dir_path
         self.themes: list[CursorTheme] = []
-        self.deleted_themes: list[CursorTheme] = []
         self.theme_file_mapping: dict[CursorTheme, str] = {}
         self.callbacks: dict[ThemeAction, list[Callable[[CursorTheme], None]]] = {}
         self.load()
 
     def load(self):
-        logger.info(f"加载主题... (From: {data_file_manager.work_dir})")
-        _, _, file_names = next(os.walk(data_file_manager.work_dir))
+        logger.info(f"加载主题... (From: {self.root_dir})")
+        _, _, file_names = next(os.walk(self.root_dir))
         for file_name in file_names:
-            file_path = str(join(data_file_manager.work_dir, file_name))
+            file_path = str(join(self.root_dir, file_name))
             self.load_theme(file_path)
-
-        _, _, file_names = next(os.walk(backup_themes_manager.work_dir))
-        for file_name in file_names:
-            file_path = str(join(backup_themes_manager.work_dir, file_name))
-            theme = self.load_theme_file(file_path)
-            self.theme_file_mapping[theme] = file_path
-            self.deleted_themes.append(theme)
 
     def save(self):
         logger.info("正在保存主题")
-        self.save_themes(data_file_manager, self.themes)
-        self.save_themes(backup_themes_manager, self.deleted_themes)
+        self.save_themes(self.themes)
 
-    def save_themes(self, parent_dir: WorkFileManager, themes: list[CursorTheme]):
-        themes_id_mapping = get_dir_all_themes(parent_dir.work_dir)
+    def save_themes(self, themes: list[CursorTheme]):
+        themes_id_mapping = get_dir_all_themes(self.root_dir)
         for theme in themes:
             if theme.id in themes_id_mapping:
                 os.remove(themes_id_mapping[theme.id])
-            file_path = str(join(parent_dir.work_dir, f"MineCursor Theme_{theme.id}_{theme.name}.mctheme"))
+            file_path = str(join(self.root_dir, f"MineCursor Theme_{theme.id}_{theme.name}.mctheme"))
             self.theme_file_mapping[theme] = file_path
             self.save_theme_file(file_path, theme)
 
@@ -131,11 +123,11 @@ class ThemeManager:
             new_theme.projects[i] = new_project
         ThemeManager.save_theme_file(file_path, new_theme)
 
-    def add_theme(self, theme: CursorTheme):
+    def add_theme(self, theme: CursorTheme):  # 添加主题
         self.themes.append(theme)
         self.call_callback(ThemeAction.ADD, theme)
 
-    def remove_theme(self, theme: CursorTheme):
+    def remove_theme(self, theme: CursorTheme):  # 移除主题
         self.call_callback(ThemeAction.DELETE, theme)
         self.themes.remove(theme)
         if theme in self.theme_file_mapping:
@@ -143,44 +135,38 @@ class ThemeManager:
                 os.remove(self.theme_file_mapping[theme])
             del self.theme_file_mapping[theme]
 
-    def renew_theme(self, theme: CursorTheme):
+    def renew_theme(self, theme: CursorTheme):  # 刷新主题名称
         if theme not in self.theme_file_mapping:
             return
         raw_path = self.theme_file_mapping.pop(theme)[:]
-        self.theme_file_mapping[theme] = join(data_file_manager.work_dir,
+        self.theme_file_mapping[theme] = join(self.root_dir,
                                               f"MineCursor Theme_{theme.id}_{theme.name}.mctheme")
         if isfile(raw_path):
             rename(raw_path, self.theme_file_mapping[theme])
 
-    def clear_all_theme(self):
-        self.themes.clear()
-        for theme in self.theme_file_mapping.keys():
-            if isfile(self.theme_file_mapping[theme]):
-                os.remove(self.theme_file_mapping[theme])
-        self.theme_file_mapping.clear()
-
-    def register_theme_change_callback(self, action: ThemeAction, callback: Callable[[CursorTheme], None]):
+    def register_theme_change_callback(self, action: ThemeAction, callback: Callable[[CursorTheme], None]):  # 注册回调
         if action not in self.callbacks:
             self.callbacks[action] = []
         self.callbacks[action].append(callback)
 
-    def call_callback(self, action: ThemeAction, theme: CursorTheme):
+    def call_callback(self, action: ThemeAction, theme: CursorTheme):  # 调用回调
         if action in self.callbacks:
             for callback in self.callbacks[action]:
                 callback(theme)
 
-    def find_project(self, project_id: str):
+    def find_project(self, project_id: str):  # 查找项目
         for theme in self.themes:
             for project in theme.projects:
                 if project.id == project_id:
                     return project
         return None
 
-    def find_theme(self, theme_id: str):
+    def find_theme(self, theme_id: str):  # 查找主题
         for theme in self.themes:
             if theme.id == theme_id:
                 return theme
         return None
 
 
-theme_manager = ThemeManager()
+theme_manager = ThemeManager(path_theme_data)
+deleted_theme_manager = ThemeManager(path_deleted_theme_data)

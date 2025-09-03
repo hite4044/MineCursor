@@ -1,6 +1,7 @@
 import os.path
 import random
 import re
+import typing
 from base64 import b64encode, b64decode
 from dataclasses import dataclass, field
 from enum import Enum
@@ -62,16 +63,16 @@ class SourceLoadManager:
         return self.zips[source_id]
 
 
-class WorkFileManager:
-    def __init__(self, path: str):
-        app_data_roaming = expandvars("%APPDATA%")
-        app_data, _ = os.path.split(app_data_roaming)
-        self.work_dir = join(app_data, path)
-        makedirs(self.work_dir, exist_ok=True)
+class DataDir(str):
+    def __new__(cls, path: str, *args, **kwargs) -> 'DataDir':
+        makedirs(path, exist_ok=True)
+        instance = str.__new__(cls, path)
+        instance.make_sub_dir = lambda name: DataDir.make_sub_dir(typing.cast(DataDir, instance), name)
+        return typing.cast(DataDir, instance)
 
-    def make_work_dir(self, name: str) -> str:
-        makedirs(join(self.work_dir, name))
-        return join(self.work_dir, name)
+    def make_sub_dir(self, name: str) -> 'DataDir':
+        makedirs(join(self, name), exist_ok=True)
+        return DataDir(join(self, name))
 
 
 @dataclass
@@ -603,6 +604,9 @@ class AssetsChoicerAssetInfo:
 
 
 source_load_manager = SourceLoadManager()
-cursors_file_manager = WorkFileManager(r"Mine Cursor\Theme Cursors")
-data_file_manager = WorkFileManager(r"Mine Cursor\Theme Data")
-backup_themes_manager = WorkFileManager(r"Mine Cursor\Deleted Theme Backup")
+
+dir_app_data, _ = os.path.split(expandvars("%APPDATA%"))
+main_dir = DataDir(join(dir_app_data, "Mine Cursor"))
+path_theme_cursors = main_dir.make_sub_dir("Theme Cursors")
+path_theme_data = main_dir.make_sub_dir(r"Theme Data")
+path_deleted_theme_data = main_dir.make_sub_dir(r"Deleted Theme Backup")

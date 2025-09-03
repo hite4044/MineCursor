@@ -16,10 +16,10 @@ from lib.cursor.inst_ini_gen import CursorInstINIGenerator
 from lib.cursor.setter import CURSOR_KIND_NAME_OFFICIAL, CursorKind, CursorsInfo, set_cursors_progress, SchemesType, \
     CR_INFO_FIELD_MAP, CursorData
 from lib.cursor.writer import write_cursor_progress
-from lib.data import CursorTheme, cursors_file_manager, data_file_manager, INVALID_FILENAME_CHAR, ThemeType, generate_id
+from lib.data import CursorTheme, path_theme_cursors, path_theme_data, INVALID_FILENAME_CHAR, ThemeType, generate_id
 from lib.log import logger
 from lib.render import render_project
-from lib.resources import theme_manager, ThemeAction
+from lib.resources import theme_manager, ThemeAction, deleted_theme_manager
 from ui.theme_editor import ThemeEditorUI
 from ui_ctl.about_dialog import AboutDialog
 from ui_ctl.public_list_ctl import PublicThemeCursorList, PublicThemeSelector, EVT_THEME_SELECTED, string_fmt_time
@@ -108,6 +108,7 @@ class ThemeEditor(ThemeEditorUI):
     def on_close(event: wx.CloseEvent):
         """程序关闭前的动作"""
         theme_manager.save()
+        deleted_theme_manager.save()
         config.save_config()
         event.Skip()
 
@@ -134,7 +135,7 @@ class ThemeSelector(PublicThemeSelector):
         super().__init__(parent)
 
         self.themes_has_deleted: list[list[tuple[int, CursorTheme]]] = [[(0, theme)] for theme in
-                                                                        theme_manager.deleted_themes]
+                                                                        deleted_theme_manager.themes]
         self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_menu)
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu)
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
@@ -154,12 +155,10 @@ class ThemeSelector(PublicThemeSelector):
             return
         stacks = self.themes_has_deleted.pop(-1)
         for index, theme in stacks[::-1]:
+            deleted_theme_manager.remove_theme(theme)
+            if theme in theme_manager.themes:
+                theme.id = generate_id()
             theme_manager.themes.insert(index, theme)
-            theme_manager.deleted_themes.remove(theme)
-            try:
-                os.remove(theme_manager.theme_file_mapping.pop(theme))
-            except FileNotFoundError:
-                pass
         self.reload_themes()
 
     def get_select_items(self) -> list[int]:
@@ -212,7 +211,6 @@ class ThemeSelector(PublicThemeSelector):
                     icon="theme/unshow_hidden.png" if config.show_hidden_themes else "theme/show_hidden.png")
         menu.AppendSeparator()
         menu.Append("打开主题文件夹 (&O)", self.on_open_theme_folder, icon="action/open_data_dir.png")
-        menu.Append("清空所有主题 (&D)", self.on_clear_all_theme, icon="action/delete.png")
         menu.Append("关于 (&E)", self.on_show_about_dialog, icon="action/about.png")
 
         self.PopupMenu(menu)
@@ -273,7 +271,7 @@ class ThemeSelector(PublicThemeSelector):
         indexes: list[int] = [{v: k for k, v in self.line_theme_mapping.items()}[theme] for theme in [first_theme]]
         self.themes_has_deleted.append([(line, element) for line, element in zip(indexes[::-1], [first_theme][::-1])])
         first_theme.id = generate_id(4)
-        theme_manager.deleted_themes.append(first_theme)
+        deleted_theme_manager.add_theme(first_theme)
         theme_manager.remove_theme(first_theme)
         self.reload_themes()
 
@@ -342,16 +340,8 @@ class ThemeSelector(PublicThemeSelector):
 
     @staticmethod
     def on_open_theme_folder():
-        dir_path = data_file_manager.work_dir
+        dir_path = path_theme_data
         wx.LaunchDefaultApplication(dir_path)
-
-    def on_clear_all_theme(self):
-        logger.info(f"清空所有主题")
-        ret = wx.MessageBox("真的要清空所有主题吗?", "清理确认", wx.ICON_WARNING | wx.YES_NO)
-        if ret != wx.YES:
-            return
-        theme_manager.clear_all_theme()
-        self.reload_themes()
 
     def get_theme_default_name(self) -> str:
         DEFAULT_NAME = "鼠标主题"
@@ -367,14 +357,14 @@ class ThemeSelector(PublicThemeSelector):
 
 
 def get_all_theme_ids() -> dict[str, str]:
-    _, dirs, _ = next(os.walk(cursors_file_manager.work_dir))
+    _, dirs, _ = next(os.walk(path_theme_cursors))
     themes_ids = {}
     for dir_name in dirs:
         if not dir_name.startswith("Theme_"):
             continue
         parts = dir_name.split("_")
         theme_id = parts[1]
-        themes_ids[theme_id] = join(cursors_file_manager.work_dir, dir_name)
+        themes_ids[theme_id] = join(path_theme_cursors, dir_name)
     return themes_ids
 
 
@@ -389,7 +379,7 @@ def apply_theme(theme: CursorTheme, target: SchemesType, raw_size: bool,
         rmtree(theme_ids[theme.id])
 
     cursor_paths = CursorsInfo(use_aero=lost_type == CursorLostType.USE_AERO)
-    work_dir = cursors_file_manager.make_work_dir(f"Theme_{theme.id}_{theme.name}")
+    theme_cursors_dir = path_theme_cursors.make_sub_dir(f"Theme_{theme.id}_{theme.name}")
     dialog.set_panels_num(2)
     dialog.update(0, 0, range_=len(theme.projects))
     for i, project in enumerate(theme.projects):
@@ -397,7 +387,7 @@ def apply_theme(theme: CursorTheme, target: SchemesType, raw_size: bool,
         dialog.update(1, 0, "...")
         frames = render_project(project)
         file_name = f"Cursor_{project.id}_{project.name}" + (".ani" if project.is_ani_cursor else ".cur")
-        file_path = join(work_dir, file_name)
+        file_path = join(theme_cursors_dir, file_name)
         logger.info(f"渲染指针项目: {project}")
         frames_num = len(frames)
         dialog.update(1, 0, f"写入帧 (0/{frames_num})", frames_num)

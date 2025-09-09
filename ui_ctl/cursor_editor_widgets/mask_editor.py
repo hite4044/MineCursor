@@ -73,12 +73,21 @@ class MaskActionDialog(wx.Dialog):
         self.saved_mask = self.editor.mask.copy()
         self.end_btn = wx.Button(self, label="完成")
         self.cancel_btn = wx.Button(self, label="取消")
+        self.fill_color_entry = wx.TextCtrl(self)
+        self.fill_color_btn = wx.Button(self, label="填充")
+        self.fill_color_entry.SetValue("128")
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         for action, name in self.ACTION_MAP.items():
             btn = wx.Button(self, label=name, id=action.value)
             btn.Bind(wx.EVT_BUTTON, self.on_btn, btn)
             sizer.Add(btn, 0, wx.EXPAND | wx.ALL, 5)
+
+        fill_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        fill_sizer.Add(CenteredText(self, label="填充颜色:"), 0, wx.EXPAND | wx.RIGHT, 5)
+        fill_sizer.Add(self.fill_color_entry, 1, wx.EXPAND | wx.RIGHT, 5)
+        fill_sizer.Add(self.fill_color_btn, 0, wx.EXPAND)
+        sizer.Add(fill_sizer, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 5)
 
         btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
         btn_sizer.AddStretchSpacer()
@@ -89,6 +98,7 @@ class MaskActionDialog(wx.Dialog):
         self.SetSizer(sizer)
         self.Fit()
 
+        self.fill_color_btn.Bind(wx.EVT_BUTTON, self.on_fill)
         self.end_btn.Bind(wx.EVT_BUTTON, self.on_finish)
         self.cancel_btn.Bind(wx.EVT_BUTTON, self.on_cancel)
 
@@ -111,6 +121,19 @@ class MaskActionDialog(wx.Dialog):
             self.mask = self.mask.transpose(Transpose.FLIP_LEFT_RIGHT)
         elif action == MaskAction.SCALE_FLIP_Y:
             self.mask = self.mask.transpose(Transpose.FLIP_TOP_BOTTOM)
+        self.editor.set_mask(self.mask)
+
+    def on_fill(self, _):
+        try:
+            alpha = int(self.fill_color_entry.GetValue())
+            assert 0 <= alpha <= 255
+        except (ValueError, AssertionError):
+            wx.MessageBox("你这数值有问题啊, (指), 呐, 有杂物\n(数值需为0~255的整数)", "数值错误")
+            return
+        ret = wx.MessageBox(f"确定要填充遮罩颜色为[{alpha}]吗?", "提示", wx.YES_NO | wx.ICON_QUESTION)
+        if ret != wx.YES:
+            return
+        self.mask = Image.new("L", self.mask.size, (255 - alpha))
         self.editor.set_mask(self.mask)
 
 

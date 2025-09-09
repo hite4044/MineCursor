@@ -128,12 +128,12 @@ class ThemeManager:
         self.call_callback(ThemeAction.ADD, theme)
 
     def remove_theme(self, theme: CursorTheme):  # 移除主题
-        self.call_callback(ThemeAction.DELETE, theme)
-        self.themes.remove(theme)
         if theme in self.theme_file_mapping:
             if isfile(self.theme_file_mapping[theme]):
                 os.remove(self.theme_file_mapping[theme])
             del self.theme_file_mapping[theme]
+        self.themes.remove(theme)
+        self.call_callback(ThemeAction.DELETE, theme)
 
     def renew_theme(self, theme: CursorTheme):  # 刷新主题名称
         if theme not in self.theme_file_mapping:

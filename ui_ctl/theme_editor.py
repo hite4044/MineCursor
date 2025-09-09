@@ -270,9 +270,8 @@ class ThemeSelector(PublicThemeSelector):
         logger.info(f"删除主题: {first_theme}")
         indexes: list[int] = [{v: k for k, v in self.line_theme_mapping.items()}[theme] for theme in [first_theme]]
         self.themes_has_deleted.append([(line, element) for line, element in zip(indexes[::-1], [first_theme][::-1])])
-        first_theme.id = generate_id(4)
-        deleted_theme_manager.add_theme(first_theme)
         theme_manager.remove_theme(first_theme)
+        deleted_theme_manager.add_theme(first_theme)
         self.reload_themes()
 
     def on_drop_theme(self, _, __, filenames: list[str]):
@@ -327,7 +326,7 @@ class ThemeSelector(PublicThemeSelector):
             for file_path in dialog.GetFilenames():
                 try:
                     theme = theme_manager.load_theme_file(file_path)
-                    theme.id = generate_id(4)
+                    theme.id = generate_id()
                     logger.info(f"已加载主题: {theme}")
                     theme_manager.add_theme(theme)
                 except (KeyError, json.JSONDecodeError):

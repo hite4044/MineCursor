@@ -194,15 +194,19 @@ class ProjectCopyDialog(DataDialog):
 
 class ProjectMoveThemeDialog(DataDialog):
     def __init__(self, parent: wx.Window, active_theme: CursorTheme):
-        self.themes_enum_cls = Enum("ThemesEnum", tuple(theme.id for theme in theme_manager.themes))
-        self.enum_to_theme_map = {self.themes_enum_cls[theme.id]: theme for theme in theme_manager.themes}
+        if config.show_hidden_themes:
+            themes = [theme for theme in theme_manager.themes]
+        else:
+            themes = [theme for theme in theme_manager.themes if theme.type == ThemeType.NORMAL]
+        self.themes_enum_cls = Enum("ThemesEnum", tuple(theme.id for theme in themes))
+        self.enum_to_theme_map = {self.themes_enum_cls[theme.id]: theme for theme in themes}
         super().__init__(parent, "移动指针项目至其他主题",
                          DataLineParam("theme", "目标主题", DataLineType.CHOICE,
                                        getattr(self.themes_enum_cls, active_theme.id),
                                        enum_names={ \
                                            getattr(self.themes_enum_cls, theme.id): \
                                                f"{theme.name} ({len(theme.projects)}-cur)" \
-                                           for theme in theme_manager.themes}))
+                                           for theme in themes}))
         self.set_icon("project/move.png")
 
     def get_result(self) -> CursorTheme:

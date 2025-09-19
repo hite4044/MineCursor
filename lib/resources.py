@@ -105,7 +105,7 @@ class ThemeManager:
                 theme_data = zlib.decompress(data_io.read()).decode("utf-8")
                 return CursorTheme.from_dict(json.loads(theme_data))
             else:
-                raise RuntimeError("未知的主题类型")
+                raise RuntimeWarning("未知的主题类型")
         else:
             return CursorTheme.from_dict(json.loads(data.decode("utf-8")))
 

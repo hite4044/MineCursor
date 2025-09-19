@@ -6,8 +6,10 @@ from enum import Enum
 from io import BytesIO
 from os import rename
 from os.path import join, basename, isfile
+from threading import Event, Thread
 from typing import Callable, Any
 
+from lib.config import config
 from lib.data import CursorTheme, path_theme_data, CursorElement, \
     AssetSourceInfo, AssetType, path_deleted_theme_data
 from lib.log import logger
@@ -44,12 +46,31 @@ class ThemeManager:
         self.callbacks: dict[ThemeAction, list[Callable[[CursorTheme], None]]] = {}
         self.load()
 
+        self.live_save_thread: Thread | None = None
+        self.live_save_flag = Event()
+
     def load(self):
         logger.info(f"加载主题... (From: {self.root_dir})")
         _, _, file_names = next(os.walk(self.root_dir))
         for file_name in file_names:
             file_path = str(join(self.root_dir, file_name))
             self.load_theme(file_path)
+
+    def live_save(self):
+        """间隔设置的时间后再进行保存"""
+
+        def live_save_thread(wait_time: float):
+            self.live_save_flag.wait(timeout=wait_time)
+            if self.live_save_flag.is_set():
+                return
+            self.save()
+
+        if self.live_save_thread and self.live_save_thread.is_alive():
+            self.live_save_flag.set()
+            self.live_save_thread.join()
+            self.live_save_flag.clear()
+        self.live_save_thread = Thread(target=live_save_thread, args=(config.live_save_time,))
+        self.live_save_thread.start()
 
     def save(self):
         logger.info("正在保存主题")

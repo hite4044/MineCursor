@@ -78,7 +78,7 @@ class PublicThemeSelector(PublicThemeSelectorUI):
                           wx.OK | wx.ICON_WARNING)
         self.line_theme_mapping[row].name = re.sub(INVALID_FILENAME_CHAR, "_", value)
         theme_manager.renew_theme(self.line_theme_mapping[row])
-        theme_manager.save()
+        theme_manager.live_save()
 
     def load_all_theme(self):
         self.DeleteAllItems()
@@ -92,7 +92,7 @@ class PublicThemeSelector(PublicThemeSelectorUI):
     def reload_themes(self):
         self.load_all_theme()
 
-        theme_manager.save()  # 经过测试，这行代码会在执行完菜单项里所绑定的函数过后才会之心
+        theme_manager.live_save()  # 经过测试，这行代码会在执行完菜单项里所绑定的函数过后才会之心
 
     def append_theme(self, theme: CursorTheme):
         line = self.GetItemCount()
@@ -477,7 +477,7 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
 
     def reload_theme(self):
         self.load_theme(self.active_theme)
-        theme_manager.save()
+        theme_manager.live_save()
 
     def on_item_activated(self, event: wx.ListEvent):
         active_project = self.active_theme.projects[event.GetIndex()]

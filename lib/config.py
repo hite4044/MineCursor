@@ -8,6 +8,7 @@ CFG_PATH = "config.json"
 
 class Config:
     show_hidden_themes: bool = False
+    live_save_time: float = 7.0
 
     def __init__(self):
         self.load_config()

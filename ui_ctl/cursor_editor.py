@@ -45,7 +45,7 @@ class CursorEditor(CursorEditorUI):
 
     def on_close(self, event: wx.CloseEvent):
         if not self.is_sub_project:
-            theme_manager.save()
+            theme_manager.live_save()
         event.Skip()
 
     def on_frame_counter_change(self, event):

@@ -15,6 +15,7 @@ from lib.log import logger
 from lib.render import render_project_frame
 from lib.resources import theme_manager
 from ui.public_list_ctl import PublicThemeCursorListUI, PublicThemeSelectorUI
+from ui.select import select_all
 from ui_ctl.cursor_editor import CursorEditor
 from ui_ctl.cursor_editor_widgets.element_list_ctrl import ElementListCtrl
 from widget.data_dialog import DataLineParam, DataDialog, DataLineType
@@ -252,6 +253,8 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
     def on_key_down(self, event: wx.KeyEvent):
         if event.GetKeyCode() == wx.WXK_DELETE:
             self.menu_delete_projects(projects=[self.active_theme.projects[i] for i in self.get_select_items()])
+        elif event.GetKeyCode() == ord("A") and event.GetModifiers() == wx.MOD_CONTROL:
+            select_all(self)
         elif event.GetKeyCode() == ord("Z") and event.GetModifiers() == wx.MOD_CONTROL:
             self.undo_action()
         elif event.GetKeyCode() == wx.WXK_UP and event.GetModifiers() == wx.MOD_SHIFT:

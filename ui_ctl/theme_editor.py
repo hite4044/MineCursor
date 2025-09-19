@@ -20,6 +20,7 @@ from lib.data import CursorTheme, path_theme_cursors, path_theme_data, INVALID_F
 from lib.log import logger
 from lib.render import render_project
 from lib.resources import theme_manager, ThemeAction, deleted_theme_manager
+from ui.select import select_all
 from ui.theme_editor import ThemeEditorUI
 from ui_ctl.about_dialog import AboutDialog
 from ui_ctl.public_list_ctl import PublicThemeCursorList, PublicThemeSelector, EVT_THEME_SELECTED, string_fmt_time
@@ -147,6 +148,8 @@ class ThemeSelector(PublicThemeSelector):
     def on_key_down(self, event: wx.KeyEvent):
         if event.GetKeyCode() == ord("Z") and event.GetModifiers() == wx.MOD_CONTROL:
             self.undo()
+        elif event.GetKeyCode() == ord("A") and event.GetModifiers() == wx.MOD_CONTROL:
+            select_all(self)
         else:
             event.Skip()
 

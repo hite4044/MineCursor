@@ -9,6 +9,7 @@ from lib.data import CursorProject, CursorElement
 from lib.image_pil2wx import PilImg2WxImg
 from lib.render import render_project_gen
 from ui.cursor_editor import ElementListCtrlUI
+from ui.select import select_all
 from ui_ctl.cursor_editor_widgets.events import ProjectUpdatedEvent, ElementSelectedEvent
 from ui_ctl.cursor_editor_widgets.mask_editor import MaskEditor
 from ui_ctl.cursor_editor_widgets.source_info_editor import SourceInfoEditDialog
@@ -66,6 +67,8 @@ class ElementListCtrl(ElementListCtrlUI):
             self.remove_elements(self.get_select_elements())
         elif event.GetKeyCode() == ord("Z") and event.GetModifiers() == wx.MOD_CONTROL:
             self.undo()
+        elif event.GetKeyCode() == ord("A") and event.GetModifiers() == wx.MOD_CONTROL:
+            select_all(self)
         elif event.GetKeyCode() == wx.WXK_UP and event.GetModifiers() == wx.MOD_SHIFT:
             index = self.GetFirstSelected()
             self.move_element(index, -1)

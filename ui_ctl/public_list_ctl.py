@@ -242,13 +242,15 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
     def clip_on_get_copy_data(self):
         if not self.check_active_theme():
             return None
-        item = self.GetFirstSelected()
-        return None if item == -1 else self.active_theme.projects[item].id
+        items = self.get_select_items()
 
-    def clip_on_set_copy_data(self, project_id: str):
-        if project := theme_manager.find_project(project_id):
-            self.active_theme.projects.append(project.copy())
-            self.reload_theme()
+        return None if not items else [self.active_theme.projects[item].id for item in items]
+
+    def clip_on_set_copy_data(self, project_ids: list[str]):
+        for project_id in project_ids:
+            if project := theme_manager.find_project(project_id):
+                self.active_theme.projects.append(project.copy())
+        self.reload_theme()
 
     def on_key_down(self, event: wx.KeyEvent):
         if event.GetKeyCode() == wx.WXK_DELETE:

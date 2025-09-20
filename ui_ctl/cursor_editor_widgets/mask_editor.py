@@ -169,8 +169,8 @@ class MaskEditor(wx.Dialog):
         self.action_btn = wx.Button(self.editor, label="操作")
         self.show_grid = wx.CheckBox(self.editor, label="显示网格",
                                      style=wx.CHK_3STATE | wx.CHK_ALLOW_3RD_STATE_FOR_USER)
-        self.color_value_label = CenteredText(self.editor, label="0")
-        self.color_slider = wx.Slider(self.editor, value=0x0, maxValue=0xFF)
+        self.color_value_label = CenteredText(self.editor, label="255")
+        self.color_slider = wx.Slider(self.editor, value=0xFF, maxValue=0xFF)
         self.ok = wx.Button(self.editor, label="确定")
         self.cancel = wx.Button(self.editor, label="取消")
         self.show_grid.Set3StateValue(wx.CHK_UNDETERMINED)
@@ -384,7 +384,7 @@ class MaskEditorPanel(wx.Window):
         self.is_drawing: bool = False
         self.draw_or_clear = True
         self.last_draw_position: tuple[int, int] | None = None
-        self.draw_color: int = 0xFF
+        self.draw_color: int = 0x00
         self.current_color: int = 0xFF
         self.drag_offset: tuple[int, int] | None = None
         self.scale = 8.0
@@ -442,7 +442,7 @@ class MaskEditorPanel(wx.Window):
         elif event.RightDown() and self.translate_local_position(event.GetX(), event.GetY()):
             self.is_drawing = True
             self.draw_or_clear = False
-            self.current_color = 0x00
+            self.current_color = 0xFF
             event.Dragging = lambda: True
         if event.Dragging():
             if self.drag_offset:

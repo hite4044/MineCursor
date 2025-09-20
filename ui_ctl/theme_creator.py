@@ -4,6 +4,7 @@ from lib.data import CursorTheme
 from lib.resources import theme_manager
 from ui.theme_creator import ThemeCreatorUI, CursorsSelectorUI, SourceThemeCursorListUI, NewThemeCursorListUI
 from ui_ctl.public_list_ctl import EVT_THEME_SELECTED, PublicThemeSelector
+from widget.center_text import CenteredText
 from widget.win_icon import set_multi_size_icon
 
 
@@ -65,6 +66,15 @@ class NewThemeCursorList(NewThemeCursorListUI):
 
         self.drop_target = DropTarget(self.OnDropText)
         self.SetDropTarget(self.drop_target)
+
+        self.tip = CenteredText(self, label="拖放添加指针", style=wx.TRANSPARENT_WINDOW)
+        hor_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        hor_sizer.AddStretchSpacer()
+        hor_sizer.Add(self.tip, 0, wx.LEFT | wx.RIGHT, 5)
+        ver_sizer = wx.BoxSizer(wx.VERTICAL)
+        ver_sizer.AddStretchSpacer()
+        ver_sizer.Add(hor_sizer, 0, wx.TOP | wx.BOTTOM, 5)
+        self.SetSizer(ver_sizer)
 
     def OnDropText(self, data: str):
         projects = data.split(", ")

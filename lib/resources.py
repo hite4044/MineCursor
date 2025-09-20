@@ -3,7 +3,6 @@ import os
 import re
 import zlib
 from enum import Enum
-from io import BytesIO
 from os import rename
 from os.path import join, basename, isfile
 from threading import Event, Thread
@@ -38,7 +37,22 @@ def get_dir_all_themes(dir_path: str):
     return themes
 
 
+class ThemeFileType(Enum):
+    RAW_JSON = 0
+    ZIP_COMPRESS = "zip_compress"
+
+
 class ThemeManager:
+    """主题管理器, 管理主题, 请避免直接操作themes列表"""
+
+    MCTF = b"MCTF"
+    HEADER_TEXT = b" Hite404 - MineCursor@github Cursor Theme File "
+    NORMAL_THEME_HEADER = bytes().join([
+        MCTF,
+        len(HEADER_TEXT).to_bytes(4, "little"),
+        HEADER_TEXT
+    ])
+
     def __init__(self, dir_path: str):
         self.root_dir = dir_path
         self.themes: list[CursorTheme] = []
@@ -93,33 +107,39 @@ class ThemeManager:
 
     @staticmethod
     def load_theme_file(file_path: str) -> CursorTheme:
-        with open(file_path, "rb") as f:
-            data = f.read()
-        if data.startswith(b"\x8CMineCursor Theme".zfill(32)):
-            data_io = BytesIO(data)
-            data_io.read(32)
-            header_length = int.from_bytes(data_io.read(8), "big")
-            header: dict[str, Any] = json.loads(data_io.read(header_length))
+        with open(file_path, "rb") as data_io:
+            if data_io.read(4) == ThemeManager.MCTF:
+                data_io.read(int.from_bytes(data_io.read(4), "little"))  # 读取并丢弃头文本
 
-            if header["type"] == "zip_content":
-                theme_data = zlib.decompress(data_io.read()).decode("utf-8")
-                return CursorTheme.from_dict(json.loads(theme_data))
+                header_length = int.from_bytes(data_io.read(8), "little")
+                header: dict[str, Any] = json.loads(data_io.read(header_length))
+
+                data_length = int.from_bytes(data_io.read(8), "little")
+                if ThemeFileType(header["type"]) == ThemeFileType.ZIP_COMPRESS:
+                    theme_data = zlib.decompress(data_io.read(data_length)).decode("utf-8")
+                else:
+                    raise RuntimeError(f"无法加载主题: {file_path}, 未知的主题类型")
             else:
-                raise RuntimeWarning("未知的主题类型")
-        else:
-            return CursorTheme.from_dict(json.loads(data.decode("utf-8")))
+                data_io.seek(0)
+                theme_data = data_io.read().decode("utf-8")
+        return CursorTheme.from_dict(json.loads(theme_data))
 
     @staticmethod
-    def save_theme_file(file_path: str, theme: CursorTheme):
+    def save_theme_file(file_path: str, theme: CursorTheme, file_type: ThemeFileType = ThemeFileType.ZIP_COMPRESS):
         logger.debug(f"保存主题至: {basename(file_path)}")
         data_string = json.dumps(theme.to_dict(), ensure_ascii=False)
-        header = json.dumps({"type": "zip_content"}).encode("utf-8")
+        if file_type == ThemeFileType.RAW_JSON:
+            with open(file_path, "w", encoding="utf-8") as f:
+                f.write(data_string)
+        header = json.dumps({"type": file_type.value}).encode("utf-8")
         with open(file_path, "wb") as f:
-            result = zlib.compress(data_string.encode("utf-8"), 1)
-            f.write(b"\x8CMineCursor Theme".zfill(32))
-            f.write(len(header).to_bytes(8, "big"))
+            compressed_theme = zlib.compress(data_string.encode("utf-8"), 1)
+            f.write(ThemeManager.NORMAL_THEME_HEADER)
+            f.write(len(header).to_bytes(8, "little"))
             f.write(header)
-            f.write(result)
+            f.write(len(compressed_theme).to_bytes(8, "little"))
+            if file_type == ThemeFileType.ZIP_COMPRESS:
+                f.write(compressed_theme)
 
     @staticmethod
     def save_rendered_theme_file(file_path: str, theme: CursorTheme):

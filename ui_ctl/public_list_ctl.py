@@ -471,7 +471,8 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
             self.DeleteAllItems()
         else:
             self.load_projects(theme.projects)
-            self.apply_theme_btn.Show(theme.type == ThemeType.NORMAL)
+            if self.USE_APPLY_BTN:
+                self.apply_theme_btn.Show(theme.type == ThemeType.NORMAL)
 
         self.Layout()
 

@@ -8,7 +8,7 @@ from widget.center_text import CenteredText
 from widget.font import ft
 from widget.win_icon import set_multi_size_icon
 
-VERSION = "v1.1"
+VERSION = "v1.1.1"
 INFO = """\
 项目贡献者: hite4044
 我为这个项目投入了数百小时的时间, 有条件的话请Star吧！

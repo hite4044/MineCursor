@@ -21,7 +21,9 @@ class TemplateSource(wx.ListCtrl):
             for project in theme.projects:
                 project_frame = render_project_frame(project, 0).resize((96, 96), Resampling.BOX)
                 preview_index = self.image_list.Add(PilImg2WxImg(project_frame).ConvertToBitmap())
-                index = self.InsertItem(self.GetItemCount(), project.name, preview_index)
+                index = self.InsertItem(self.GetItemCount(),
+                                        project.name if project.name else project.kind.kind_name,
+                                        preview_index)
                 self.index2project_map[index] = project
 
     def get_project(self):

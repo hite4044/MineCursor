@@ -127,10 +127,13 @@ class ThemeManager:
     @staticmethod
     def save_theme_file(file_path: str, theme: CursorTheme, file_type: ThemeFileType = ThemeFileType.ZIP_COMPRESS):
         logger.debug(f"保存主题至: {basename(file_path)}")
+
         data_string = json.dumps(theme.to_dict(), ensure_ascii=False)
         if file_type == ThemeFileType.RAW_JSON:
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(data_string)
+            return
+
         header = json.dumps({"type": file_type.value}).encode("utf-8")
         with open(file_path, "wb") as f:
             compressed_theme = zlib.compress(data_string.encode("utf-8"), 1)
@@ -142,7 +145,8 @@ class ThemeManager:
                 f.write(compressed_theme)
 
     @staticmethod
-    def save_rendered_theme_file(file_path: str, theme: CursorTheme):
+    def save_rendered_theme_file(file_path: str, theme: CursorTheme,
+                                 file_type: ThemeFileType = ThemeFileType.ZIP_COMPRESS):
         new_theme = theme.copy()
         for i, project in enumerate(new_theme.projects):
             new_project = project.copy()
@@ -162,7 +166,7 @@ class ThemeManager:
             new_project.elements.append(frame_element)
             new_project.scale = saved_scale
             new_theme.projects[i] = new_project
-        ThemeManager.save_theme_file(file_path, new_theme)
+        ThemeManager.save_theme_file(file_path, new_theme, file_type)
 
     def add_theme(self, theme: CursorTheme):  # 添加主题
         self.themes.append(theme)

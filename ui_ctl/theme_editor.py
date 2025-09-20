@@ -19,7 +19,7 @@ from lib.cursor.writer import write_cursor_progress
 from lib.data import CursorTheme, path_theme_cursors, path_theme_data, INVALID_FILENAME_CHAR, ThemeType, generate_id
 from lib.log import logger
 from lib.render import render_project
-from lib.resources import theme_manager, ThemeAction, deleted_theme_manager
+from lib.resources import theme_manager, ThemeAction, deleted_theme_manager, ThemeFileType
 from ui.select import select_all
 from ui.theme_editor import ThemeEditorUI
 from ui_ctl.about_dialog import AboutDialog
@@ -93,6 +93,20 @@ class ThemeDataDialog(DataDialog):
     def get_result(self) -> tuple[str, int, str, str, ThemeType]:
         datas = self.datas
         return datas["name"], datas["base_size"], datas["author"], datas["description"], ThemeType(datas["type"])
+
+
+class ThemeFileTypeDialog(DataDialog):
+    def __init__(self, parent: wx.Window | None):
+        super().__init__(parent, "选择主题文件格式",
+                         DataLineParam("type", "主题文件格式", DataLineType.CHOICE, ThemeFileType.ZIP_COMPRESS,
+                                       enum_names={
+                                           ThemeFileType.RAW_JSON: "原始Json (体积大) (可直接编辑)",
+                                           ThemeFileType.ZIP_COMPRESS: "Zip流 (体积小) (便于分享)"
+                                       }))
+        self.set_icon("theme/theme_file_type.png")
+
+    def get_result(self) -> ThemeFileType:
+        return ThemeFileType(self.datas["type"])  # 套一层类实例确保IDE检测的返回类型正确
 
 
 class ThemeEditor(ThemeEditorUI):
@@ -295,12 +309,17 @@ class ThemeSelector(PublicThemeSelector):
         file_path = dialog.GetPath()
         file_dir = os.path.dirname(file_path)
         end_fix = file_path.split(".")[-1]
+
+        dialog = ThemeFileTypeDialog(self)
+        if dialog.ShowModal() != wx.ID_OK:
+            return
+        file_type = dialog.get_result()
         for theme in themes:
             export_path = os.path.join(file_dir, theme.name + "." + end_fix)
             if end_fix == "rmctheme":
-                theme_manager.save_rendered_theme_file(export_path, theme)
+                theme_manager.save_rendered_theme_file(export_path, theme, file_type)
             else:
-                theme_manager.save_theme_file(export_path, theme)
+                theme_manager.save_theme_file(export_path, theme, file_type)
 
     def on_export_theme_cursors(self, theme: CursorTheme):
         dialog = wx.DirDialog(self, "导出主题指针", defaultPath=theme.name)

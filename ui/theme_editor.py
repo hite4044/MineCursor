@@ -8,7 +8,7 @@ from widget.font import ft
 
 class ThemeEditorUI(wx.Frame):
     def __init__(self, parent: wx.Window | None):
-        super().__init__(parent, title="Mine Cursor", size=(1166, 625))
+        super().__init__(parent, title="Mine Cursor", size=(1183, 625))
         self.SetFont(ft(11))
 
         self.splitter = wx.SplitterWindow(self)

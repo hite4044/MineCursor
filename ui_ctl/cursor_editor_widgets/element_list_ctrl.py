@@ -118,7 +118,8 @@ class ElementListCtrl(ElementListCtrlUI):
         if len(elements) == 1:
             menu.AppendSeparator()
             menu.Append("编辑遮罩 (&M)", self.on_edit_mask, index, icon="element/edit_mask.png")
-            menu.Append("编辑源信息 (&I)", self.on_edit_source, index, icon="element/edit_info.png")
+            if not elements[0].sub_project:
+                menu.Append("编辑源信息 (&I)", self.on_edit_source, index, icon="element/edit_info.png")
             menu.AppendSeparator()
             menu.Append("上移一层 (&W)", self.move_element, index, -1, icon="action/up.png")
             menu.Append("下移一层 (&S)", self.move_element, index, 1, icon="action/down.png")

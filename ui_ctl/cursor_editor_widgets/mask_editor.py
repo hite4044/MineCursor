@@ -150,6 +150,7 @@ class MaskEditor(wx.Dialog):
             self.SetFont(parent.GetFont())
         set_multi_size_icon(self, "assets/icons/element/edit_mask.png")
         mask = ImageOps.invert(mask)
+        self.raw_mask = mask.copy()
         self.mask = mask
         self.background = background
         self._position = (0, 0)
@@ -256,7 +257,7 @@ class MaskEditor(wx.Dialog):
         self.editor.Refresh()
 
     def on_close(self, event: wx.CloseEvent):
-        if ImageOps.invert(self.mask) == self.background.getchannel("A"):
+        if self.mask != self.raw_mask:
             ret = wx.MessageBox("确定要放弃没有保存的遮罩吗？", "确认关闭", wx.YES_NO | wx.ICON_QUESTION)
             if ret != wx.YES:
                 return

@@ -29,4 +29,5 @@ class RectElementSource(RectElementSourceUI):
         size = (self.size_width.data, self.size_height.data)
         color = (self.color_r.data, self.color_g.data, self.color_b.data, self.color_a.data)
         frame = Image.new("RGBA", size, color)
-        return CursorElement(self.name.data, [frame], [AssetSourceInfo(AssetType.RECT, size=size, color=color)])
+        name = "像素点" if self.name.data == "矩形" and size == (1, 1) else self.name.data
+        return CursorElement(name, [frame], [AssetSourceInfo(AssetType.RECT, size=size, color=color)])

@@ -113,7 +113,7 @@ class ImageElementSource(ImageElementSourceUI):
     def key_hook(self, event: wx.KeyEvent):
         if event.GetKeyCode() == ord("C") and event.GetModifiers() == wx.MOD_CONTROL:
             if self.active_image:
-                data = wx.BitmapDataObject(PilImg2WxImg(self.active_image).ConvertToBitmap())
+                data = wx.ImageDataObject(PilImg2WxImg(self.active_image))
                 wx.TheClipboard.SetData(data)
                 wx.Bell()
         elif event.GetKeyCode() == ord("V") and event.GetModifiers() == wx.MOD_CONTROL:

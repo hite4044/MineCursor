@@ -186,6 +186,7 @@ class SourceInfoEditDialog(wx.Dialog):
             self.rect_source.color_a.set_value(source_info.color[3])
             self.rect_source.size_width.set_value(source_info.size[0])
             self.rect_source.size_height.set_value(source_info.size[1])
+            self.rect_source.picker.SetColour(wx.Colour(*source_info.color))
             self.notebook.switch_page(1)
         elif source_info.type == AssetType.IMAGE:
             self.image_source.resize_width.set_value(source_info.size[0])

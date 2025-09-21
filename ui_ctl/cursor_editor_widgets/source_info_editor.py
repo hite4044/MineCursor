@@ -61,6 +61,9 @@ class SourceInfoEditDialog(wx.Dialog):
         self.source_lc.Bind(wx.EVT_KEY_DOWN, self.on_key)
         self.Bind(wx.EVT_BUTTON, self.on_apply, self.apply_btn)
 
+        self.source_lc.Select(0, False)
+        self.source_lc.Select(0, True)
+
     def on_key(self, event: wx.KeyEvent):
         if event.GetKeyCode() == wx.WXK_UP and event.GetModifiers() == wx.MOD_SHIFT:
             self.exchange_item(self.source_lc.GetFirstSelected(), -1)
@@ -209,9 +212,10 @@ class SourceInfoEditDialog(wx.Dialog):
             elif source_info.type == AssetType.IMAGE:
                 self.source_lc.SetItem(i, 2, f"Image: {source_info.size[0]}x{source_info.size[1]}")
 
-        self.source_lc.Unbind(wx.EVT_LIST_ITEM_SELECTED)
-        self.source_lc.Select(item)
-        self.source_lc.EnsureVisible(item)
-        self.source_lc.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_select_source)
+        if item != -1:
+            self.source_lc.Unbind(wx.EVT_LIST_ITEM_SELECTED)
+            self.source_lc.Select(item)
+            self.source_lc.EnsureVisible(item)
+            self.source_lc.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_select_source)
 
 

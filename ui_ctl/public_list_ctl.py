@@ -83,11 +83,15 @@ class PublicThemeSelector(PublicThemeSelectorUI):
     def load_all_theme(self):
         self.DeleteAllItems()
         self.line_theme_mapping.clear()
+        show_themes: dict[ThemeType, list[CursorTheme]] = {theme_type: [] for theme_type in config.theme_kind_order}
         for theme in theme_manager.themes:
             if not config.show_hidden_themes and not self.FORCE_FULL_THEME:
                 if theme.type != ThemeType.NORMAL:
                     continue
-            self.append_theme(theme)
+            show_themes[theme.type].append(theme)
+        for theme_type, themes in show_themes.items():
+            for theme in themes:
+                self.append_theme(theme)
 
     def reload_themes(self):
         self.load_all_theme()

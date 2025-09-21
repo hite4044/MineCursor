@@ -49,6 +49,10 @@ class ImageElementSource(ImageElementSourceUI):
         for entry in entries:
             entry.Bind(EVT_DATA_UPDATE, self.on_data_change)
 
+        self.preview_bitmap.Bind(wx.EVT_LEFT_DOWN,
+                                 lambda e: exec("e.Skip()\nself.preview_bitmap.SetFocus()", {"e": e}, {"self": self}))
+        self.preview_bitmap.Bind(wx.EVT_CHAR_HOOK, self.key_hook)
+
     def on_load_paste_board(self, _=None):
         image = ImageGrab.grabclipboard()
         if isinstance(image, Image.Image):
@@ -84,6 +88,7 @@ class ImageElementSource(ImageElementSourceUI):
         self.resize_width.set_value(image.width)
         self.resize_height.set_value(image.height)
         self.on_data_change()
+        self.Layout()
         return True
 
     def on_data_change(self, _=None):
@@ -104,3 +109,25 @@ class ImageElementSource(ImageElementSourceUI):
 
         return CursorElement(self.name.data, [image],
                              source_infos=[AssetSourceInfo(AssetType.IMAGE, size=image.size, image=image)])
+
+    def key_hook(self, event: wx.KeyEvent):
+        if event.GetKeyCode() == ord("C") and event.GetModifiers() == wx.MOD_CONTROL:
+            if self.active_image:
+                data = wx.BitmapDataObject(PilImg2WxImg(self.active_image).ConvertToBitmap())
+                wx.TheClipboard.SetData(data)
+                wx.Bell()
+        elif event.GetKeyCode() == ord("V") and event.GetModifiers() == wx.MOD_CONTROL:
+            data = wx.BitmapDataObject()
+            wx.TheClipboard.GetData(data)
+
+            if not data.GetBitmap().IsOk():
+                data = wx.FileDataObject()
+                wx.TheClipboard.GetData(data)
+                if data.GetFilenames():
+                    filename = data.GetFilenames()[0]
+                    self.load_image(Image.open(filename).convert("RGBA"))
+            else:
+                bitmap = data.GetBitmap()
+                buffer = bytearray(bitmap.GetWidth() * bitmap.GetHeight() * 4)
+                bitmap.CopyToBuffer(buffer, wx.BitmapBufferFormat_RGBA)
+                self.load_image(Image.frombuffer("RGBA", bitmap.GetSize().Get(), buffer))

@@ -113,7 +113,7 @@ class ImageElementSourceUI(wx.Panel):
             grid_sizer.Add(entry.label, 0, wx.EXPAND)
             grid_sizer.Add(entry.entry, 1, wx.EXPAND)
         sizer.Add(grid_sizer)
-        sizer.Add(self.preview_bitmap)
+        sizer.Add(self.preview_bitmap, 1, wx.EXPAND)
         self.SetSizer(sizer)
 
 

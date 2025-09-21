@@ -117,17 +117,4 @@ class ImageElementSource(ImageElementSourceUI):
                 wx.TheClipboard.SetData(data)
                 wx.Bell()
         elif event.GetKeyCode() == ord("V") and event.GetModifiers() == wx.MOD_CONTROL:
-            data = wx.BitmapDataObject()
-            wx.TheClipboard.GetData(data)
-
-            if not data.GetBitmap().IsOk():
-                data = wx.FileDataObject()
-                wx.TheClipboard.GetData(data)
-                if data.GetFilenames():
-                    filename = data.GetFilenames()[0]
-                    self.load_image(Image.open(filename).convert("RGBA"))
-            else:
-                bitmap = data.GetBitmap()
-                buffer = bytearray(bitmap.GetWidth() * bitmap.GetHeight() * 4)
-                bitmap.CopyToBuffer(buffer, wx.BitmapBufferFormat_RGBA)
-                self.load_image(Image.frombuffer("RGBA", bitmap.GetSize().Get(), buffer))
+            self.on_load_paste_board()

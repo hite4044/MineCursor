@@ -26,6 +26,7 @@ class DataEntry(wx.Panel):
     def __init__(self, parent: wx.Window, label: str,
                  data_type: Type[str | int | float | bool | Enum],
                  limits: tuple[int | float, int | float] | None = None, enum_names: dict[Enum, str] | None = None,
+                 disabled: bool = False, multilined: bool = False,
                  use_sizer=False):
         self.depend_entry = None
         if use_sizer:
@@ -38,7 +39,8 @@ class DataEntry(wx.Panel):
         self.enum_names = enum_names
         self.label = CenteredText(parent, label=label, x_center=False)
         if data_type in [str, int, float]:
-            self.entry = wx.TextCtrl(parent, style=wx.TE_PROCESS_ENTER)
+            style = (wx.TE_MULTILINE if multilined else 0) | (wx.TE_READONLY if disabled else 0)
+            self.entry = wx.TextCtrl(parent, style=wx.TE_PROCESS_ENTER | style)
             if data_type == str:
                 self.entry.Bind(wx.EVT_TEXT, self.on_text)
         elif data_type == bool:
@@ -55,14 +57,18 @@ class DataEntry(wx.Panel):
         else:
             raise ValueError(f"Unsupported data type: {data_type}")
 
-        if data_type == bool:
-            self.entry.Bind(wx.EVT_CHECKBOX, self.finish_edit)
+        if disabled:
+            if not isinstance(self.entry, wx.TextCtrl):
+                self.entry.Disable()
         else:
-            self.entry.Bind(wx.EVT_SET_FOCUS, self.on_start_edit)
-            self.entry.Bind(wx.EVT_KILL_FOCUS, self.on_focus_lost)
-            self.entry.Bind(wx.EVT_TEXT_ENTER, self.on_enter_press)
-        if data_type in [int, float]:
-            self.entry.Bind(wx.EVT_MOUSEWHEEL, self.on_mouse_wheel)
+            if data_type == bool:
+                self.entry.Bind(wx.EVT_CHECKBOX, self.finish_edit)
+            else:
+                self.entry.Bind(wx.EVT_SET_FOCUS, self.on_start_edit)
+                self.entry.Bind(wx.EVT_KILL_FOCUS, self.on_focus_lost)
+                self.entry.Bind(wx.EVT_TEXT_ENTER, self.on_enter_press)
+            if data_type in [int, float]:
+                self.entry.Bind(wx.EVT_MOUSEWHEEL, self.on_mouse_wheel)
 
         if use_sizer:
             self.sizer = wx.BoxSizer(wx.HORIZONTAL)

@@ -31,14 +31,6 @@ from widget.ect_menu import EtcMenu
 from widget.win_icon import set_multi_size_icon
 
 
-def get_user_name() -> str:
-    import getpass
-    return getpass.getuser()
-
-
-USER_NAME = get_user_name()
-
-
 class CursorLostType(Enum):
     USE_IDC_RES = 0
     USE_AERO = 1
@@ -66,33 +58,55 @@ class ThemeApplyDialog(DataDialog):
 
 
 class ThemeDataDialog(DataDialog):
-    def __init__(self, parent: wx.Window | None, is_create,
-                 name: str = "Cursor Theme", base_size: int = 32,
-                 author: str = USER_NAME, description: str = "None",
-                 theme_type: ThemeType = ThemeType.NORMAL,
-                 make_time: float = 0.0):
-        super().__init__(parent, "创建主题" if is_create else "编辑主题",
-                         DataLineParam("name", "主题名称", DataLineType.STRING, name),
-                         DataLineParam("base_size", "基础尺寸", DataLineType.INT, base_size),
-                         DataLineParam("author", "作者", DataLineType.STRING, author),
-                         DataLineParam("description", "描述", DataLineType.STRING, description),
-                         DataLineParam("type", "主题类型", DataLineType.CHOICE, theme_type,
-                                       enum_names={
-                                           ThemeType.NORMAL: "普通",
-                                           ThemeType.PRE_DEFINE: "预设",
-                                           ThemeType.TEMPLATE: "模版",
-                                       }),
-                         *([DataLineParam("Explorers - Hinkik", "制作时间", DataLineType.STRING,
-                                          string_fmt_time(make_time))] if not is_create else [])
-                         )
+    def __init__(self, parent: wx.Window | None, is_create: bool, theme: CursorTheme | None = None):
+        if theme is None:
+            theme = CursorTheme("新指针主题", 32, config.default_author)
+        params = [
+            DataLineParam("name", "主题名称", DataLineType.STRING, theme.name),
+            DataLineParam("base_size", "基础尺寸", DataLineType.INT, theme.base_size),
+            DataLineParam("author", "作者", DataLineType.STRING, theme.author),
+            DataLineParam("description", "描述", DataLineType.STRING, theme.description),
+            DataLineParam("type", "主题类型", DataLineType.CHOICE, theme.type,
+                          enum_names={
+                              ThemeType.NORMAL: "普通",
+                              ThemeType.PRE_DEFINE: "预设",
+                              ThemeType.TEMPLATE: "模版",
+                          })]
+        if not is_create:
+            params.append(DataLineParam("Explorers - Hinkik", "制作时间", DataLineType.STRING,
+                                        string_fmt_time(theme.make_time), disabled=True))
+            params.append(DataLineParam("Special Ability - Empty", "创建时间", DataLineType.STRING,
+                                        theme.create_time, disabled=True))
+            params.append(DataLineParam("note", "备注", DataLineType.STRING, theme.note, multilined=True))
+            params.append(DataLineParam("license_info", "协议信息", DataLineType.STRING,
+                                        theme.license_info, multilined=True))
+        super().__init__(parent, "创建主题" if is_create else "编辑主题", *params)
+        self.is_create = is_create
         if is_create:
             self.set_icon("theme/add.png")
         else:
             self.set_icon("theme/edit_info.png")
 
-    def get_result(self) -> tuple[str, int, str, str, ThemeType]:
+    def as_theme(self, theme: CursorTheme | None = None) -> CursorTheme:
+        if theme is None:
+            theme = CursorTheme("Barrier - KARUT")
+
         datas = self.datas
-        return datas["name"], datas["base_size"], datas["author"], datas["description"], ThemeType(datas["type"])
+        name = datas["name"]
+        if re.findall(INVALID_FILENAME_CHAR, name):
+            wx.MessageBox(f"主题名 [{name}] 中的非法字符已替换为下划线\n(为了保存主题文件)", "主题名中的非法字符",
+                          wx.OK | wx.ICON_WARNING)
+        name = re.sub(INVALID_FILENAME_CHAR, "_", name)
+
+        theme.name = name
+        theme.base_size = datas["base_size"]
+        theme.author = datas["author"]
+        theme.description = datas["description"]
+        theme.type = ThemeType(datas["type"])
+        if not self.is_create:
+            theme.note = datas["note"]
+            theme.license_info = datas["license_info"]
+        return theme
 
 
 class ThemeFileTypeDialog(DataDialog):
@@ -255,31 +269,17 @@ class ThemeSelector(PublicThemeSelector):
             self.reload_themes()
 
     def on_add_theme(self):
-        dialog = ThemeDataDialog(self, True, self.get_theme_default_name())
+        dialog = ThemeDataDialog(self, True)
         if dialog.ShowModal() == wx.ID_OK:
-            name, base_size, author, description, theme_type = dialog.get_result()
-            if re.findall(INVALID_FILENAME_CHAR, name):
-                wx.MessageBox(f"主题名 [{name}] 中的非法字符已替换为下划线\n(为了保存主题文件)", "主题名中的非法字符",
-                              wx.OK | wx.ICON_WARNING)
-            name = re.sub(INVALID_FILENAME_CHAR, "_", name)
-            theme = CursorTheme(name, base_size, author, description, theme_type)
+            theme = dialog.as_theme()
             theme_manager.add_theme(theme)
             self.reload_themes()
             self.Select(self.GetItemCount() - 1)
 
     def on_edit_theme(self, theme: CursorTheme):
-        dialog = ThemeDataDialog(self, False, theme.name, theme.base_size, theme.author, theme.description, theme.type,
-                                 theme.make_time)
+        dialog = ThemeDataDialog(self, False, theme)
         if dialog.ShowModal() == wx.ID_OK:
-            name, base_size, author, description, theme_type = dialog.get_result()
-            if re.findall(INVALID_FILENAME_CHAR, name):
-                wx.MessageBox(f"主题名 [{name}] 中的非法字符已替换为下划线\n(为了保存主题文件)", "主题名中的非法字符",
-                              wx.OK | wx.ICON_WARNING)
-            theme.name = re.sub(INVALID_FILENAME_CHAR, "_", name)
-            theme.base_size = base_size
-            theme.author = author
-            theme.description = description
-            theme.type = theme_type
+            dialog.as_theme(theme)
             theme_manager.renew_theme(theme)
             self.reload_themes()
 

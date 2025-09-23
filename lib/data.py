@@ -4,6 +4,7 @@ import re
 import typing
 from base64 import b64encode, b64decode
 from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum
 from io import BytesIO
 from os import makedirs
@@ -424,13 +425,16 @@ class CursorProject:
         self.kind: CursorKind = CursorKind.ARROW
         self.elements: list[CursorElement] = []
         self.center_pos = Position(0, 0)
-        self.scale = 1.0
+        self.scale = 2.0
         self.resample: Image.Resampling = Image.Resampling.NEAREST
         self.is_ani_cursor = False
         self.frame_count = 20
         self.ani_rate: int = 6
         self.ani_rates: list[int] | None = None
 
+        self.own_note: str | None = None
+        self.own_license_info: str | None = None
+        self.create_time: str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.make_time: float = 0.0
 
         self.id: str = generate_id(4)
@@ -450,7 +454,7 @@ class CursorProject:
         return f"<Project:[{self.name}{',' + self.external_name if self.external_name else ''}]>"
 
     def to_dict(self):
-        return {
+        data = {
             "name": self.name,
             "raw_canvas_size": list(self.raw_canvas_size),
             "external_name": self.external_name,
@@ -463,8 +467,14 @@ class CursorProject:
             "frame_count": self.frame_count,
             "ani_rate": self.ani_rate,
             "ani_rates": self.ani_rates,
-            "make_time": self.make_time,
+
+            "make_time": self.make_time
         }
+        if self.own_note:
+            data["own_note"] = self.own_note
+        if self.own_license_info:
+            data["license_info"] = self.own_license_info
+        return data
 
     @staticmethod
     def from_dict(data: dict) -> 'CursorProject':
@@ -483,6 +493,8 @@ class CursorProject:
         project.ani_rate = data["ani_rate"]
         project.ani_rates = data.get("ani_rates")
         project.make_time = data.get("make_time", 0)
+        project.own_note = data.get("own_note")
+        project.own_license_info = data.get("license_info")
         return project
 
     def copy(self) -> 'CursorProject':
@@ -493,6 +505,17 @@ class CursorProject:
             if element.id == element_id:
                 return element
         return None
+
+
+DEFAULT_NOTE = """这个人或许不想写备注"""
+
+DEFAULT_LICENSE_INFO = """\
+主题提供协议 - CC BY-NC-SA 4.0:
+https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+此主题使用的部分游戏资源, 遵循此条款:
+https://www.minecraft.net/usage-guidelines
+"""
 
 
 @dataclass
@@ -506,6 +529,10 @@ class CursorTheme:
 
     id: str = field(default_factory=generate_id)
 
+    note: str = DEFAULT_NOTE
+    license_info: str = DEFAULT_LICENSE_INFO
+    create_time: str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
     def __hash__(self):
         return hash(self.id)
 
@@ -516,7 +543,7 @@ class CursorTheme:
         return f"<Theme:[{self.name}],{self.base_size}px,{len(self.projects)}-curs>"
 
     def to_dict(self):
-        return {
+        data = {
             "name": self.name,
             "type": self.type.value,
             "id": self.id,
@@ -524,7 +551,13 @@ class CursorTheme:
             "author": self.author,
             "description": self.description,
             "projects": [project.to_dict() for project in self.projects],
+            "create_time": self.create_time,
         }
+        if self.note:
+            data["note"] = self.note
+        if self.license_info:
+            data["license_info"] = self.license_info
+        return data
 
     @staticmethod
     def from_dict(data: dict) -> 'CursorTheme':
@@ -536,6 +569,9 @@ class CursorTheme:
             author=data["author"],
             description=data["description"],
             projects=[CursorProject.from_dict(project) for project in data["projects"]],
+            note=data.get("note", ""),
+            license_info=data.get("license_info", ""),
+            create_time=data.get("create_time", "Unknow")
         )
 
     def copy(self):

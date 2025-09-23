@@ -35,6 +35,9 @@ class DataLineParam:
 
     enum_names: dict[Enum, str] | None = None
 
+    disabled: bool = False
+    multilined: bool = False
+
 
 class DataDialog(wx.Dialog):
     def __init__(self, parent: wx.Window | None, title: str, *params: DataLineParam):
@@ -57,20 +60,23 @@ class DataDialog(wx.Dialog):
             elif param.type == DataLineType.BOOL:
                 self.datas[param.id] = False
 
-        entries_sizer = wx.FlexGridSizer(len(params)+1, 2, 5, 5)
+        entries_sizer = wx.FlexGridSizer(len(params) + 1, 2, 5, 5)
         entries_sizer.AddGrowableCol(1, 1)
         self.entries: list[DataEntry] = []
         for index in range(len(params)):
             param: DataLineParam = params[index]
             data_type = DATA_TYPE_MAP[param.type] if param.type != DataLineType.CHOICE else next(
                 iter(param.enum_names.keys())).__class__
-            entry: DataEntry = DataEntry(self, param.label, data_type, enum_names=param.enum_names)
+            entry: DataEntry = DataEntry(self, param.label, data_type, enum_names=param.enum_names,
+                                         disabled=param.disabled, multilined=param.multilined)
             entry.set_value(param.default)
             entry.label.SetToolTip(param.tip)
             entry.entry.SetMinSize((350, -1))
 
             entries_sizer.Add(entry.label, 0, wx.EXPAND)
             entries_sizer.Add(entry.entry, 1, wx.EXPAND)
+            if param.multilined:
+                entries_sizer.AddGrowableRow(index, 1)
             self.entries.append(entry)
         btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.ok_btn = wx.Button(self, label="确定")

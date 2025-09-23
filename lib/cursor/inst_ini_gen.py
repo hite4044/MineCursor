@@ -1,6 +1,29 @@
 from lib.cursor.setter import CursorKind, CURSOR_KIND_NAME_OFFICIAL
 from lib.data import CursorTheme
 
+
+def pri_tuple_fmt_time(seconds: float) -> tuple[int, int, int, int]:
+    """转化时间戳至时间元组"""
+    return int(seconds // 3600 // 24), int(seconds // 3600 % 24), int(seconds % 3600 // 60), int(seconds % 60)
+
+
+def pri_string_fmt_time(seconds: float) -> str:
+    """格式化时间戳至字符串"""
+    time_str = ""
+    time_tuple = pri_tuple_fmt_time(seconds)
+    if time_tuple[0] > 0:
+        time_str += f"{time_tuple[0]}d "
+    if time_tuple[1] > 0:
+        time_str += f"{time_tuple[1]}h "
+    if time_tuple[2] > 0:
+        time_str += f"{time_tuple[2]}m "
+    if time_tuple[3] > 0:
+        time_str += f"{time_tuple[3]}s"
+    if time_str:
+        return time_str
+    return "无"
+
+
 VAR_NAME_MAP: dict[CursorKind, str] = {
     CursorKind.ARROW: "pointer",
     CursorKind.HELP: "help",
@@ -31,24 +54,42 @@ class INIPart:
 class PartInfo(INIPart):
     @staticmethod
     def get_text(theme: CursorTheme) -> str:
-        return "\n".join([
-            "; Install Script generate by MineCursor",
-            "; Theme Info: ",
-            f"; - Theme ID: {theme.id}",
-            f"; - Theme Name: {theme.name}",
-            f"; - Theme Anchor: {theme.author}",
-            f"; - Theme Description: {theme.description}",
-            f"; - Theme Base Size: {theme.base_size}",
-            f"; Projects: ",
-            *["\n".join([
-                f"; - {CURSOR_KIND_NAME_OFFICIAL[project.kind]}",
-                f"; - - Name: {project.name}",
-                *([f"; - - External Name: {project.external_name}"] if project.external_name else []),
-                f"; - - Hotspot: {project.center_pos}",
-                f"; - - Size: {project.canvas_size}",
-                *([f"; - - Animation Cursor"] if project.is_ani_cursor else [])
-            ]) for project in theme.projects]
+        lines = []
+        lines.extend([
+            "; Cursor theme install script generate by MineCursor",
+            "",
+            "Theme Info: ",
+            f"- Theme ID: {theme.id}",
+            f"- Theme Name: {theme.name}",
+            f"- Theme Anchor: {theme.author}",
+            f"- Theme Description: {theme.description}",
+            f"- Theme Base Size: {theme.base_size}",
+            f"- Make Time: {pri_string_fmt_time(theme.make_time)}",
+            f"- Note: {theme.note}",
+            f"- License Info: {theme.license_info}"
+            "",
+            f"Projects: "
         ])
+        for project in theme.projects:
+            sub_lines = [
+                f"- {CURSOR_KIND_NAME_OFFICIAL[project.kind]}",
+                f"- - Name: {project.name}"
+            ]
+            if project.external_name:
+                sub_lines.append(f"- - External Name: {project.external_name}")
+            sub_lines.append(f"- - Hotspot: {project.center_pos}")
+            sub_lines.append(f"- - Size: {project.canvas_size}")
+            if project.is_ani_cursor:
+                sub_lines.append(f"- - Animation Cursor")
+            sub_lines.append(f"- - Make Time: {pri_string_fmt_time(project.make_time)}")
+            if project.own_note:
+                sub_lines.append(f"- - Note: {project.own_note}")
+            if project.own_license_info:
+                sub_lines.append(f"- - License Info: {project.own_license_info}")
+
+            lines.extend(sub_lines)
+            lines.append("")
+        return "\n; ".join(lines)
 
 
 class PartVersion(INIPart):

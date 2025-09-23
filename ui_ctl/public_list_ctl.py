@@ -118,43 +118,51 @@ class PublicThemeSelector(PublicThemeSelectorUI):
 
 
 class ProjectDataDialog(DataDialog):
-    def __init__(self, parent: wx.Window | None, is_create: bool = True,
-                 name: str = "", external_name: str = "", size: int | tuple[int, int] = 32,
-                 scale: float = 2.0,
-                 kind: CursorKind = CursorKind.ARROW,
-                 make_time: float = 0.0):
+    def __init__(self, parent: wx.Window | None, is_create: bool = True, project: CursorProject | None = None, size: tuple[int, int] | None = None):
+        if project is None:
+            project = CursorProject("", (16, 16))
+        if size is not None:
+            project.raw_canvas_size = size
         params = [
-            DataLineParam("name", "项目名称", DataLineType.STRING, name if name else ""),
+            DataLineParam("name", "项目名称", DataLineType.STRING, project.name if project.name else ""),
             DataLineParam("external_name", "展示名称", DataLineType.STRING,
-                          external_name if external_name else ""),
-            *([DataLineParam("canvas_size", "画布尺寸", DataLineType.INT, size)]
+                          project.external_name if project.external_name else ""),
+            *([DataLineParam("canvas_size", "画布尺寸", DataLineType.INT, project.raw_canvas_size[0])]
               if is_create else [
-                DataLineParam("size_width", "画布宽", DataLineType.INT, size[0]),
-                DataLineParam("size_height", "画布高", DataLineType.INT, size[1]),
+                DataLineParam("size_width", "画布宽", DataLineType.INT, project.raw_canvas_size[0]),
+                DataLineParam("size_height", "画布高", DataLineType.INT, project.raw_canvas_size[1]),
             ]),
-            DataLineParam("scale", "缩放", DataLineType.FLOAT, scale),
-            DataLineParam("kind", "类型", DataLineType.CHOICE, kind,
-                          enum_names=CURSOR_KIND_NAME_OFFICIAL),
-            *([DataLineParam("Special Ability - Empty", "制作时间", DataLineType.STRING,
-                            string_fmt_time(make_time))] if not is_create else []),
+            DataLineParam("scale", "缩放", DataLineType.FLOAT, project.scale),
+            DataLineParam("kind", "类型", DataLineType.CHOICE, project.kind, enum_names=CURSOR_KIND_NAME_OFFICIAL)
         ]
+        if not is_create:
+            params.append(DataLineParam("Valhalla - Xomu、Retro/Grade", "制作时间", DataLineType.STRING,
+                                        string_fmt_time(project.make_time), disabled=True))
+            params.append(DataLineParam("note", "备注", DataLineType.STRING,
+                                        project.own_note if project.own_note else "", multilined=True))
+            params.append(DataLineParam("license_info", "协议信息", DataLineType.STRING,
+                                        project.own_license_info if project.own_license_info else "", multilined=True))
         super().__init__(parent, "添加指针项目" if is_create else "编辑指针项目信息", *params)
         if is_create:
             self.set_icon("project/add.png")
         else:
             self.set_icon("project/edit_info.png")
 
-    def get_result(self) -> tuple[str | str, str | None, int | tuple[int, int], float, CursorKind]:
+    def as_project(self, project: CursorProject | None = None) -> CursorProject:
+        if project is None:
+            project = CursorProject("On Fire - Robin Hustin", (666, 666))
         datas = self.datas
+        project.name = datas["name"] if datas["name"] else None
+        project.external_name = datas["external_name"] if datas["external_name"] else None
+        project.scale = datas["scale"]
+        project.kind = CursorKind(datas["kind"])
         if datas.get("canvas_size"):
-            size = datas["canvas_size"]
+            project.raw_canvas_size = (datas["canvas_size"], datas["canvas_size"])
         else:
-            size = (datas["size_width"], datas["size_height"])
-        result = [datas["name"], datas["external_name"] if datas["external_name"] else None, size, datas["scale"],
-                  datas["kind"]]
-        if datas["name"] == "":
-            result[0] = None
-        return cast(tuple[str, str | None, int | tuple[int, int], float, CursorKind], tuple(result))
+            project.raw_canvas_size = (datas["size_width"], datas["size_height"])
+        project.own_note = datas["note"] if datas["note"] else None
+        project.own_license_info = datas["license_info"] if datas["license_info"] else None
+        return project
 
 
 class MutilProjectDataDialog(DataDialog):
@@ -387,11 +395,7 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
             return
         dialog = ProjectDataDialog(self, size=self.active_theme.base_size)
         if dialog.ShowModal() == wx.ID_OK:
-            name, external_name, size, scale, kind = dialog.get_result()
-            project = CursorProject(name, (size, size))
-            project.kind = kind
-            project.external_name = external_name
-            project.scale = scale
+            project = dialog.as_project()
             self.active_theme.projects.append(project)
             self.reload_theme()
 
@@ -407,15 +411,9 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
             return
         if len(projects) == 1:
             project = projects[0]
-            dialog = ProjectDataDialog(self, False, project.name, project.external_name,
-                                       project.raw_canvas_size, project.scale, project.kind, project.make_time)
+            dialog = ProjectDataDialog(self, False, project)
             if dialog.ShowModal() == wx.ID_OK:
-                name, external_name, size, scale, kind = dialog.get_result()
-                project.name = name
-                project.external_name = external_name
-                project.raw_canvas_size = size
-                project.kind = kind
-                project.scale = scale
+                dialog.as_project(project)
                 self.reload_theme()
         else:
             dialog = MutilProjectDataDialog(self, active_project.raw_canvas_size, active_project.scale)

@@ -7,10 +7,19 @@ from lib.log import logger
 CFG_PATH = "config.json"
 
 
+def get_user_name() -> str:
+    import getpass
+    return getpass.getuser()
+
+
+USER_NAME = get_user_name()
+
+
 class Config:
     show_hidden_themes: bool = False
     live_save_time: float = 7.0
     theme_kind_order: list[ThemeType] = [ThemeType.NORMAL, ThemeType.PRE_DEFINE, ThemeType.TEMPLATE]
+    default_author: str = USER_NAME
 
     def __init__(self):
         self.load_config()

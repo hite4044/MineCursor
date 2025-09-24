@@ -121,16 +121,16 @@ class ProjectDataDialog(DataDialog):
     def __init__(self, parent: wx.Window | None, is_create: bool = True, project: CursorProject | None = None, size: tuple[int, int] | None = None):
         if project is None:
             project = CursorProject("", (16, 16))
-        if size is not None:
-            project.raw_canvas_size = size
+        if size is None:
+            size = project.raw_canvas_size
         params = [
             DataLineParam("name", "项目名称", DataLineType.STRING, project.name if project.name else ""),
             DataLineParam("external_name", "展示名称", DataLineType.STRING,
                           project.external_name if project.external_name else ""),
-            *([DataLineParam("canvas_size", "画布尺寸", DataLineType.INT, project.raw_canvas_size[0])]
+            *([DataLineParam("canvas_size", "画布尺寸", DataLineType.INT, size[0])]
               if is_create else [
-                DataLineParam("size_width", "画布宽", DataLineType.INT, project.raw_canvas_size[0]),
-                DataLineParam("size_height", "画布高", DataLineType.INT, project.raw_canvas_size[1]),
+                DataLineParam("size_width", "画布宽", DataLineType.INT, size[0]),
+                DataLineParam("size_height", "画布高", DataLineType.INT, size[1]),
             ]),
             DataLineParam("scale", "缩放", DataLineType.FLOAT, project.scale),
             DataLineParam("kind", "类型", DataLineType.CHOICE, project.kind, enum_names=CURSOR_KIND_NAME_OFFICIAL)
@@ -393,7 +393,7 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
     def menu_add_project(self):  # 新建一个项目
         if not self.check_active_theme():
             return
-        dialog = ProjectDataDialog(self, size=self.active_theme.base_size)
+        dialog = ProjectDataDialog(self, size=(self.active_theme.base_size, ) * 2)
         if dialog.ShowModal() == wx.ID_OK:
             project = dialog.as_project()
             self.active_theme.projects.append(project)

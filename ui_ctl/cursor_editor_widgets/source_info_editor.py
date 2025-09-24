@@ -61,6 +61,10 @@ class SourceInfoEditDialog(wx.Dialog):
         self.source_lc.Bind(wx.EVT_KEY_DOWN, self.on_key)
         self.Bind(wx.EVT_BUTTON, self.on_apply, self.apply_btn)
 
+        wx.CallAfter(self.init_select)
+
+    def init_select(self):
+        self.Layout()
         self.source_lc.Select(0, False)
         self.source_lc.Select(0, True)
 
@@ -165,19 +169,10 @@ class SourceInfoEditDialog(wx.Dialog):
         self.active_index = int(self.source_lc.GetFirstSelected())
         source_info = self.element.source_infos[self.active_index]
         if source_info.type == AssetType.ZIP_FILE:
-            if self.mc_source.source != AssetSources.get_source_by_id(source_info.source_id):
+            if self.mc_source.source.id != source_info.source_id:
                 self.mc_source.source = AssetSources.get_source_by_id(source_info.source_id)
                 self.mc_source.load_source()
-            assets_map_res = {v: k for k, v in self.mc_source.assets_map.items()}
-            item = assets_map_res[source_info.source_path]
-            self.mc_source.load_item(item)
-            while True:
-                parent = self.mc_source.assets_tree.GetItemParent(item)
-                self.mc_source.assets_tree.Expand(parent)
-                if parent in self.mc_source.loaded_roots:
-                    break
-                item = parent
-            self.mc_source.assets_tree.SelectItem(item)
+            self.mc_source.track_file(source_info.source_path)
             self.notebook.switch_page(0)
         elif source_info.type == AssetType.RECT:
             self.rect_source.color_r.set_value(source_info.color[0])

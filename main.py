@@ -21,7 +21,10 @@ class StreamMix:
     def write(self, data: str):
         self.std_file.write(data)
         # 去除颜色转义符
-        self.added_stream.write(data.rstrip("\n")[5:-4] + ("\n" if data[-1] == "\n" else ""))
+        if data.startswith("\033"):
+            data = data.rstrip("\n")[5:-4] + ("\n" if data[-1] == "\n" else "")
+            return
+        self.added_stream.write(data)
 
     def flush(self):
         self.std_file.flush()

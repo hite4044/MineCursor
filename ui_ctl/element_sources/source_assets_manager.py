@@ -1,7 +1,6 @@
 import json
 import re
 import typing
-from collections import ChainMap
 from enum import Enum
 from zipfile import ZipFile, ZipInfo
 
@@ -126,9 +125,9 @@ class SourceAssetsManager:
         self.tree_ctrl = tree_ctrl
         self.image_list = image_list
         self.file = ZipFile(source_file)
-        self.assets_tree = {}
-        self.item_to_asset_map = {}
-        self.assets_roots: list[wx.TreeItemId] = []
+        self.root_files_map: dict[str, list[ZipInfo]] = {}  # 从根节点名称 -> 文件列表
+        self.assets_roots: dict[wx.TreeItemId, str] = {}  # 从根节点 -> 根节点名称
+        self.sub_assets_roots: list[wx.TreeItemId] = []
         self.source: AssetSource | None = None
 
         self.real_root = self.tree_ctrl.GetRootItem()
@@ -150,11 +149,11 @@ class SourceAssetsManager:
         self.source = source
         self.cur_kind = kind
         self.file = source_load_manager.load_zip(source.id)
-        self.item_to_asset_map = {}
+        self.sub_assets_roots.clear()
 
         # Step1 -> 提取所有根节点
-        root_names = []
-        root_files_map = {}
+        root_names: list[str] = []
+        self.root_files_map = {}
         for _, info in self.file.NameToInfo.items():
             fp = info.filename.split("/")
             if fp[-1].endswith(".mcmeta"):  # 筛选掉 .mcmeta文件
@@ -165,27 +164,25 @@ class SourceAssetsManager:
                 if len(fp) == 1:
                     root_names.append(root_name)
             else:
-                if root_name not in root_files_map:
-                    root_files_map[root_name] = []
-                root_files_map[root_name].append(info)
+                if root_name not in self.root_files_map:
+                    self.root_files_map[root_name] = []
+                self.root_files_map[root_name].append(info)
 
         # Step2 -> 加载根节点
         self.assets_roots.clear()
-        assets_maps: list[dict[wx.TreeItemId, str]] = []
         for root_name in ["推荐"] + root_names:
             image = self.image_list.Add(wx.Bitmap(ROOT_IMAGES[root_name]))
             asset_root = self.tree_ctrl.AppendItem(self.real_root, ROOT_TEXTS.get(root_name, root_name), image)
-            assets_map = self.load_asset_root(asset_root, root_name, root_files_map.get(root_name))
-            assets_maps.append(assets_map)
-        full_assets_map = ChainMap(*assets_maps)
-        return full_assets_map
+            self.tree_ctrl.AppendItem(asset_root, "加载中...")
+            self.assets_roots[asset_root] = root_name
+
 
     def load_recommend_root(self, root_item: wx.TreeItemId):
         assets_map: dict[wx.TreeItemId, str] = {}
         recommend_data: RecommendData = self.current_recommend()
 
-        def load_sub_root(root: wx.TreeItemId, files_t: list[str]):  # 加载一个文件列表到一个节点
-            self.assets_roots.append(root)
+        def load_sub_root(root: wx.TreeItemId, files_t: list[str]):  # 加载一个文本列表为一个树节点的子节点
+            self.sub_assets_roots.append(root)
             for fp in files_t:
                 item_t = self.tree_ctrl.AppendItem(root, fp.split("/")[-1])
                 assets_map[item_t] = fp
@@ -246,7 +243,7 @@ class SourceAssetsManager:
         for file_path in asset_list:
             if file_path in animation_frames:  # 加载动画帧
                 animation_root = self.tree_ctrl.AppendItem(root_item, file_path.split("/")[-1])  # 文件名当标签
-                self.assets_roots.append(animation_root)
+                self.sub_assets_roots.append(animation_root)
                 assets_map[animation_root] = animation_frames[file_path][0]  # 使用第一帧作为动画根节点的缩略图
                 for _, frame_path in animation_frames[file_path].items():
                     filename = frame_path.split("/")[-1]
@@ -259,7 +256,7 @@ class SourceAssetsManager:
         return assets_map
 
     def load_asset_root(self, root_item: wx.TreeItemId, root_name: str, filelist: list[ZipInfo]):
-        way = ROOT_LOADING_WAYS[root_name]
+        way = ROOT_LOADING_WAYS.get(root_name, AssetRootLoadWay.AS_TREE)
         assets_map: dict[wx.TreeItemId, str] = {}
         if way == AssetRootLoadWay.AS_RECOMMEND:
             assets_map = self.load_recommend_root(root_item)
@@ -267,5 +264,5 @@ class SourceAssetsManager:
             assets_map = self.load_flat_expand_root(root_item, filelist)
         elif way == AssetRootLoadWay.AS_TREE:  # 这个写的爽, 啥也不用做直接开始遍历
             dir_tree = DirTree.load(root_name, filelist)
-            assets_map = dir_tree.full_data(self.tree_ctrl, root_item, self.assets_roots)
+            assets_map = dir_tree.full_data(self.tree_ctrl, root_item, self.sub_assets_roots)
         return assets_map

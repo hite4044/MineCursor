@@ -1,4 +1,6 @@
+import os
 import re
+from collections import ChainMap
 from enum import Enum
 from io import BytesIO
 from typing import Optional
@@ -74,6 +76,7 @@ class ElementSelectList(ElementSelectListUI):
         self.showing_item = None
         self.assets = SourceAssetsManager(source.textures_zip, self.assets_tree, self.tree_image_list)
         self.assets_map: dict[wx.TreeItemId, str] = {}
+        self.roots_to_assets_map: dict[str, dict[wx.TreeItemId, str]] = {}
         self.loaded_roots: list[wx.TreeItemId] = []
         self.dir_image_list: wx.ImageList | None = None
 
@@ -82,7 +85,8 @@ class ElementSelectList(ElementSelectListUI):
         self.assets_tree.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.on_select_item)
         self.assets_tree.Bind(wx.EVT_LEFT_DOWN, self.on_click)
         self.assets_tree.Bind(wx.EVT_RIGHT_DOWN, self.on_menu)
-        self.assets_tree.Expand(self.assets.assets_roots[0])  # 再次展开触发加载缩略图
+
+        # self.assets_tree.Expand(self.assets.sub_assets_roots[0])  # 再次展开触发加载缩略图
 
     def on_menu(self, event: wx.MouseEvent):
         event.Skip()
@@ -101,10 +105,10 @@ class ElementSelectList(ElementSelectListUI):
         self.tree_image_list.RemoveAll()
         self.assets_tree.DeleteAllItems()
         self.loaded_roots.clear()
+        self.roots_to_assets_map.clear()
 
-        assets_map: dict[wx.TreeItemId, str] = self.assets.load_source(self.source, self.kind)
+        self.assets.load_source(self.source, self.kind)
 
-        self.assets_map = assets_map
         self.zip_file = self.assets.file
 
     def on_expand_root(self, event: wx.TreeEvent):  # 展开根节点时, 加载根节点下所有节点的缩略图
@@ -113,8 +117,9 @@ class ElementSelectList(ElementSelectListUI):
         if root in self.loaded_roots:
             return
         root_parent = self.assets_tree.GetItemParent(root)
-        if self.real_root != root_parent and root not in self.assets.assets_roots:  # 必须是根节点的子节点
+        if self.real_root != root_parent and root not in self.assets.sub_assets_roots:  # 必须是根节点的子节点
             return
+        self.load_root(root)
         for child in get_item_children(self.assets_tree, root):
             try:
                 image_io = BytesIO(self.zip_file.read(self.assets_map[child]))
@@ -130,6 +135,39 @@ class ElementSelectList(ElementSelectListUI):
             self.assets_tree.SetItemImage(child, image)
         self.loaded_roots.append(root)
 
+    def load_root(self, root: wx.TreeItemId):
+        if root in self.roots_to_assets_map:
+            return
+        root_name = self.assets.assets_roots[root]
+        self.assets_tree.DeleteChildren(root)
+        sub_assets_map = self.assets.load_asset_root(root,
+                                                     root_name,
+                                                     self.assets.root_files_map[self.assets.assets_roots[root]])
+        self.roots_to_assets_map[root_name] = sub_assets_map
+        self.assets_map = ChainMap(*self.roots_to_assets_map.values())
+
+    def track_file(self, fp: str):
+        root_name = fp.split("/")[0]
+        print(root_name)
+        assets_roots_res = {v: k for k, v in self.assets.assets_roots.items()}
+        root_item = assets_roots_res[root_name]
+        if root_item not in self.loaded_roots:
+            self.load_root(root_item)
+
+        item = {v: k for k, v in self.assets_map.items()}[fp]
+        parent = item
+        while True:
+            parent = self.assets_tree.GetItemParent(parent)
+            self.assets_tree.Expand(parent)
+            if parent in self.loaded_roots:
+                break
+
+        item = {v: k for k, v in self.assets_map.items()}[fp]
+
+        self.assets_tree.SelectItem(item)
+        wx.CallAfter(self.load_item, item)
+
+
     def on_click(self, event: wx.MouseEvent):
         event.Skip()
         item, flag = self.assets_tree.HitTest(event.GetPosition())
@@ -137,6 +175,7 @@ class ElementSelectList(ElementSelectListUI):
             self.load_item(item)
 
     def on_select_item(self, event: wx.TreeEvent):
+        print("on select")
         event.Skip()
         item = event.GetItem()
         self.load_item(item)

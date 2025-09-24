@@ -17,7 +17,6 @@ class CenteredText(wx.Window):
             y_center=True,
     ):
         super().__init__(parent, id_, pos, size, style, name)
-        print(parent.GetBackgroundColour(), parent)
         size = self.SetLabel(label)
         self.SetSize(size)
         self.SetInitialSize(size)

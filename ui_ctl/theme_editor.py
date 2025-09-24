@@ -24,6 +24,7 @@ from ui.select import select_all
 from ui.theme_editor import ThemeEditorUI
 from ui_ctl.about_dialog import AboutDialog
 from ui_ctl.public_list_ctl import PublicThemeCursorList, PublicThemeSelector, EVT_THEME_SELECTED, string_fmt_time
+from ui_ctl.settings import SettingsDialog
 from ui_ctl.theme_creator import ThemeCreator
 from widget.adv_progress_dialog import AdvancedProgressDialog
 from widget.data_dialog import DataDialog, DataLineParam, DataLineType
@@ -242,9 +243,15 @@ class ThemeSelector(PublicThemeSelector):
                     icon="theme/unshow_hidden.png" if config.show_hidden_themes else "theme/show_hidden.png")
         menu.AppendSeparator()
         menu.Append("打开主题文件夹 (&O)", self.on_open_theme_folder, icon="action/open_data_dir.png")
+        menu.Append("设置 (&S)", self.on_open_config_dialog, icon="action/settings.png")
         menu.Append("关于 (&E)", self.on_show_about_dialog, icon="action/about.png")
 
         self.PopupMenu(menu)
+
+    def on_open_config_dialog(self):
+        dialog = SettingsDialog(self)
+        dialog.ShowModal()
+        self.reload_themes()
 
     def on_show_about_dialog(self):
         dialog = AboutDialog(self)

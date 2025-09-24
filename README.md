@@ -20,7 +20,7 @@
 
 ### 从源代码运行
 
-1. 下载 [Python3.10.9](https://www.python.org/ftp/python/3.10.9/python-3.10.9-amd64.exe) 安装程序
+1. 下载 [Python 3.10.9](https://www.python.org/ftp/python/3.10.9/python-3.10.9-amd64.exe) 安装程序
 2. 在安装程序的首个页面勾选 `Add Python 3.10 to PATH` 然后 `Install Now`, 安装完成后关闭窗口
 3. 从项目Github页面下载项目Zip压缩包 (Code绿色按钮->Download ZIP)
 4. 解压至某个地方, 打开该文件夹, 并在地址栏输入`cmd`并回车
@@ -38,12 +38,13 @@ TIP: 如果想要更加方便地打开工具, 可以建立一个快捷方式:
 
 此项目:
 
-- [MPL2.0许可证](https://www.mozilla.org/en-US/MPL/2.0/)
+- [MPL2.0 许可证](https://www.mozilla.org/en-US/MPL/2.0/)
 
 项目引用或使用内容:
-
-- [Mojang Minecraft](https://www.minecraft.net/)
-- 部分游戏贴图、粒子等内容（遵循[此条款](https://www.minecraft.net/usage-guidelines))
+- 项目图标:
+- - [Mojang Minecraft](https://www.minecraft.net/)
+- 项目自带资源库:
+- - 部分游戏贴图 (遵循[此条款](https://www.minecraft.net/usage-guidelines))
 
 ## Python版本
 

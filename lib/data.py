@@ -398,6 +398,7 @@ class CursorElement:
             frame_count = max_index - min_index
 
         sub_project = CursorProject(name, size)
+        sub_project.scale = 1.0
         sub_project.is_ani_cursor = True
         sub_project.frame_count = frame_count
         for element in elements:

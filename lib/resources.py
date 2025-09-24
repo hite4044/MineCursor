@@ -12,6 +12,7 @@ from lib.config import config
 from lib.data import CursorTheme, path_theme_data, CursorElement, \
     AssetSourceInfo, AssetType, path_deleted_theme_data
 from lib.log import logger
+from lib.perf import Counter
 from lib.render import render_project_frame
 
 HEX_PATTERN = re.compile("^#([A-Fa-f0-9]+)$")
@@ -65,10 +66,12 @@ class ThemeManager:
 
     def load(self):
         logger.info(f"加载主题... (From: {self.root_dir})")
+        timer = Counter()
         _, _, file_names = next(os.walk(self.root_dir))
         for file_name in file_names:
             file_path = str(join(self.root_dir, file_name))
             self.load_theme(file_path)
+        logger.info(f"主题加载完毕, 用时: {timer.endT()}")
 
     def live_save(self):
         """间隔设置的时间后再进行保存"""
@@ -83,7 +86,7 @@ class ThemeManager:
             self.live_save_flag.set()
             self.live_save_thread.join()
             self.live_save_flag.clear()
-        self.live_save_thread = Thread(target=live_save_thread, args=(config.live_save_time,))
+        self.live_save_thread = Thread(target=live_save_thread, args=(config.live_save_time,), daemon=True)
         self.live_save_thread.start()
 
     def save(self):

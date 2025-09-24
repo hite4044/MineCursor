@@ -39,9 +39,14 @@ class CursorEditor(CursorEditorUI):
         self.Bind(EVT_PROJECT_UPDATED, self.on_project_updated)
         self.Bind(EVT_SCALE_UPDATED, self.on_scale_updated)
         self.Bind(wx.EVT_CLOSE, self.on_close)
+        self.Bind(wx.EVT_SIZE, self.on_size)
         logger.info(f"项目编辑器初始化用时: {timer.endT()}, 项目: {project}")
 
         self.last_edit = perf_counter()
+
+    def on_size(self, event: wx.SizeEvent):
+        event.Skip()
+        self.Refresh()
 
     def on_close(self, event: wx.CloseEvent):
         if not self.is_sub_project:

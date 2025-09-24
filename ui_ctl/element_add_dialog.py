@@ -43,6 +43,9 @@ class ElementAddDialog(ElementAddDialogUI):
         super().__init__(parent)
         self.Bind(wx.EVT_WINDOW_CREATE, self.on_window_create)
         self.element: CursorElement | None = None
+
+        bg = self.sources_notebook.GetBackgroundColour()
+        self.sources_notebook.SetBackgroundColour(wx.Colour(255, 255, 255))
         source: AssetSource
         for nam, source_enum in AssetSources.members().items():
             source = source_enum.value
@@ -52,10 +55,13 @@ class ElementAddDialog(ElementAddDialogUI):
         self.template_source = TemplateSource(self.sources_notebook)
         self.image_element_source = ImageElementSource(self.sources_notebook)
         self.project_source = ProjectSource(self.sources_notebook)
+        self.sources_notebook.SetBackgroundColour(bg)
+
         self.sources_notebook.AddPage(self.rect_element_source, "矩形")
         self.sources_notebook.AddPage(self.template_source, "模板")
         self.sources_notebook.AddPage(self.image_element_source, "图像")
         self.sources_notebook.AddPage(self.project_source, "子项目")
+
         self.ok.Bind(wx.EVT_BUTTON, self.on_ok)
         self.cancel.Bind(wx.EVT_BUTTON, self.on_close)
         set_multi_size_icon(self, "assets/icons/element/add.png")
@@ -65,6 +71,7 @@ class ElementAddDialog(ElementAddDialogUI):
         self.work_timer = 0.0
 
     def on_window_create(self, event: wx.WindowCreateEvent):
+        event.Skip()
         self.load_click_hook(event.GetWindow())
 
     def load_click_hook(self, window: wx.Window):
@@ -72,7 +79,7 @@ class ElementAddDialog(ElementAddDialogUI):
 
     def on_click(self, event: wx.MouseEvent):
         event.Skip()
-        if perf_counter() - self.last_click < 20:
+        if perf_counter() - self.last_click < 60:
             self.work_timer += perf_counter() - self.last_click
         self.last_click = perf_counter()
 

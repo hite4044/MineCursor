@@ -6,7 +6,7 @@ class CenteredText(wx.Window):
 
     def __init__(
             self,
-            parent,
+            parent: wx.Window,
             id_=wx.ID_ANY,
             label="",
             pos=wx.DefaultPosition,
@@ -17,6 +17,7 @@ class CenteredText(wx.Window):
             y_center=True,
     ):
         super().__init__(parent, id_, pos, size, style, name)
+        print(parent.GetBackgroundColour(), parent)
         size = self.SetLabel(label)
         self.SetSize(size)
         self.SetInitialSize(size)
@@ -24,6 +25,7 @@ class CenteredText(wx.Window):
         self.Bind(wx.EVT_SIZE, self.on_size)
         self.x_center = x_center
         self.y_center = y_center
+        self.SetDoubleBuffered(True)
 
     def on_size(self, event: wx.SizeEvent):
         event.Skip()

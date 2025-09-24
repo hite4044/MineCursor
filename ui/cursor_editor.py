@@ -139,6 +139,7 @@ class InfoEditorUI(NoTabNotebook):
         self.add_page(self.proj_editor)
         self.add_page(self.element_editor)
         self.switch_page(0)
+        self.SetDoubleBuffered(True)
 
 
 GroupData = tuple[tuple[str, bool], tuple[tuple, ...]]

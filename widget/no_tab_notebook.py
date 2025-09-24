@@ -3,12 +3,11 @@ import wx
 
 class NoTabNotebook(wx.Panel):
     def __init__(self, parent: wx.Window):
-        super().__init__(parent, style=wx.TRANSPARENT_WINDOW)
+        super().__init__(parent)
         self.panels: list[wx.Window] = []
         self.now_window: wx.Window | None = None
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.sizer)
-        self.Bind(wx.EVT_ERASE_BACKGROUND, lambda event: None)
 
     def add_page(self, window: wx.Window):
         self.panels.append(window)

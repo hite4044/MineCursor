@@ -48,6 +48,7 @@ class AboutDialog(wx.Dialog):
         self.title.SetFont(ft(36))
         self.open_project_github.SetFont(ft(18))
         self.info.SetValue(INFO)
+        self.info.SetMinSize((-1, 400))
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.icon, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, 10)
@@ -55,6 +56,7 @@ class AboutDialog(wx.Dialog):
         sizer.Add(self.open_project_github, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
         sizer.Add(self.info, 1, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP | wx.BOTTOM, 10)
         self.SetSizer(sizer)
+        self.Fit()
 
         self.open_project_github.Bind(wx.EVT_BUTTON, open_github)
         set_multi_size_icon(self, "assets/icons/action/about.png")

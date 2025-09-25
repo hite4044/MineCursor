@@ -5,15 +5,8 @@ import sys
 from datetime import datetime
 from os.path import expandvars, join, split
 
-# 在无输出句柄的情况下替换标准输出为文件
 
-log_dir = join(split(expandvars("%APPDATA%"))[0], "Mine Cursor/Logs")
-os.makedirs(log_dir, exist_ok=True)
-output_file = open(join(log_dir, f"log_{datetime.now().strftime('%Y-%m-%d')}.log"), "a+", encoding="utf-8")
-output_file.write(f"\n\nMineCursor Starting... ({datetime.now().strftime('%Y-%m-%d %H:%M:%S')})\n")
-
-
-class StreamMix:
+class StreamMixer:
     def __init__(self, std_file, added_stream):
         self.std_file = std_file
         self.added_stream = added_stream
@@ -21,9 +14,8 @@ class StreamMix:
     def write(self, data: str):
         self.std_file.write(data)
         # 去除颜色转义符
-        if data.startswith("\033"):
-            data = data.rstrip("\n")[5:-4] + ("\n" if data[-1] == "\n" else "")
-            return
+        if data.startswith("\033"):  # 去除颜色符号
+            data = data.rstrip("\n")[5:-4] + "\n"
         self.added_stream.write(data)
 
     def flush(self):
@@ -34,32 +26,62 @@ class StreamMix:
         return self.std_file.fileno()
 
 
-if sys.stdout is None or sys.stderr is None:
-    sys.stdout = output_file
-    sys.stderr = output_file
-else:
-    sys.stdout = StreamMix(sys.stdout, output_file)
-    sys.stderr = StreamMix(sys.stderr, output_file)
+class MineCursorLauncher:
+    def __init__(self):
+        self.switch_work_dir()
+        self.handle_output()
+        self.program_prepare()
+        self.run_app()
 
-faulthandler.enable()
+    @staticmethod
+    def switch_work_dir():
+        os.chdir(os.path.dirname(__file__))  # 进入当前目录
+        sys.path.append(os.path.dirname(__file__))  # 添加模块导入路径
 
-os.chdir(os.path.dirname(__file__))  # 进入当前目录
-sys.path.append(os.path.dirname(__file__))  # 添加模块导入路径
+    @staticmethod
+    def handle_output():  # 在无输出句柄的情况下替换标准输出为文件
+        data_dir = MineCursorLauncher.get_data_dir()
+        log_dir = join(data_dir, "Logs")
+        os.makedirs(log_dir, exist_ok=True)
 
-ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("MineCursor")
+        output_file = open(join(log_dir, f"log_{datetime.now().strftime('%Y-%m-%d')}.log"), "a+", encoding="utf-8")
+        output_file.write(f"\n\nMineCursor Starting... ({datetime.now().strftime('%Y-%m-%d %H:%M:%S')})\n")
 
-###################################################################################
+        if sys.stdout is None or sys.stderr is None:
+            sys.stdout = output_file
+            sys.stderr = output_file
+        else:
+            sys.stdout = StreamMixer(sys.stdout, output_file)
+            sys.stderr = StreamMixer(sys.stderr, output_file)
 
-# 启动程序
-from lib.log import logger
+    @staticmethod
+    def get_data_dir():
+        data_dir = join(split(expandvars("%APPDATA%"))[0], "Mine Cursor")
+        if os.path.isfile("config.json"):
+            import json
+            config = json.load(open("config.json", encoding="utf-8"))
+            if isinstance(config, dict) and config.get("data_dir"):
+                data_dir = os.path.abspath(expandvars(config.get("data_dir")))
+        return data_dir
 
-logger.info("导入库中...")
+    @staticmethod
+    def program_prepare():
+        faulthandler.enable()
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("MineCursor")
 
-import wx
-from ui_ctl.theme_editor import ThemeEditor
+    @staticmethod
+    def run_app():
+        from lib.log import logger
+        logger.info("导入库中...")
 
-if __name__ == "__main__":
-    app = wx.App()
-    frame = ThemeEditor(None)
-    frame.Show()
-    app.MainLoop()
+        import wx
+        from ui_ctl.theme_editor import ThemeEditor
+
+        app = wx.App()
+        frame = ThemeEditor(None)
+        frame.Show()
+        app.MainLoop()
+
+
+if __name__ == '__main__':
+    MineCursorLauncher()

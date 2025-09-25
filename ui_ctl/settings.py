@@ -13,7 +13,8 @@ from widget.win_icon import set_multi_size_icon
 LABEL_MAP = {
     "show_hidden_themes": "显示隐藏主题",
     "live_save_time": "保存延时时间",
-    "default_author": "默认作者名称"
+    "default_author": "默认作者名称",
+    "data_dir": "数据保存目录 (高级)"
 }
 
 
@@ -24,7 +25,7 @@ class SettingsDialog(wx.Dialog):
         set_multi_size_icon(self, "assets/icons/action/settings.png")
 
         self.entries: dict[str, DataEntry] = {}
-        for config_name in config.find_config_names():
+        for config_name in LABEL_MAP.keys():
             config_value = getattr(config, config_name)
             if type(config_value) not in [str, int, float, bool]:
                 continue
@@ -37,10 +38,11 @@ class SettingsDialog(wx.Dialog):
         self.delete_filetype_btn = wx.Button(self, label="删除文件类型信息")
 
         sizer = wx.BoxSizer(wx.VERTICAL)
-        entries_sizer = wx.FlexGridSizer(len(self.entries) + 1, 2, 5, 5)
+        entries_sizer = wx.FlexGridSizer(len(self.entries) + 2, 2, 5, 5)
         entries_sizer.AddGrowableCol(1, 1)
         for entry in list(self.entries.values()) + [
-            self.set_filetype_btn
+            self.set_filetype_btn,
+            self.delete_filetype_btn
         ]:
             if isinstance(entry, DataEntry):
                 entries_sizer.Add(entry.label, 0, wx.EXPAND)

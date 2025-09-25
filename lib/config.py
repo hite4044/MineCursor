@@ -1,8 +1,8 @@
 import json
 from typing import Any
 
-from lib.data import ThemeType
 from lib.log import logger
+from lib.struct import ThemeType
 
 CFG_PATH = "config.json"
 
@@ -16,6 +16,8 @@ USER_NAME = get_user_name()
 
 
 class Config:
+    first_launch: bool = True
+    data_dir: str = "%APPDATA%\..\Mine Cursor"
     show_hidden_themes: bool = False
     live_save_time: float = 7.0
     theme_kind_order: list[ThemeType] = [ThemeType.NORMAL, ThemeType.PRE_DEFINE, ThemeType.TEMPLATE]

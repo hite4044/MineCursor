@@ -14,7 +14,9 @@ from zipfile import ZipFile
 
 from PIL import Image
 
+from lib.config import config
 from lib.cursor.setter import CursorKind
+from lib.struct import ThemeType
 
 INVALID_FILENAME_CHAR = re.compile(r'[<>:"/\\|?*]')
 
@@ -192,12 +194,6 @@ class ReverseWay(Enum):
     X_FIRST = 0
     Y_FIRST = 1
     BOTH = 2
-
-
-class ThemeType(Enum):
-    NORMAL = 0  # 普通
-    PRE_DEFINE = 1  # 用作选配
-    TEMPLATE = 2  # 用作模版
 
 
 class SubProjectFrames(list):
@@ -642,8 +638,7 @@ class AssetsChoicerAssetInfo:
 
 source_load_manager = SourceLoadManager()
 
-dir_app_data, _ = os.path.split(expandvars("%APPDATA%"))
-main_dir = DataDir(join(dir_app_data, "Mine Cursor"))
+main_dir = DataDir(os.path.abspath(expandvars(config.data_dir)))
 path_theme_cursors = main_dir.make_sub_dir("Theme Cursors")
 path_theme_data = main_dir.make_sub_dir(r"Theme Data")
 path_deleted_theme_data = main_dir.make_sub_dir(r"Deleted Theme Backup")

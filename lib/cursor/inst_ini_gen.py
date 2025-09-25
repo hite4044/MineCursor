@@ -89,7 +89,11 @@ class PartInfo(INIPart):
 
             lines.extend(sub_lines)
             lines.append("")
-        return "\n; ".join(lines)
+
+        real_lines = []
+        for line in lines:
+            real_lines.extend(line.split("\n"))
+        return "\n; ".join(real_lines)
 
 
 class PartVersion(INIPart):

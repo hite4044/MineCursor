@@ -329,9 +329,9 @@ class ThemeSelector(PublicThemeSelector):
                 theme_manager.save_theme_file(export_path, theme, file_type)
 
     def on_export_theme_cursors(self, theme: CursorTheme):
-        dialog = wx.DirDialog(self, "导出主题指针", defaultPath=theme.name)
+        dialog = wx.DirDialog(self, "导出主题指针 - 选择保存路径", defaultPath=theme.name)
         if dialog.ShowModal() == wx.ID_OK:
-            dir_path = dialog.GetPath()
+            dir_path = join(dialog.GetPath(), f"{theme.name}_{theme.id}")
             makedirs(dir_path, exist_ok=True)
             file_map: dict[CursorKind, str] = {}
             for project in theme.projects:

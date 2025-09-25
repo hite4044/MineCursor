@@ -52,6 +52,7 @@ class DataEntry(wx.Panel):
             self.entry.Bind(wx.EVT_CHOICE, self.finish_edit)
 
             def at():
+                self.entry.AppendItems(list(enum_names.values()))
                 for i, enum in enumerate(enum_names):
                     if enum_names[enum] == self.data:
                         self.entry.SetSelection(i)
@@ -127,6 +128,9 @@ class DataEntry(wx.Panel):
 
     def finish_edit(self, _=None):
         if isinstance(self.entry, wx.Choice):
+            if self.after_call.IsRunning():
+                self.after_call.Stop()
+                self.after_task_func()
             data = self.entry.GetSelection()
             assert data != -1
             enum_data = list(self.enum_names.keys())[data]

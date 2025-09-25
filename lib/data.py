@@ -528,7 +528,7 @@ class CursorTheme:
 
     note: str = DEFAULT_NOTE
     license_info: str = DEFAULT_LICENSE_INFO
-    create_time: str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    create_time: str = datetime.now().strftime("%Y-%m-%d %H:%M")
 
     def __hash__(self):
         return hash(self.id)

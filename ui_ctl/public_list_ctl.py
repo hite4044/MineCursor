@@ -121,6 +121,7 @@ class ProjectDataDialog(DataDialog):
     def __init__(self, parent: wx.Window | None, is_create: bool = True, project: CursorProject | None = None, size: tuple[int, int] | None = None):
         if project is None:
             project = CursorProject("", (16, 16))
+        self.is_create = is_create
         if size is None:
             size = project.raw_canvas_size
         params = [
@@ -160,8 +161,9 @@ class ProjectDataDialog(DataDialog):
             project.raw_canvas_size = (datas["canvas_size"], datas["canvas_size"])
         else:
             project.raw_canvas_size = (datas["size_width"], datas["size_height"])
-        project.own_note = datas["note"] if datas["note"] else None
-        project.own_license_info = datas["license_info"] if datas["license_info"] else None
+        if not self.is_create:
+            project.own_note = datas["note"] if datas["note"] else None
+            project.own_license_info = datas["license_info"] if datas["license_info"] else None
         return project
 
 

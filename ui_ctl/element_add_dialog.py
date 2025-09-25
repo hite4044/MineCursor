@@ -99,7 +99,8 @@ class ElementAddDialog(ElementAddDialogUI):
             else:
                 self.element = None
         else:
-            self.proc_source_page()
+            if not self.proc_source_page():
+                return
         self.EndModal(wx.ID_OK)
         self.Destroy()
 
@@ -108,7 +109,7 @@ class ElementAddDialog(ElementAddDialogUI):
         info = active_selector.get_element_info()
         if info is None:
             wx.MessageBox("请选择一个元素", "错误")
-            return
+            return False
         element_name = info.frames[0][1].split("/")[-1].split(".")[0].replace("_", " ").title()
         element_name = re.sub(r'\d+$', '', element_name).rstrip()
         frames = [f for f, p in info.frames]
@@ -116,6 +117,7 @@ class ElementAddDialog(ElementAddDialogUI):
         self.element = CursorElement(element_name, frames, source_infos)
         if len(frames) > 1:
             self.element.animation_length = len(frames)
+        return True
 
     def on_close(self, _):
         self.EndModal(wx.ID_CANCEL)

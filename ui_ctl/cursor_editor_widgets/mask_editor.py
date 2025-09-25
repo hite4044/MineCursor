@@ -60,8 +60,8 @@ class MaskActionDialog(wx.Dialog):
     ACTION_MAP = {
         MaskAction.ROTATE_LEFT: "左转",
         MaskAction.ROTATE_RIGHT: "右转",
-        MaskAction.SCALE_FLIP_X: "水平翻转",
-        MaskAction.SCALE_FLIP_Y: "垂直翻转"
+        MaskAction.SCALE_FLIP_X: "左右翻转",
+        MaskAction.SCALE_FLIP_Y: "上下翻转"
     }
 
     def __init__(self, editor: 'MaskEditor'):

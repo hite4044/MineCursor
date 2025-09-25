@@ -2,12 +2,15 @@ import json
 import re
 import typing
 from enum import Enum
+from os.path import expandvars
 from zipfile import ZipFile, ZipInfo
 
 import wx
+from win32gui import ExtractIconEx
 
 from lib.cursor.setter import CursorKind
 from lib.data import AssetSource, source_load_manager
+from lib.log import logger
 
 
 class AssetRootLoadWay(Enum):
@@ -99,7 +102,7 @@ class DirTree:
         return root_dir
 
     def full_data(self, tree_ctrl: wx.TreeCtrl, root: wx.TreeItemId, assets_roots: list[wx.TreeItemId],
-                  dir_path: str = "", assets_map: dict[wx.TreeItemId, str] = None):
+                  dir_path: str = "", assets_map: dict[wx.TreeItemId, str] = None, dir_image: int = -1):
         if assets_map is None:
             assets_map: dict[wx.TreeItemId, str] = {}
             dir_path = f"{self.name}"
@@ -107,7 +110,7 @@ class DirTree:
         assets_roots.append(root)
 
         for dir_name, dir_tree in self.dirs.items():
-            dir_root = tree_ctrl.AppendItem(root, dir_name)
+            dir_root = tree_ctrl.AppendItem(root, dir_name, dir_image)
             dir_tree.full_data(tree_ctrl, dir_root, assets_roots, f"{dir_path}/{dir_name}", assets_map)
         for file_name in self.files:
             fp = f"{dir_path}/{file_name}"
@@ -134,6 +137,17 @@ class SourceAssetsManager:
         with open("assets/sources/recommend.json") as f:  # 公用推荐
             self.public_recommend: RecommendData = json.load(f)
 
+        try:
+            icon_large, icon_small = ExtractIconEx(expandvars("%SystemRoot%/System32/Shell32.dll"), 4, 1)
+            icon_small = icon_small[0]
+            self.dir_icon = wx.Icon()
+            self.dir_icon.CreateFromHICON(icon_small)
+            self.dir_image = self.image_list.Add(self.dir_icon)
+        except Exception as e:
+            logger.error(f"无法提取系统文件夹图标 -> {e.__class__.__qualname__}: {e}")
+            self.dir_icon = None
+            self.dir_image = -1
+
     def current_recommend(self):  # 将公用推荐与源自定义推荐合并
         recommend_data: RecommendData = self.public_recommend.copy()
         if self.source.recommend_file:
@@ -150,6 +164,8 @@ class SourceAssetsManager:
         self.cur_kind = kind
         self.file = source_load_manager.load_zip(source.id)
         self.sub_assets_roots.clear()
+        if self.dir_icon:
+            self.dir_image = self.image_list.Add(self.dir_icon)
 
         # Step1 -> 提取所有根节点
         root_names: list[str] = []
@@ -192,13 +208,13 @@ class SourceAssetsManager:
         if crt_kind_name in recommend_data:  # 如果包含这个类型的指针推荐
             folded_root = -1
             if len(recommend_data) > 1:
-                folded_root = self.tree_ctrl.AppendItem(root_item, "更多")  # 收进一个单独的文件夹
+                folded_root = self.tree_ctrl.AppendItem(root_item, "更多", self.dir_image)  # 收进一个单独的文件夹
             load_sub_root(root_item, recommend_data[crt_kind_name])
             recommend_data.pop(crt_kind_name)  # 从待加载列表中移除
         else:  # 不然就用传入的根节点
             folded_root = root_item
         for kind_name, files in recommend_data.items():
-            kind_root = self.tree_ctrl.AppendItem(folded_root, CursorKind(kind_name).kind_name)
+            kind_root = self.tree_ctrl.AppendItem(folded_root, CursorKind(kind_name).kind_name, self.dir_image)
             load_sub_root(kind_root, files)
             self.sub_assets_roots.append(kind_root)
         return assets_map
@@ -265,5 +281,5 @@ class SourceAssetsManager:
             assets_map = self.load_flat_expand_root(root_item, filelist)
         elif way == AssetRootLoadWay.AS_TREE:  # 这个写的爽, 啥也不用做直接开始遍历
             dir_tree = DirTree.load(root_name, filelist)
-            assets_map = dir_tree.full_data(self.tree_ctrl, root_item, self.sub_assets_roots)
+            assets_map = dir_tree.full_data(self.tree_ctrl, root_item, self.sub_assets_roots, dir_image=self.dir_image)
         return assets_map

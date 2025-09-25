@@ -20,9 +20,9 @@ class DataEntryEvent(wx.PyCommandEvent):
         super().Skip(skip)
 
 
-
 class DataEntry(wx.Panel):
     entry: wx.TextCtrl | wx.CheckBox | wx.Choice
+
     def __init__(self, parent: wx.Window, label: str,
                  data_type: Type[str | int | float | bool | Enum],
                  limits: tuple[int | float, int | float] | None = None, enum_names: dict[Enum, str] | None = None,
@@ -38,6 +38,8 @@ class DataEntry(wx.Panel):
         self.last_value = None
         self.enum_names = enum_names
         self.label = CenteredText(parent, label=label, x_center=False)
+        self.after_call = wx.CallLater(100, self.after_task_func)
+        self.after_tasks = []
         if data_type in [str, int, float]:
             style = (wx.TE_MULTILINE if multilined else 0) | (wx.TE_READONLY if disabled else 0)
             self.entry = wx.TextCtrl(parent, style=wx.TE_PROCESS_ENTER | style)
@@ -46,14 +48,18 @@ class DataEntry(wx.Panel):
         elif data_type == bool:
             self.entry = wx.CheckBox(parent)
         elif issubclass(data_type, Enum):
-            self.entry = wx.Choice(parent, choices=list(enum_names.values()))  # 组件创建性能不佳
+            self.entry = wx.Choice(parent)  # 组件创建性能不佳
             self.entry.Bind(wx.EVT_CHOICE, self.finish_edit)
-            for i, enum in enumerate(enum_names):
-                if enum_names[enum] == self.data:
-                    self.entry.SetSelection(i)
-                    break
-            else:
-                self.entry.SetSelection(0)
+
+            def at():
+                for i, enum in enumerate(enum_names):
+                    if enum_names[enum] == self.data:
+                        self.entry.SetSelection(i)
+                        break
+                else:
+                    self.entry.SetSelection(0)
+
+            self.after_tasks.append(at)
         else:
             raise ValueError(f"Unsupported data type: {data_type}")
 
@@ -79,6 +85,11 @@ class DataEntry(wx.Panel):
 
         # self.label.SetMinSize((-1, 28))
         self.entry.SetMinSize((-1, 28))
+
+    def after_task_func(self):
+        for task in self.after_tasks:
+            task()
+        self.after_tasks.clear()
 
     def Bind(self, event, handler, *args):
         if event is EVT_DATA_UPDATE:
@@ -151,7 +162,13 @@ class DataEntry(wx.Panel):
             self.entry.SetValue(str(value))
             return
         if issubclass(self.data_type, Enum):
-            self.entry.SetSelection(list(self.enum_names.keys()).index(value))
+            def at():
+                self.entry.SetSelection(list(self.enum_names.keys()).index(value))
+
+            if self.after_call.IsRunning():
+                self.after_tasks.append(at)
+            else:
+                at()
             return
         self.entry.SetValue(value)
 

@@ -175,6 +175,8 @@ class SourceAssetsManager:
             asset_root = self.tree_ctrl.AppendItem(self.real_root, ROOT_TEXTS.get(root_name, root_name), image)
             self.tree_ctrl.AppendItem(asset_root, "加载中...")
             self.assets_roots[asset_root] = root_name
+            if root_name == "推荐":
+                self.load_asset_root(asset_root, "推荐", None)
 
 
     def load_recommend_root(self, root_item: wx.TreeItemId):
@@ -182,7 +184,6 @@ class SourceAssetsManager:
         recommend_data: RecommendData = self.current_recommend()
 
         def load_sub_root(root: wx.TreeItemId, files_t: list[str]):  # 加载一个文本列表为一个树节点的子节点
-            self.sub_assets_roots.append(root)
             for fp in files_t:
                 item_t = self.tree_ctrl.AppendItem(root, fp.split("/")[-1])
                 assets_map[item_t] = fp
@@ -199,7 +200,7 @@ class SourceAssetsManager:
         for kind_name, files in recommend_data.items():
             kind_root = self.tree_ctrl.AppendItem(folded_root, CursorKind(kind_name).kind_name)
             load_sub_root(kind_root, files)
-        self.tree_ctrl.Expand(root_item)
+            self.sub_assets_roots.append(kind_root)
         return assets_map
 
     def load_flat_expand_root(self, root_item: wx.TreeItemId, filelist: list[ZipInfo]):
@@ -255,7 +256,7 @@ class SourceAssetsManager:
             assets_map[item] = file_path
         return assets_map
 
-    def load_asset_root(self, root_item: wx.TreeItemId, root_name: str, filelist: list[ZipInfo]):
+    def load_asset_root(self, root_item: wx.TreeItemId, root_name: str, filelist: list[ZipInfo] | None):
         way = ROOT_LOADING_WAYS.get(root_name, AssetRootLoadWay.AS_TREE)
         assets_map: dict[wx.TreeItemId, str] = {}
         if way == AssetRootLoadWay.AS_RECOMMEND:

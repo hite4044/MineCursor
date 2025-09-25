@@ -1,4 +1,3 @@
-import os
 import re
 from collections import ChainMap
 from enum import Enum
@@ -86,7 +85,7 @@ class ElementSelectList(ElementSelectListUI):
         self.assets_tree.Bind(wx.EVT_LEFT_DOWN, self.on_click)
         self.assets_tree.Bind(wx.EVT_RIGHT_DOWN, self.on_menu)
 
-        # self.assets_tree.Expand(self.assets.sub_assets_roots[0])  # 再次展开触发加载缩略图
+        self.assets_tree.Expand(list(self.assets.assets_roots.keys())[0])  # 再次展开触发加载缩略图
 
     def on_menu(self, event: wx.MouseEvent):
         event.Skip()
@@ -136,19 +135,19 @@ class ElementSelectList(ElementSelectListUI):
         self.loaded_roots.append(root)
 
     def load_root(self, root: wx.TreeItemId):
-        if root in self.roots_to_assets_map:
+        if root in self.roots_to_assets_map or root in self.assets.sub_assets_roots:
             return
         root_name = self.assets.assets_roots[root]
         self.assets_tree.DeleteChildren(root)
         sub_assets_map = self.assets.load_asset_root(root,
                                                      root_name,
-                                                     self.assets.root_files_map[self.assets.assets_roots[root]])
+                                                     self.assets.root_files_map[self.assets.assets_roots[root]] \
+                                                         if root_name != "推荐" else None)
         self.roots_to_assets_map[root_name] = sub_assets_map
         self.assets_map = ChainMap(*self.roots_to_assets_map.values())
 
     def track_file(self, fp: str):
         root_name = fp.split("/")[0]
-        print(root_name)
         assets_roots_res = {v: k for k, v in self.assets.assets_roots.items()}
         root_item = assets_roots_res[root_name]
         if root_item not in self.loaded_roots:
@@ -166,7 +165,6 @@ class ElementSelectList(ElementSelectListUI):
 
         self.assets_tree.SelectItem(item)
         wx.CallAfter(self.load_item, item)
-
 
     def on_click(self, event: wx.MouseEvent):
         event.Skip()

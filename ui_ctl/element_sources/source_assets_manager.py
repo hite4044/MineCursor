@@ -111,7 +111,7 @@ class DirTree:
 
         for dir_name, dir_tree in self.dirs.items():
             dir_root = tree_ctrl.AppendItem(root, dir_name, dir_image)
-            dir_tree.full_data(tree_ctrl, dir_root, assets_roots, f"{dir_path}/{dir_name}", assets_map)
+            dir_tree.full_data(tree_ctrl, dir_root, assets_roots, f"{dir_path}/{dir_name}", assets_map, dir_image)
         for file_name in self.files:
             fp = f"{dir_path}/{file_name}"
             item = tree_ctrl.AppendItem(root, file_name)

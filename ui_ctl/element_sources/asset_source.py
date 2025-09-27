@@ -125,7 +125,7 @@ class ElementSelectList(ElementSelectListUI):
             try:
                 image_io = BytesIO(self.zip_file.read(self.assets_map[child]))
             except KeyError:  # 适配推荐树
-                logger.warning(f"项没有图标: {self.assets_tree.GetItemText(child)}")
+                logger.debug(f"项没有图标: {self.assets_tree.GetItemText(child)}")
                 continue
             try:
                 pil_image = translate_item_icon(Image.open(image_io))

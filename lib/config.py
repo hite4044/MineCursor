@@ -22,6 +22,7 @@ class Config:
     live_save_time: float = 7.0
     theme_kind_order: list[ThemeType] = [ThemeType.NORMAL, ThemeType.PRE_DEFINE, ThemeType.TEMPLATE]
     default_author: str = USER_NAME
+    enabled_sources: list[str] = None
 
     def __init__(self):
         self.load_config()

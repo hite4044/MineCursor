@@ -3,8 +3,9 @@ from time import perf_counter
 
 import wx
 
+from lib.config import config
 from lib.cursor.setter import CursorKind
-from lib.data import CursorElement, AssetSources, AssetSourceInfo, AssetType, SubProjectFrames
+from lib.data import CursorElement, source_manager, AssetSourceInfo, AssetType, SubProjectFrames
 from lib.log import logger
 from lib.perf import Counter
 from lib.ui_interface import ui_class
@@ -47,10 +48,11 @@ class ElementAddDialog(ElementAddDialogUI):
         bg = self.sources_notebook.GetBackgroundColour()
         self.sources_notebook.SetBackgroundColour(wx.Colour(255, 255, 255))
         source: AssetSource
-        for nam, source_enum in AssetSources.members().items():
-            source = source_enum.value
+        for source in source_manager.sources:
+            if not source.id in config.enabled_sources:
+                return
             selector = ui_class(ElementSelectListUI)(self.sources_notebook, source, cursor_kind)
-            self.sources_notebook.AddPage(selector, source.name, select=(source_enum == AssetSources.DEFAULT))
+            self.sources_notebook.AddPage(selector, source.name, select=(source == source_manager.DEFAULT))
         self.rect_element_source = RectElementSource(self.sources_notebook)
         self.template_source = TemplateSource(self.sources_notebook)
         self.image_element_source = ImageElementSource(self.sources_notebook)

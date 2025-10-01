@@ -6,7 +6,10 @@ from os.path import abspath
 import wx
 
 from lib.config import config
+from lib.data import AssetSource
 from lib.info import IS_PACKAGE_ENV
+from ui_ctl.sources_editor import SourcesEditor
+from widget.data_dialog import DataDialog
 from widget.data_entry import DataEntry
 from widget.win_icon import set_multi_size_icon
 
@@ -36,13 +39,15 @@ class SettingsDialog(wx.Dialog):
         self.cancel = wx.Button(self, label="取消")
         self.set_filetype_btn = wx.Button(self, label="设置文件类型信息")
         self.delete_filetype_btn = wx.Button(self, label="删除文件类型信息")
+        self.open_sources_editor_btn = wx.Button(self, label="打开源编辑器")
 
         sizer = wx.BoxSizer(wx.VERTICAL)
-        entries_sizer = wx.FlexGridSizer(len(self.entries) + 2, 2, 5, 5)
+        entries_sizer = wx.FlexGridSizer(len(self.entries) + 3, 2, 5, 5)
         entries_sizer.AddGrowableCol(1, 1)
         for entry in list(self.entries.values()) + [
             self.set_filetype_btn,
-            self.delete_filetype_btn
+            self.delete_filetype_btn,
+            self.open_sources_editor_btn
         ]:
             if isinstance(entry, DataEntry):
                 entries_sizer.Add(entry.label, 0, wx.EXPAND)
@@ -64,6 +69,7 @@ class SettingsDialog(wx.Dialog):
         self.cancel.Bind(wx.EVT_BUTTON, self.on_cancel)
         self.set_filetype_btn.Bind(wx.EVT_BUTTON, self.on_set_filetype_info)
         self.delete_filetype_btn.Bind(wx.EVT_BUTTON, self.on_delete_filetype_info)
+        self.open_sources_editor_btn.Bind(wx.EVT_BUTTON, self.on_open_sources_editor)
 
     def on_ok(self, _):
         for config_name, entry in self.entries.items():
@@ -75,6 +81,10 @@ class SettingsDialog(wx.Dialog):
     def on_cancel(self, _):
         self.EndModal(wx.ID_CANCEL)
         self.Destroy()
+
+    def on_open_sources_editor(self, _):
+        editor = SourcesEditor(self)
+        editor.ShowModal()
 
     def on_set_filetype_info(self, _):
         self.set_filetype_info(winreg.OpenKey(winreg.HKEY_CURRENT_USER, "SOFTWARE\Classes"))

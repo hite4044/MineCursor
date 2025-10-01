@@ -1,7 +1,7 @@
 import wx
 
 from lib.cursor.setter import CursorKind
-from lib.data import CursorElement, AssetType, AssetSources, AssetSourceInfo
+from lib.data import CursorElement, AssetType, source_manager, AssetSourceInfo
 from lib.image_pil2wx import PilImg2WxImg
 from ui_ctl.element_add_dialog import ElementAddDialog, ElementSelectList, RectElementSource, ImageElementSource
 from widget.ect_menu import EtcMenu
@@ -31,7 +31,7 @@ class SourceInfoEditDialog(wx.Dialog):
 
         right_panel = wx.Panel(warp)
         self.notebook = NoTabNotebook(right_panel)
-        self.mc_source = C_ElementSelectList(self.notebook, AssetSources.DEFAULT.value, proj_kind)
+        self.mc_source = C_ElementSelectList(self.notebook, source_manager.DEFAULT.value, proj_kind)
         self.rect_source = RectElementSource(self.notebook)
         self.image_source = ImageElementSource(self.notebook)
         self.apply_btn = wx.Button(right_panel, label="应用到所选源信息")
@@ -170,7 +170,7 @@ class SourceInfoEditDialog(wx.Dialog):
         source_info = self.element.source_infos[self.active_index]
         if source_info.type == AssetType.ZIP_FILE:
             if self.mc_source.source.id != source_info.source_id:
-                self.mc_source.source = AssetSources.get_source_by_id(source_info.source_id)
+                self.mc_source.source = source_manager.get_source_by_id(source_info.source_id)
                 self.mc_source.load_source()
             self.mc_source.track_file(source_info.source_path)
             self.notebook.switch_page(0)

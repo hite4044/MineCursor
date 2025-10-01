@@ -12,7 +12,7 @@ from PIL.Image import Resampling
 from win32gui import ExtractIconEx
 
 from lib.cursor.setter import CursorKind
-from lib.data import AssetSources, AssetsChoicerAssetInfo
+from lib.data import source_manager, AssetsChoicerAssetInfo
 from lib.image_pil2wx import PilImg2WxImg
 from lib.log import logger
 from ui.element_add_dialog import ElementSelectListUI, AssetSource
@@ -48,16 +48,16 @@ def get_item_children(tree_view, item: wx.TreeItemId) -> list[wx.TreeItemId]:
 
 class SourceSwitchDataDialog(DataDialog):
     def __init__(self, parent: wx.Window, now_source: AssetSource):
-        SourceEnum = Enum("SourceEnum", tuple(source.id for source in AssetSources.get_sources()))
+        SourceEnum = Enum("SourceEnum", tuple(source.id for source in source_manager.sources))
         super().__init__(parent, "切换素材源", DataLineParam("source_id", "素材源", DataLineType.CHOICE,
                                                              getattr(SourceEnum, now_source.id),
                                                              enum_names={
                                                                  getattr(SourceEnum, source.id): source.name \
-                                                                 for source in AssetSources.get_sources()
+                                                                 for source in source_manager.sources
                                                              }))
 
     def get_result(self):
-        return AssetSources.get_source_by_id(self.datas["source_id"].name)
+        return source_manager.get_source_by_id(self.datas["source_id"].name)
 
 
 ES_DIR = 0
@@ -75,7 +75,7 @@ class ElementSelectList(ElementSelectListUI):
         super().__init__(parent, source, kind)
         self.zip_file: ZipFile | None = None
         self.showing_item = None
-        self.assets = SourceAssetsManager(source.textures_zip, self.assets_tree, self.tree_image_list)
+        self.assets = SourceAssetsManager(source.id, self.assets_tree, self.tree_image_list)
         self.assets_map: dict[wx.TreeItemId, str] = {}
         self.roots_to_assets_map: dict[str, dict[wx.TreeItemId, str]] = {}
         self.loaded_roots: list[wx.TreeItemId] = []
@@ -87,7 +87,8 @@ class ElementSelectList(ElementSelectListUI):
         self.assets_tree.Bind(wx.EVT_LEFT_DOWN, self.on_click)
         self.assets_tree.Bind(wx.EVT_RIGHT_DOWN, self.on_menu)
 
-        self.assets_tree.Expand(list(self.assets.assets_roots.keys())[0])  # 再次展开触发加载缩略图
+        if self.source.recommend_file:
+            self.assets_tree.Expand(list(self.assets.assets_roots.keys())[0])  # 再次展开触发加载缩略图
 
     def on_menu(self, event: wx.MouseEvent):
         event.Skip()

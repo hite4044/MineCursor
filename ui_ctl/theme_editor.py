@@ -16,7 +16,8 @@ from lib.cursor.inst_ini_gen import CursorInstINIGenerator
 from lib.cursor.setter import CURSOR_KIND_NAME_OFFICIAL, CursorKind, CursorsInfo, set_cursors_progress, SchemesType, \
     CR_INFO_FIELD_MAP, CursorData
 from lib.cursor.writer import write_cursor_progress
-from lib.data import CursorTheme, path_theme_cursors, path_theme_data, INVALID_FILENAME_CHAR, ThemeType, generate_id
+from lib.data import CursorTheme, path_theme_cursors, path_theme_data, INVALID_FILENAME_CHAR, ThemeType, generate_id, \
+    source_manager
 from lib.log import logger
 from lib.render import render_project
 from lib.resources import theme_manager, ThemeAction, deleted_theme_manager, ThemeFileType
@@ -140,6 +141,7 @@ class ThemeEditor(ThemeEditorUI):
         theme_manager.save()
         deleted_theme_manager.save()
         config.save_config()
+        source_manager.save_user_source()
         event.Skip()
 
 
@@ -189,7 +191,7 @@ class ThemeSelector(PublicThemeSelector):
         for index, theme in stacks[::-1]:
             deleted_theme_manager.remove_theme(theme)
             if theme in theme_manager.themes:
-                theme.id = generate_id()
+                theme.refresh_id()
             theme_manager.themes.insert(index, theme)
         self.reload_themes()
 
@@ -355,7 +357,7 @@ class ThemeSelector(PublicThemeSelector):
             for file_path in dialog.GetFilenames():
                 try:
                     theme = theme_manager.load_theme_file(file_path)
-                    theme.id = generate_id()
+                    theme.refresh_id()
                     logger.info(f"已加载主题: {theme}")
                     theme_manager.add_theme(theme)
                 except (KeyError, json.JSONDecodeError):

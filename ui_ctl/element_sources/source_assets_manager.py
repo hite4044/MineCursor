@@ -2,14 +2,14 @@ import json
 import re
 import typing
 from enum import Enum
-from os.path import expandvars
-from zipfile import ZipFile, ZipInfo
+from os.path import expandvars, isfile
+from zipfile import ZipInfo
 
 import wx
 from win32gui import ExtractIconEx
 
 from lib.cursor.setter import CursorKind
-from lib.data import AssetSource, source_load_manager
+from lib.data import AssetSource, source_manager
 from lib.log import logger
 
 
@@ -123,11 +123,11 @@ RecommendData = dict[str, list[str]]
 
 
 class SourceAssetsManager:
-    def __init__(self, source_file: str, tree_ctrl: wx.TreeCtrl, image_list: wx.ImageList):
+    def __init__(self, source_id: str, tree_ctrl: wx.TreeCtrl, image_list: wx.ImageList):
         self.cur_kind: CursorKind | None = None
         self.tree_ctrl = tree_ctrl
         self.image_list = image_list
-        self.file = ZipFile(source_file)
+        self.file = source_manager.load_zip(source_id)
         self.root_files_map: dict[str, list[ZipInfo]] = {}  # 从根节点名称 -> 文件列表
         self.assets_roots: dict[wx.TreeItemId, str] = {}  # 从根节点 -> 根节点名称
         self.sub_assets_roots: list[wx.TreeItemId] = []
@@ -150,7 +150,7 @@ class SourceAssetsManager:
 
     def current_recommend(self):  # 将公用推荐与源自定义推荐合并
         recommend_data: RecommendData = self.public_recommend.copy()
-        if self.source.recommend_file:
+        if self.source.recommend_file and isfile(self.source.recommend_file):
             with open(self.source.recommend_file) as f:
                 custom_rmd_data: RecommendData = json.load(f)
             for kind, assets_list in custom_rmd_data.items():
@@ -162,7 +162,7 @@ class SourceAssetsManager:
     def load_source(self, source: AssetSource, kind: CursorKind):  # 以指定的指针类型加载一个源
         self.source = source
         self.cur_kind = kind
-        self.file = source_load_manager.load_zip(source.id)
+        self.file = source_manager.load_zip(source.id)
         self.sub_assets_roots.clear()
         if self.dir_icon:
             self.dir_image = self.image_list.Add(self.dir_icon)
@@ -194,8 +194,10 @@ class SourceAssetsManager:
             if root_name == "推荐":
                 self.load_asset_root(asset_root, "推荐", None)
 
-
     def load_recommend_root(self, root_item: wx.TreeItemId):
+        if not self.source.recommend_file:
+            self.tree_ctrl.Delete(root_item)
+            return {}
         assets_map: dict[wx.TreeItemId, str] = {}
         recommend_data: RecommendData = self.current_recommend()
 

@@ -12,6 +12,12 @@ from lib.config import config
 from lib.datas.base_struct import AssetType
 
 
+class SourceNotFoundError(Exception):
+    def __init__(self, source_id: str, *messages):
+        super().__init__(*messages)
+        self.source_id = source_id
+
+
 class AssetSource:
     def __init__(self,
                  name: str,
@@ -129,7 +135,7 @@ class AssetSourceManager:
         for source in self.sources:
             if target_id == source.id:
                 return source
-        raise ValueError(f"未找到id为 [{target_id}] 的素材源")
+        raise SourceNotFoundError(target_id, f"未找到id为 [{target_id}] 的素材源")
 
     @classmethod
     def find_internal_sources(cls):

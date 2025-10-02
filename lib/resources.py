@@ -11,6 +11,7 @@ from typing import Callable, Any
 from lib.config import config
 from lib.data import CursorTheme, path_theme_data, CursorElement, \
     AssetSourceInfo, AssetType, path_deleted_theme_data
+from lib.datas.source import SourceNotFoundError
 from lib.log import logger
 from lib.perf import Counter
 from lib.render import render_project_frame
@@ -103,7 +104,11 @@ class ThemeManager:
             self.save_theme_file(file_path, theme)
 
     def load_theme(self, file_path: str):
-        theme = self.load_theme_file(file_path)
+        try:
+            theme = self.load_theme_file(file_path)
+        except SourceNotFoundError as e:
+            logger.warning(f"主题 [{file_path}] 中ID为 [{e.source_id}] 的源不存在")
+            return
         logger.info(f"已加载主题: {theme}")
         self.add_theme(theme)
         self.theme_file_mapping[theme] = file_path

@@ -220,9 +220,11 @@ class MaskEditor(wx.Dialog):
         dialog.ShowModal()
 
     def get_mask_func(self):
+        wx.Bell()
         return self.mask.copy()
 
     def set_mask_func(self, mask: Image.Image):
+        mask = mask.copy()
         if mask.size != self.mask.size:
             ret = wx.MessageBox("遮罩大小不一致, 是否直接缩放并继续?", "错误", wx.YES_NO | wx.ICON_WARNING)
             if ret != wx.YES:

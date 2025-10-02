@@ -38,7 +38,12 @@ class AssetSource:
 
     @property
     def recommend_file(self):
-        t = self.fmt("recommend_file.json")
+        t = self.fmt("recommend.json")
+        return t if isfile(t) else None
+
+    @property
+    def icon(self):
+        t = self.fmt("icon.png")
         return t if isfile(t) else None
 
     def fmt(self, filename: str):
@@ -75,9 +80,7 @@ class AssetSource:
 
 
 class AssetSourceManager:
-    MINECRAFT_25W32A = AssetSource("Minecraft 25w32a (1.21.9)",
-                                   "minecraft-textures-25w32a",
-                                   source_dir=r"assets/sources/25w32a")
+    MINECRAFT_25W32A = AssetSource.from_file("assets/sources/25w32a/source.json")
     DEFAULT = MINECRAFT_25W32A
 
     def __init__(self):
@@ -114,7 +117,7 @@ class AssetSourceManager:
 
         return sources
 
-    def save_user_source(self):
+    def save_source(self):
         for source in self.user_sources:
             source.save()
 

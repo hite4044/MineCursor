@@ -42,6 +42,8 @@ class Config:
         for name, value in cfg_data.items():
             if name == "theme_kind_order":
                 value = [ThemeType(t_value) for t_value in value]
+            if name == "enabled_sources":
+                value = list(set(value))
             if name in exist_names:
                 setattr(self, name, value)
             else:

@@ -26,6 +26,7 @@ from ui.theme_editor import ThemeEditorUI
 from ui_ctl.about_dialog import AboutDialog
 from ui_ctl.public_list_ctl import PublicThemeCursorList, PublicThemeSelector, EVT_THEME_SELECTED, string_fmt_time
 from ui_ctl.settings import SettingsDialog
+from ui_ctl.sources_editor import SourcesEditor
 from ui_ctl.theme_creator import ThemeCreator
 from widget.adv_progress_dialog import AdvancedProgressDialog
 from widget.data_dialog import DataDialog, DataLineParam, DataLineType
@@ -141,7 +142,7 @@ class ThemeEditor(ThemeEditorUI):
         theme_manager.save()
         deleted_theme_manager.save()
         config.save_config()
-        source_manager.save_user_source()
+        source_manager.save_source()
         event.Skip()
 
 
@@ -244,11 +245,16 @@ class ThemeSelector(PublicThemeSelector):
         menu.Append("显示隐藏主题 (&H)", self.on_show_hidden_theme,
                     icon="theme/unshow_hidden.png" if config.show_hidden_themes else "theme/show_hidden.png")
         menu.AppendSeparator()
-        menu.Append("打开主题文件夹 (&O)", self.on_open_theme_folder, icon="action/open_data_dir.png")
+        menu.Append("打开主题文件夹 (&T)", self.on_open_theme_folder, icon="action/open_data_dir.png")
+        menu.Append("管理源 (&Q)", self.on_open_sources_editor, icon="source/source.png")
         menu.Append("设置 (&S)", self.on_open_config_dialog, icon="action/settings.png")
         menu.Append("关于 (&E)", self.on_show_about_dialog, icon="action/about.png")
 
         self.PopupMenu(menu)
+
+    def on_open_sources_editor(self):
+        editor = SourcesEditor(self)
+        editor.ShowModal()
 
     def on_open_config_dialog(self):
         dialog = SettingsDialog(self)

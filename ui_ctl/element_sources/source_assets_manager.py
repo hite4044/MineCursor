@@ -187,7 +187,10 @@ class SourceAssetsManager:
         # Step2 -> 加载根节点
         self.assets_roots.clear()
         for root_name in ["推荐"] + root_names:
-            image = self.image_list.Add(wx.Bitmap(ROOT_IMAGES[root_name]))
+            if root_name in ROOT_IMAGES:
+                image = self.image_list.Add(wx.Bitmap(ROOT_IMAGES[root_name]))
+            else:
+                image = self.dir_image
             asset_root = self.tree_ctrl.AppendItem(self.real_root, ROOT_TEXTS.get(root_name, root_name), image)
             self.tree_ctrl.AppendItem(asset_root, "加载中...")
             self.assets_roots[asset_root] = root_name

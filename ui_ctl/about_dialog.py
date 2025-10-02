@@ -27,7 +27,7 @@ class AboutDialog(wx.Dialog):
         self.info = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_READONLY)
         self.title.SetFont(ft(36))
         self.open_project_github.SetFont(ft(18))
-        self.info.SetValue(INFO)
+        self.info.SetValue(PROJ_INFO)
         self.info.SetMinSize((-1, 400))
 
         sizer = wx.BoxSizer(wx.VERTICAL)

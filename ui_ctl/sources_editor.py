@@ -70,8 +70,15 @@ class SourcesEditor(wx.Dialog):
         self.ctrl.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_menu)
         self.ctrl.Bind(wx.EVT_LIST_ITEM_CHECKED, self.on_item_check)
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu)
+        self.Bind(wx.EVT_CLOSE, self.on_close)
 
         self.load_sources()
+
+    def on_close(self, event: wx.CloseEvent):
+        event.Skip()
+        if event.CanVeto():
+            self.Destroy()
+            return
 
     def load_sources(self):
         self.on_loading_source = True
@@ -97,6 +104,7 @@ class SourcesEditor(wx.Dialog):
         source = self.line_to_source[item]
         menu = EtcMenu()
         menu.Append("从文件添加 (&A)", self.on_add_from_file, icon="source/add.png")
+        menu.Append("从文件夹添加 (&F)", self.on_add_from_dir, icon="source/add.png")
         menu.AppendSeparator()
         menu.Append("编辑 (&E)", self.on_edit_source, source, icon="source/edit_info.png")
         menu.Append("打开源文件夹 (&Z)", wx.LaunchDefaultApplication, source.source_dir, icon="source/open_dir.png")
@@ -125,6 +133,7 @@ class SourcesEditor(wx.Dialog):
 
         menu = EtcMenu()
         menu.Append("从文件添加 (&A)", self.on_add_from_file, icon="source/add.png")
+        menu.Append("从文件夹添加 (&F)", self.on_add_from_dir, icon="source/add.png")
 
         self.PopupMenu(menu)
 

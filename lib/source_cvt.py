@@ -48,7 +48,7 @@ def load_jar2source(fp: str, extract_dir: str = None):
     authors = mods.get("authors", "未知")
     description = mods.get("description", "未知")
     note = NOTE_TEMP.format(info["license"]) if info.get("license") else "未知"
-    source_id = f"{name}-{version}-{hex(hash(info_bytes))[2:2 + 8]}"
+    source_id = f"{name}-{version}-{hex(hash(info_bytes))[3:3 + 8]}"
     note = append_basic_info(jar, note)
 
     # 保存图标

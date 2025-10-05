@@ -2,7 +2,7 @@ import json
 from typing import Any
 
 from lib.log import logger
-from lib.struct import ThemeType
+from lib.t_struct import ThemeType
 
 CFG_PATH = "config.json"
 

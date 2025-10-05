@@ -10,6 +10,7 @@ from PIL import Image
 
 from lib.config import config
 from lib.datas.base_struct import AssetType
+from lib.log import logger
 
 
 class SourceNotFoundError(Exception):
@@ -38,6 +39,9 @@ class AssetSource:
         self.note = note
 
         self.internal_source: bool = False
+
+    def __str__(self):
+        return f"<AssetSource:[{self.name}],{self.id}>"
 
     @property
     def textures_zip(self):
@@ -116,12 +120,14 @@ class AssetSourceManager:
     @staticmethod
     def load_sources(root: str):
         """从一个目录下加载所有有效的素材源, 并返回素材源列表"""
+        logger.info(f"加载用户素材源... (From: {root})")
         _, dirs, files = next(walk(root))
         sources = []
 
         for source_dir in dirs:
             source_cfg_fp = join(root, source_dir, "source.json")
             if isfile(source_cfg_fp):
+                logger.info(f"已加载素材源: {source_dir}")
                 source = AssetSource.from_file(source_cfg_fp)
                 sources.append(source)
 
@@ -136,12 +142,14 @@ class AssetSourceManager:
     def sources(self) -> list[AssetSource]:
         return self.internal_sources + self.user_sources
 
-    def get_source_by_id(self, target_id: str) -> AssetSource | None:
+    def get_source_by_id(self, target_id: str, raise_error: bool = True) -> AssetSource | None:
         """根据素材源ID查找对应素材源"""
         for source in self.sources:
             if target_id == source.id:
                 return source
-        raise SourceNotFoundError(target_id, f"未找到id为 [{target_id}] 的素材源")
+        if raise_error:
+            raise SourceNotFoundError(target_id, f"未找到id为 [{target_id}] 的素材源")
+        return None
 
     @classmethod
     def find_internal_sources(cls):

@@ -1,17 +1,22 @@
 import json
 import os
 import re
+import time
+import typing
 import zlib
+from dataclasses import dataclass
 from enum import Enum
+from io import BytesIO
 from os import rename
-from os.path import join, basename, isfile
+from os.path import join, basename, isfile, dirname, split
 from threading import Event, Thread
 from typing import Callable, Any
+from zipfile import ZipFile, ZIP_DEFLATED, ZipInfo
 
 from lib.config import config
 from lib.data import CursorTheme, path_theme_data, CursorElement, \
     AssetSourceInfo, AssetType, path_deleted_theme_data
-from lib.datas.source import SourceNotFoundError
+from lib.datas.source import SourceNotFoundError, AssetSource
 from lib.log import logger
 from lib.perf import Counter
 from lib.render import render_project_frame
@@ -39,9 +44,32 @@ def get_dir_all_themes(dir_path: str):
     return themes
 
 
+def full_dir_into_zip(file: ZipFile, source_dir: str, source_arc_path: str):
+    file.write(source_dir, source_arc_path + "/")
+
+    root, dirs, files = next(os.walk(source_dir))
+    for dir_name in dirs:
+        dir_path = join(root, dir_name)
+        arc_dir_path = join(source_arc_path, dir_name)
+        full_dir_into_zip(file, dir_path, arc_dir_path)
+
+    for file_name in files:
+        file_path = join(root, file_name)
+        arc_file_path = join(source_arc_path, split(file_path)[1])
+        file.write(file_path, arc_file_path)
+
+
 class ThemeFileType(Enum):
     RAW_JSON = 0
     ZIP_COMPRESS = "zip_compress"
+    ZIP_FILE = "zip_file"
+
+
+@dataclass
+class ThemeLoadInfo:
+    file_type: ThemeFileType = None
+    theme_data: str = None
+    zip_io: BytesIO = None
 
 
 class ThemeManager:
@@ -105,7 +133,7 @@ class ThemeManager:
 
     def load_theme(self, file_path: str):
         try:
-            theme = self.load_theme_file(file_path)
+            theme, _ = self.load_theme_file(file_path)
         except SourceNotFoundError as e:
             logger.warning(f"主题 [{file_path}] 中ID为 [{e.source_id}] 的源不存在")
             return
@@ -114,7 +142,9 @@ class ThemeManager:
         self.theme_file_mapping[theme] = file_path
 
     @staticmethod
-    def load_theme_file(file_path: str) -> CursorTheme:
+    def load_theme_file(file_path: str) -> tuple[CursorTheme | dict, ThemeLoadInfo]:
+        """从一个MineCursor主题文件加载主题"""
+        info = ThemeLoadInfo()
         with open(file_path, "rb") as data_io:
             if data_io.read(4) == ThemeManager.MCTF:
                 data_io.read(int.from_bytes(data_io.read(4), "little"))  # 读取并丢弃头文本
@@ -123,17 +153,29 @@ class ThemeManager:
                 header: dict[str, Any] = json.loads(data_io.read(header_length))
 
                 data_length = int.from_bytes(data_io.read(8), "little")
-                if ThemeFileType(header["type"]) == ThemeFileType.ZIP_COMPRESS:
+                file_type = ThemeFileType(header["type"])
+                info.file_type = file_type
+                if file_type == ThemeFileType.ZIP_COMPRESS:
                     theme_data = zlib.decompress(data_io.read(data_length)).decode("utf-8")
+                elif file_type == ThemeFileType.ZIP_FILE:
+                    zip_io = BytesIO(data_io.read(data_length))
+                    with ZipFile(zip_io, "r") as zip_file:
+                        theme_data = zip_file.read("theme.json").decode("utf-8")
+                    zip_io.seek(0)
+                    info.zip_io = zip_io
+                    return json.loads(theme_data), info
                 else:
                     raise RuntimeError(f"无法加载主题: {file_path}, 未知的主题类型")
             else:
+                info.file_type = ThemeFileType.RAW_JSON
                 data_io.seek(0)
                 theme_data = data_io.read().decode("utf-8")
-        return CursorTheme.from_dict(json.loads(theme_data))
+        return CursorTheme.from_dict(json.loads(theme_data)), info
 
     @staticmethod
-    def save_theme_file(file_path: str, theme: CursorTheme, file_type: ThemeFileType = ThemeFileType.ZIP_COMPRESS):
+    def save_theme_file(file_path: str, theme: CursorTheme, file_type: ThemeFileType = ThemeFileType.ZIP_COMPRESS,
+                        extra_sources: list[AssetSource] | None = None):
+        """保存主题到一个MineCursor主题文件"""
         logger.debug(f"保存主题至: {basename(file_path)}")
 
         data_string = json.dumps(theme.to_dict(), ensure_ascii=False)
@@ -144,13 +186,27 @@ class ThemeManager:
 
         header = json.dumps({"type": file_type.value}).encode("utf-8")
         with open(file_path, "wb") as f:
-            compressed_theme = zlib.compress(data_string.encode("utf-8"), 1)
             f.write(ThemeManager.NORMAL_THEME_HEADER)
             f.write(len(header).to_bytes(8, "little"))
             f.write(header)
-            f.write(len(compressed_theme).to_bytes(8, "little"))
             if file_type == ThemeFileType.ZIP_COMPRESS:
+                compressed_theme = zlib.compress(data_string.encode("utf-8"), 1)
+                f.write(len(compressed_theme).to_bytes(8, "little"))
                 f.write(compressed_theme)
+            elif file_type == ThemeFileType.ZIP_FILE:
+                zip_io = BytesIO()
+                zip_file = ZipFile(zip_io, "x", ZIP_DEFLATED, compresslevel=1)
+                zip_file.writestr("theme.json", data_string)
+                if extra_sources:
+                    dir_info = ZipInfo("sources/", typing.cast(tuple[int, int, int, int, int, int], time.localtime()))
+                    zip_file.writestr(dir_info, b"")
+                    for source in extra_sources:
+                        if source.internal_source:
+                            continue
+                        full_dir_into_zip(zip_file, source.source_dir, f"sources/{split(source.source_dir)[1]}")
+                zip_file.close()
+                f.write(len(zip_io.getbuffer()).to_bytes(8, "little"))
+                f.write(zip_io.getbuffer())
 
     @staticmethod
     def save_rendered_theme_file(file_path: str, theme: CursorTheme,

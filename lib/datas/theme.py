@@ -3,7 +3,7 @@ from datetime import datetime
 
 from lib.datas.base_struct import *
 from lib.datas.project import CursorProject
-from lib.struct import ThemeType
+from lib.t_struct import ThemeType
 
 DEFAULT_NOTE = """这个人或许不想写备注"""
 

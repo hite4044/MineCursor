@@ -2,12 +2,14 @@ import json
 import os
 import re
 from enum import Enum
+from io import BytesIO
 from os import makedirs
-from os.path import join, isfile
+from os.path import join, isfile, expandvars, dirname, isdir, split
 from os.path import join as path_join
-from shutil import rmtree
+from shutil import rmtree, copytree
 from threading import Thread
 from typing import cast
+from zipfile import ZipFile
 
 import wx
 
@@ -16,8 +18,11 @@ from lib.cursor.inst_ini_gen import CursorInstINIGenerator
 from lib.cursor.setter import CURSOR_KIND_NAME_OFFICIAL, CursorKind, CursorsInfo, set_cursors_progress, SchemesType, \
     CR_INFO_FIELD_MAP, CursorData
 from lib.cursor.writer import write_cursor_progress
-from lib.data import CursorTheme, path_theme_cursors, path_theme_data, INVALID_FILENAME_CHAR, ThemeType, generate_id, \
-    source_manager
+from lib.data import CursorTheme, path_theme_cursors, path_theme_data, INVALID_FILENAME_CHAR, ThemeType, source_manager
+from lib.datas.base_struct import AssetType, generate_id
+from lib.datas.data_dir import path_user_sources
+from lib.datas.project import CursorProject
+from lib.datas.source import AssetSource, SourceNotFoundError
 from lib.log import logger
 from lib.render import render_project
 from lib.resources import theme_manager, ThemeAction, deleted_theme_manager, ThemeFileType
@@ -39,6 +44,61 @@ class CursorLostType(Enum):
     USE_AERO = 1
     # DONT_REPLACE = 2
 
+
+def find_theme_sources(theme: CursorTheme) -> list[AssetSource]:
+    sources = set()
+    for project in theme.projects:
+        for source_id in find_project_sources(project):
+            sources.add(source_id)
+    return [source_manager.get_source_by_id(source_id) for source_id in sources]
+
+
+def find_project_sources(project: CursorProject) -> list[str]:
+    sources = []
+    for element in project.elements:
+        if element.sub_project:
+            sources.extend(find_project_sources(element.sub_project))
+
+        for source_info in element.source_infos:
+            if source_info.type == AssetType.ZIP_FILE:
+                sources.append(source_info.source_id)
+    return sources
+
+
+def import_theme_sources(zip_io: BytesIO) -> list[AssetSource]:
+    work_dir = join(expandvars("%TEMP%"), f"MineCursor Source Extract {generate_id()}")
+    makedirs(work_dir, exist_ok=True)
+    with open('ext.zip', "wb") as f:
+        f.write(zip_io.getbuffer())
+    with ZipFile(zip_io) as zip_file:
+        zip_file.extractall(work_dir)
+
+    sources_dir = join(work_dir, "sources")
+    if not isdir(sources_dir):
+        return []
+
+    _, dirs, files = next(os.walk(sources_dir))
+    sources = []
+    for dir_name in dirs:
+        logger.debug(f"导入主题包内置的素材源: {dir_name}")
+        dir_path = join(sources_dir, dir_name)
+        source_json = join(dir_path, "source.json")
+        if isfile(source_json):
+            sources.append(AssetSource.from_file(source_json))
+
+    for source in sources:
+        if source_manager.get_source_by_id(source.id, False) is None:
+            new_dir = join(str(path_user_sources), split(source.source_dir)[1])
+            copytree(source.source_dir, new_dir)
+            rmtree(source.source_dir)
+            source.source_dir = new_dir
+            sources.append(source)
+            source_manager.user_sources.append(source)
+    source_manager.save_source()
+
+    rmtree(work_dir)
+
+    return sources
 
 class ThemeApplyDialog(DataDialog):
     def __init__(self, parent: wx.Window | None, theme: CursorTheme):
@@ -118,7 +178,8 @@ class ThemeFileTypeDialog(DataDialog):
                          DataLineParam("type", "主题文件格式", DataLineType.CHOICE, ThemeFileType.ZIP_COMPRESS,
                                        enum_names={
                                            ThemeFileType.RAW_JSON: "原始Json (体积大) (可直接编辑)",
-                                           ThemeFileType.ZIP_COMPRESS: "Zip流 (体积小) (便于分享)"
+                                           ThemeFileType.ZIP_COMPRESS: "Zip流 (体积小) (便于分享)",
+                                           ThemeFileType.ZIP_FILE: "Zip文件 (包含所需源)"
                                        }))
         self.set_icon("theme/theme_file_type.png")
 
@@ -214,7 +275,7 @@ class ThemeSelector(PublicThemeSelector):
             menu.AppendSeparator()
             menu.Append("编辑主题信息 (&E)", self.on_edit_theme, theme, icon="theme/edit_info.png")
         menu.AppendSeparator()
-        menu.Append("导入主题 (&I)", self.on_import_theme, icon="theme/import.png")
+        menu.Append("导入主题 (&I)", self.on_import_theme_prop, icon="theme/import.png")
         menu.Append("导出主题 (&O)" + mk_end(themes), self.on_export_theme, themes, icon="theme/export.png")
         if len(themes) == 1:
             menu.AppendSeparator()
@@ -237,7 +298,7 @@ class ThemeSelector(PublicThemeSelector):
         menu.Append("添加 (&A)", self.on_add_theme, icon="theme/add.png")
         menu.Append("合成主题 (&M)", self.on_create_theme, icon="theme/merge.png")
         menu.AppendSeparator()
-        menu.Append("导入主题 (&I)", self.on_import_theme, icon="theme/import.png")
+        menu.Append("导入主题 (&I)", self.on_import_theme_prop, icon="theme/import.png")
         if len(self.themes_has_deleted) != 0:
             menu.AppendSeparator()
             menu.Append("撤销 (&Z)", self.undo, icon="action/undo.png")
@@ -307,9 +368,7 @@ class ThemeSelector(PublicThemeSelector):
         self.reload_themes()
 
     def on_drop_theme(self, _, __, filenames: list[str]):
-        for file_path in filenames:
-            if isfile(file_path):
-                theme_manager.load_theme(file_path)
+        self.import_themes(filenames)
         self.reload_themes()
 
     def on_export_theme(self, themes: list[CursorTheme]):
@@ -317,7 +376,7 @@ class ThemeSelector(PublicThemeSelector):
                                defaultFile=f"{themes[0].name}.mctheme",
                                wildcard="|".join(["MineCursor 主题文件 (*.mctheme)|*.mctheme",
                                                   "MineCursor 渲染主题文件 (*.rmctheme)|*.rmctheme"]),
-                               style=wx.FD_SAVE)
+                               style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
         if dialog.ShowModal() != wx.ID_OK:
             return
 
@@ -333,6 +392,13 @@ class ThemeSelector(PublicThemeSelector):
             export_path = os.path.join(file_dir, theme.name + "." + end_fix)
             if end_fix == "rmctheme":
                 theme_manager.save_rendered_theme_file(export_path, theme, file_type)
+            elif file_type == ThemeFileType.ZIP_FILE:
+                try:
+                    sources = find_theme_sources(theme)
+                except SourceNotFoundError as e:
+                    wx.MessageBox(f"主题 [{theme}] 中源ID为 [{e.source_id}] 的源未找到", "错误", wx.OK | wx.ICON_ERROR)
+                    continue
+                theme_manager.save_theme_file(export_path, theme, file_type, sources)
             else:
                 theme_manager.save_theme_file(export_path, theme, file_type)
 
@@ -352,27 +418,43 @@ class ThemeSelector(PublicThemeSelector):
             with open(path_join(dir_path, "~右键安装.inf"), "w", encoding="gbk") as f:
                 f.write(ini)
 
-    def on_import_theme(self):
+    def on_import_theme_prop(self):
         dialog = wx.FileDialog(self, "导入主题",
                                wildcard="|".join(["MineCursor 主题文件 (*.mctheme)|*.mctheme",
                                                   "MineCursor 渲染主题文件 (*.rmctheme)|*.rmctheme",
                                                   "所有文件 (*.*)|*.*"]),
                                style=wx.FD_OPEN | wx.FD_MULTIPLE)
-        if dialog.ShowModal() == wx.ID_OK:
-            error_paths = []
-            for file_path in dialog.GetFilenames():
-                try:
-                    theme = theme_manager.load_theme_file(file_path)
-                    theme.refresh_id()
-                    logger.info(f"已加载主题: {theme}")
-                    theme_manager.add_theme(theme)
-                except (KeyError, json.JSONDecodeError):
-                    error_paths.append(file_path)
-            if error_paths:
-                pf = '\n'.join(error_paths)
-                wx.MessageBox(f"以下主题文件导入失败: \n{pf}",
-                              "导入主题文件失败", wx.OK | wx.ICON_ERROR)
-            self.reload_themes()
+        if dialog.ShowModal() != wx.ID_OK:
+            return
+
+        self.import_themes(dialog.GetFilenames())
+
+    def import_themes(self, filenames: list[str]):
+        error_paths = []
+        sources = []
+        for file_path in filenames:
+            try:
+                theme, theme_load_info = theme_manager.load_theme_file(file_path)
+                if theme_load_info.file_type == ThemeFileType.ZIP_FILE:
+                    sources.extend(import_theme_sources(theme_load_info.zip_io))
+                    theme = CursorTheme.from_dict(theme)
+
+                assert isinstance(theme, CursorTheme)
+
+                theme.refresh_id()
+                logger.info(f"已加载主题: {theme}")
+                theme_manager.add_theme(theme)
+            except (KeyError, json.JSONDecodeError, SourceNotFoundError):
+                error_paths.append(file_path)
+        if error_paths:
+            pf = '\n'.join(error_paths)
+            wx.MessageBox(f"以下主题文件导入失败: \n{pf}",
+                          "导入主题文件失败", wx.OK | wx.ICON_ERROR)
+        if sources:
+            s = '\n'.join([str(source) for source in sources])
+            wx.MessageBox(f"已添加以下源: \n{s}",
+                          "添加源成功", wx.OK | wx.ICON_INFORMATION)
+        self.reload_themes()
 
     @staticmethod
     def on_open_theme_folder():

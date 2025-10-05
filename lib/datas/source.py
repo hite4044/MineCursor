@@ -19,6 +19,7 @@ class SourceNotFoundError(Exception):
 
 
 class AssetSource:
+    """某个目录下的素材源"""
     def __init__(self,
                  name: str,
                  id: str,
@@ -86,6 +87,7 @@ class AssetSource:
 
 
 class AssetSourceManager:
+    """素材源管理器"""
     MINECRAFT_25W32A = AssetSource.from_file("assets/sources/25w32a/source.json")
     DEFAULT = MINECRAFT_25W32A
 
@@ -102,6 +104,7 @@ class AssetSourceManager:
             config.enabled_sources = [source.id for source in self.sources]
 
     def load_zip(self, source_id: str):
+        """加载素材源的资源压缩包, 缓存避免重复打开"""
         if source_id not in self.zips:
             source = source_manager.get_source_by_id(source_id)
             with open(source.fmt(source.textures_zip), "rb") as f:
@@ -112,6 +115,7 @@ class AssetSourceManager:
 
     @staticmethod
     def load_sources(root: str):
+        """从一个目录下加载所有有效的素材源, 并返回素材源列表"""
         _, dirs, files = next(walk(root))
         sources = []
 
@@ -124,6 +128,7 @@ class AssetSourceManager:
         return sources
 
     def save_source(self):
+        """保存所有用户素材源"""
         for source in self.user_sources:
             source.save()
 
@@ -132,6 +137,7 @@ class AssetSourceManager:
         return self.internal_sources + self.user_sources
 
     def get_source_by_id(self, target_id: str) -> AssetSource | None:
+        """根据素材源ID查找对应素材源"""
         for source in self.sources:
             if target_id == source.id:
                 return source
@@ -139,6 +145,7 @@ class AssetSourceManager:
 
     @classmethod
     def find_internal_sources(cls):
+        """查找写死在程序里的内置素材源"""
         sources = []
         for name, value in cls.__dict__.items():
             if name == "DEFAULT":
@@ -150,6 +157,7 @@ class AssetSourceManager:
 
 
 class AssetSourceInfo:
+    """特定类型的素材源信息"""
     def __init__(self, type_: AssetType,
                  source_id: str | None = None,
                  source_path: str | None = None,
@@ -208,6 +216,7 @@ class AssetSourceInfo:
             )
 
     def load_frame(self) -> Image.Image:
+        """将本素材源加载成帧"""
         if self.type == AssetType.ZIP_FILE:
             zip_file = source_manager.load_zip(self.source_id)
             return Image.open(zip_file.open(self.source_path)).convert("RGBA")

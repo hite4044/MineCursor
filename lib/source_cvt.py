@@ -24,6 +24,10 @@ def check_names(file: ZipFile, names: list[str]) -> bytes | None:
 
 
 def append_basic_info(file: ZipFile, note: str) -> str:
+    if info := check_names(file, ["pack.mcmeta"]):
+        note += "资源包信息 (Mcmeta): \n"
+        note += info.decode("utf-8", errors="ignore")
+        note += "\n"
     if info := check_names(file, ["README.txt", "README", "readme.txt", "ReadMe.txt", "README.TXT", "README.md"]):
         note += "说明文件 (Readme): \n"
         note += info.decode("utf-8", errors="ignore")
@@ -85,25 +89,24 @@ def load_zip2source(fp: str, extract_dir: str = None):
     with open(fp, "rb") as f:
         file_context = f.read()
     pack = ZipFile(BytesIO(file_context))
-    info_bytes = pack.read("pack.mcmeta")
-    info = json.loads(info_bytes.decode("utf-8"))
 
     # 选择大小较大的资源文件夹
     assets_dirs: dict[str, int] = {}
-    for path, info in pack.NameToInfo.items():
+    for path, zip_info in pack.NameToInfo.items():
+        print(path)
         if path.startswith("assets/"):
             parts = path.split("/")
-            if path.endswith("textures/") and len(parts) == 3:
+            if path.endswith("textures/") and len(parts) == 4:
                 if path in assets_dirs:
                     continue
                 dir_path = parts[1]
                 assets_dirs[dir_path] = 0
-            elif len(parts) >= 3 and path[2] == "textures" and path[-1] != "/":
+            elif len(parts) >= 4 and path[2] == "textures" and path[-1] != "/":
                 dir_path = parts[1]
                 try:
-                    assets_dirs[dir_path] += info.file_size
+                    assets_dirs[dir_path] += zip_info.file_size
                 except KeyError:
-                    assets_dirs[dir_path] = info.file_size
+                    assets_dirs[dir_path] = zip_info.file_size
 
     # 筛选资源文件夹
     if len(assets_dirs) == 0:
@@ -118,22 +121,24 @@ def load_zip2source(fp: str, extract_dir: str = None):
     # 提取贴图
     textures_zip = ZipFile(join(extract_dir, "textures.zip"), "x", ZIP_DEFLATED, compresslevel=1)
     textures_root = max_dir + "textures/"
-    for path, info in pack.NameToInfo.items():
+    for path, zip_info in pack.NameToInfo.items():
         if path.startswith(textures_root) and not path.endswith("/"):
-            new_info = deepcopy(info)
-            new_info.filename = info.filename.replace(max_dir, "", 1)
-            new_info.orig_filename = info.orig_filename.replace(max_dir, "", 1)
+            new_info = deepcopy(zip_info)
+            new_info.filename = zip_info.filename.replace(max_dir, "", 1)
+            new_info.orig_filename = zip_info.orig_filename.replace(max_dir, "", 1)
             textures_zip.writestr(new_info, pack.read(path))
     textures_zip.close()
 
     # 提取资源包信息
+    info_bytes = pack.read("pack.mcmeta")
+    info = json.loads(info_bytes.decode("utf-8"))
     name = split(fp)[1].replace(".zip", "")
     fp_name = re.sub("§[0123456789abcdef]", "", split(fp)[1])
     source_id = f"{fp_name}-{generate_id()}"
     description = info["pack"].get("description", "未知")
     description = re.sub("§[0123456789abcdef]", "", description).replace("\n", " ")
     note = f"来源于Zip资源包: {split(fp)[1]}\n" \
-           f"文件sha256: {hashlib.sha256(file_context).hexdigest()}\n" \
+           f"文件sha256: {hashlib.md5(file_context).hexdigest()}\n" \
            f"资源包标题: {description}\n"
     note = append_basic_info(pack, note)
 

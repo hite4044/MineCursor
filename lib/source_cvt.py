@@ -138,7 +138,7 @@ def load_zip2source(fp: str, extract_dir: str = None):
     description = info["pack"].get("description", "未知")
     description = re.sub("§[0123456789abcdef]", "", description).replace("\n", " ")
     note = f"来源于Zip资源包: {split(fp)[1]}\n" \
-           f"文件sha256: {hashlib.md5(file_context).hexdigest()}\n" \
+           f"文件md5: {hashlib.md5(file_context).hexdigest()}\n" \
            f"资源包标题: {description}\n"
     note = append_basic_info(pack, note)
 

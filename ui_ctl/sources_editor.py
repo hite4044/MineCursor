@@ -140,8 +140,7 @@ class SourcesEditor(wx.Dialog):
     def on_add_from_file(self):
         dialog = wx.FileDialog(
             self, "新增素材源 (模组Jar/材质包)",
-            wildcard="|".join(["模组Jar (*.jar)|*.jar",
-                               "材质包 (*.zip)|*.zip"]),
+            wildcard="模组Jar/材质包 (*.jar;*.zip)|*.jar;*.zip",
             style=wx.FD_OPEN)
         if dialog.ShowModal() != wx.ID_OK:
             return

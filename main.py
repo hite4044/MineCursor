@@ -35,8 +35,9 @@ class MineCursorLauncher:
 
     @staticmethod
     def switch_work_dir():
-        os.chdir(os.path.dirname(__file__))  # 进入当前目录
-        sys.path.append(os.path.dirname(__file__))  # 添加模块导入路径
+        t = os.path.dirname(os.path.abspath(__file__))
+        os.chdir(t)  # 进入当前目录
+        sys.path.append(t)  # 添加模块导入路径
 
     @staticmethod
     def handle_output():  # 在无输出句柄的情况下替换标准输出为文件

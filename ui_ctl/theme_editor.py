@@ -68,8 +68,6 @@ def find_project_sources(project: CursorProject) -> list[str]:
 def import_theme_sources(zip_io: BytesIO) -> list[AssetSource]:
     work_dir = join(expandvars("%TEMP%"), f"MineCursor Source Extract {generate_id()}")
     makedirs(work_dir, exist_ok=True)
-    with open('ext.zip', "wb") as f:
-        f.write(zip_io.getbuffer())
     with ZipFile(zip_io) as zip_file:
         zip_file.extractall(work_dir)
 

@@ -17,6 +17,8 @@ from ui_ctl.cursor_editor_widgets.events import ElementSelectedEvent, ScaleUpdat
 
 
 class AnimationManager:
+    """管理动画光标的动画播放, 由于Python有GIL, 所以只能用单线程的方式实现时间差额补偿定时"""
+
     def __init__(self, parent: wx.Window):
         self.timer = wx.Timer(parent)
         self.frame_time_cbk = lambda: 0.0
@@ -48,7 +50,6 @@ class AnimationManager:
         self.offsets_count += 1
         self.last_update = crt_time
         return self.offsets_sum / self.offsets_count
-
 
     def start(self):
         self.on_evt_timer(None)
@@ -119,6 +120,7 @@ class ElementCanvas(ElementCanvasUI):
         self.Bind(wx.EVT_SIZE, self.on_size)
         self.Bind(wx.EVT_MOUSE_EVENTS, self.on_dragging)
         self.Bind(wx.EVT_LEFT_DOWN, self.on_click)
+        self.GetParent().Bind(wx.EVT_CHAR_HOOK, self.on_key)
         self.Bind(wx.EVT_MOUSEWHEEL, self.on_scroll)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.on_destroy)
 
@@ -250,6 +252,23 @@ class ElementCanvas(ElementCanvasUI):
             else:
                 return
             self.Refresh()
+
+    def on_key(self, event: wx.KeyEvent):
+        if event.GetKeyCode() in [wx.WXK_UP, wx.WXK_DOWN, wx.WXK_LEFT, wx.WXK_RIGHT] and \
+                self.GetScreenRect().Contains(wx.GetMousePosition()) and \
+                self.active_element:
+            if event.GetKeyCode() == wx.WXK_UP:
+                self.active_element.position.y -= 1
+            elif event.GetKeyCode() == wx.WXK_DOWN:
+                self.active_element.position.y += 1
+            elif event.GetKeyCode() == wx.WXK_LEFT:
+                self.active_element.position.x -= 1
+            elif event.GetKeyCode() == wx.WXK_RIGHT:
+                self.active_element.position.x += 1
+            wx.PostEvent(self.GetParent(), ProjectUpdatedEvent())
+            self.post_element_selected(self.active_element)
+            return
+        event.Skip()
 
     def post_element_selected(self, element: CursorElement | None):
         event = ElementSelectedEvent(element)

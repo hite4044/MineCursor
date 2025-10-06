@@ -12,6 +12,8 @@ class PublicThemeCursorListUI(wx.ListCtrl):
         if not self.USE_APPLY_BTN:
             return
 
+        self.SetDoubleBuffered(True)
+
         self.apply_theme_btn = wx.Button(self, label="应用")
 
         btn_sizer = wx.BoxSizer(wx.HORIZONTAL)

@@ -300,6 +300,7 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
         self.DeleteAllItems()
 
     def load_projects(self, projects: list[CursorProject]):
+        self.Freeze()
         self.clear()
 
         size = self.ICON_SIZE
@@ -317,6 +318,7 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
             else:
                 name = CURSOR_KIND_NAME_OFFICIAL[project.kind]
             self.InsertItem(i, name, cursor_image_id)
+        self.Thaw()
 
     def get_select_items(self) -> list[int]:
         first = self.GetFirstSelected()

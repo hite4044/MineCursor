@@ -13,7 +13,6 @@ from PIL import Image
 from lib.data import AssetSource
 from lib.datas.base_struct import generate_id
 
-NOTE_TEMP = """模组协议: {}"""
 
 
 def check_names(file: ZipFile, names: list[str]) -> bytes | None:
@@ -25,15 +24,15 @@ def check_names(file: ZipFile, names: list[str]) -> bytes | None:
 
 def append_basic_info(file: ZipFile, note: str) -> str:
     if info := check_names(file, ["pack.mcmeta"]):
-        note += "资源包信息 (Mcmeta): \n"
+        note += "\n资源包信息 (Mcmeta): \n"
         note += info.decode("utf-8", errors="ignore")
         note += "\n"
     if info := check_names(file, ["README.txt", "README", "readme.txt", "ReadMe.txt", "README.TXT", "README.md"]):
-        note += "说明文件 (Readme): \n"
+        note += "\n说明文件 (Readme): \n"
         note += info.decode("utf-8", errors="ignore")
         note += "\n"
     if info := check_names(file, ["LICENSE.txt", "LICENSE", "License.txt", "License", "license.txt", "license"]):
-        note += "协议文件 (License): \n"
+        note += "\n\n协议文件 (License): \n"
         note += info.decode("utf-8", errors="ignore")
         note += "\n"
     return note
@@ -51,8 +50,12 @@ def load_jar2source(fp: str, extract_dir: str = None):
     version = mods.get("version", "未知")
     authors = mods.get("authors", "未知")
     description = mods.get("description", "未知")
-    note = NOTE_TEMP.format(info["license"]) if info.get("license") else "未知"
     source_id = f"{name}-{version}-{hex(hash(info_bytes))[3:3 + 8]}"
+    note = ""
+    if info.get("license"):
+        note += f"模组协议: {info.get('license')}\n"
+    if mods.get("displayURL"):
+        note += f"模组主页: {mods['displayURL']}\n"
     note = append_basic_info(jar, note)
 
     # 保存图标

@@ -1,8 +1,8 @@
 {
     "name": "Minecraft 25w32a (1.21.9)",
     "id": "minecraft-textures-25w32a",
-    "version": "",
-    "authors": "",
-    "description": "",
-    "note": ""
+    "version": "25w32a",
+    "authors": "Mojang Studios",
+    "description": "游戏Minecraft的游戏纹理包",
+    "note": "使用准则: https://www.minecraft.net/usage-guidelines"
 }

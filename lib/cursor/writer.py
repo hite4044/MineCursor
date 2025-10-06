@@ -24,11 +24,7 @@ def create_project_cache():
 def write_ani(path: str, frames: list[Image.Image], project: CursorProject):
     project_dir = create_project_cache()
     hotspot = (int(project.center_pos[0] * project.scale), int(project.center_pos[1] * project.scale))
-    if project.ani_rates:
-        rates = project.ani_rates + [project.ani_rate] * (project.frame_count - len(project.ani_rates))
-        rates = rates[:len(frames)]
-    else:
-        rates = [project.ani_rate] * project.frame_count
+    rates = project.real_ani_rates
 
     files = []
     for i, frame in enumerate(frames):

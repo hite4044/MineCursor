@@ -120,13 +120,8 @@ def draw_project_frame(project: CursorProject, image: Image.Image, position: tup
 
     if project.ani_rates:
         project_frame_count = 0
-        rates = project.ani_rates.copy()
-        if len(rates) > project.frame_count:
-            [rates.pop(-1) for _ in range(project.frame_count - len(rates))]
-        elif len(rates) < project.frame_count:
-            rates.extend(([project.ani_rate for _ in range(len(rates) - project.frame_count)]))
-        assert len(rates) == project.frame_count
-        for i, frame_time in enumerate(cycle(project.ani_rates)):
+        rates = project.real_ani_rates
+        for i, frame_time in enumerate(cycle(rates)):
             if project_frame_count / 60 >= frame_count / FPS:
                 break
             project_frame_count += frame_time

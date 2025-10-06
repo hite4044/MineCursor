@@ -49,10 +49,7 @@ class RateEditor(wx.Frame):
 
     def load_default(self, _):
         project = self.project
-        if project.ani_rates:
-            self.rates = project.ani_rates + [project.ani_rate] * (project.frame_count - len(project.ani_rates))
-        else:
-            self.rates = [project.ani_rate] * project.frame_count
+        self.rates = project.real_ani_rates
         self.full_data()
         self.apply_to_project()
 

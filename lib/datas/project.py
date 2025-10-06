@@ -6,8 +6,8 @@ from typing import cast
 from PIL import Image
 
 from lib.cursor.setter import CursorKind
-from lib.datas.source import AssetSourceInfo
 from lib.datas.base_struct import *
+from lib.datas.source import AssetSourceInfo
 
 
 class SubProjectFrames(list):
@@ -245,6 +245,19 @@ class CursorProject:
         self.make_time: float = 0.0
 
         self.id: str = generate_id(4)
+
+    @property
+    def real_ani_rates(self) -> list[int]:
+        if not self.ani_rates:
+            return [self.ani_rate for _ in range(self.frame_count)]
+        ani_rates = self.ani_rates.copy()
+        if len(ani_rates) > self.frame_count:
+            for _ in range(len(ani_rates) - self.frame_count):
+                ani_rates.pop(-1)
+        elif len(ani_rates) < self.frame_count:
+            ani_rates.extend(([self.ani_rate] * (self.frame_count - len(ani_rates))))
+        assert len(ani_rates) == self.frame_count
+        return ani_rates
 
     @property
     def frame_delay(self) -> int:

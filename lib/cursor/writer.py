@@ -26,6 +26,7 @@ def write_ani(path: str, frames: list[Image.Image], project: CursorProject):
     hotspot = (int(project.center_pos[0] * project.scale), int(project.center_pos[1] * project.scale))
     if project.ani_rates:
         rates = project.ani_rates + [project.ani_rate] * (project.frame_count - len(project.ani_rates))
+        rates = rates[:len(frames)]
     else:
         rates = [project.ani_rate] * project.frame_count
 

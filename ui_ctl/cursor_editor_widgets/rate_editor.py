@@ -66,7 +66,7 @@ class RateEditor(wx.Frame):
         scroll_value = self.list.GetScrollPos(wx.VERTICAL)
         self.list.DeleteAllItems()
         for i, rate in enumerate(self.rates):
-            self.list.InsertItem(i, str(i + 1))
+            self.list.InsertItem(i, str(i))
             self.list.SetItem(i, 1, f"{rate / 60 * 1000:.1f} ms")
             self.list.SetItem(i, 2, str(rate))
             if i > self.project.frame_count:

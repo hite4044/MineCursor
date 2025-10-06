@@ -223,7 +223,7 @@ class ElementListCtrl(ElementListCtrlUI):
     def output_file(project: CursorProject):
         wildcard = "动态光标 (*.ani)|*.ani" if project.is_ani_cursor else "静态光标 (*.cur)|*.cur"
         end_fix = ".ani" if project.is_ani_cursor else ".cur"
-        default_name = project.kind.kind_name if project.name is None else project.name
+        default_name = project.name if project.name else (project.external_name if project.external_name else project.kind.kind_name)
         dialog = wx.FileDialog(wx.GetActiveWindow(), "选择保存路径", defaultFile=default_name + end_fix,
                                wildcard=wildcard,
                                style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)

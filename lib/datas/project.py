@@ -63,7 +63,7 @@ class CursorElement:
         self.animation_data: list[AnimationFrameData] = [AnimationFrameData() for _ in range(len(frames))]
         self.animation_data_index: list[int] = []
         self.proc_step = DEFAULT_PROC_ORDER
-        self.allow_mask_scale = None
+        self.allow_mask_scale = False
         self.final_rect = (0, 0, 16, 16)
         self.final_image = Image.new("RGBA", (16, 16))
         self.sub_project: CursorProject | None = None

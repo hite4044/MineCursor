@@ -386,7 +386,7 @@ class ThemeSelector(PublicThemeSelector):
             makedirs(dir_path, exist_ok=True)
             file_map: dict[CursorKind, str] = {}
             for project in theme.projects:
-                file_name = f"{CURSOR_KIND_NAME_OFFICIAL[project.kind]}" + (".ani" if project.is_ani_cursor else ".cur")
+                file_name = f"{project.kind.off_name}" + (".ani" if project.is_ani_cursor else ".cur")
                 fp = path_join(dir_path, file_name)
                 frames = render_project(project)
                 list(write_cursor_progress(fp, frames, project))
@@ -474,7 +474,7 @@ def apply_theme(theme: CursorTheme, target: SchemesType, raw_size: bool,
         dialog.update(0, i, f"导出项目: {project}")
         dialog.update(1, 0, "...")
         frames = render_project(project)
-        file_name = f"Cursor_{project.id}_{project.name}" + (".ani" if project.is_ani_cursor else ".cur")
+        file_name = f"Cursor_{project.id}_{project.name if project.name else project.kind.kind_name}" + (".ani" if project.is_ani_cursor else ".cur")
         file_path = join(theme_cursors_dir, file_name)
         logger.info(f"渲染指针项目: {project}")
         frames_num = len(frames)

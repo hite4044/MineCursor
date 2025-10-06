@@ -242,7 +242,6 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
     def __init__(self, parent: wx.Window):
         super().__init__(parent)
 
-        self.use_cute_name: bool = True
         self.image_list = wx.ImageList()
         self.active_theme: CursorTheme | None = None
         self.cursors_has_deleted_map: dict[CursorTheme, list[ActionStack]] = {}
@@ -313,10 +312,8 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
             cursor_image_id = self.image_list.Add(cursor_bitmap)
             if project.external_name is not None:
                 name = project.external_name
-            elif self.use_cute_name:
-                name = CURSOR_KIND_NAME_CUTE[project.kind]
             else:
-                name = CURSOR_KIND_NAME_OFFICIAL[project.kind]
+                name = project.kind.kind_name
             self.InsertItem(i, name, cursor_image_id)
         self.Thaw()
 

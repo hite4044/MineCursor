@@ -20,6 +20,7 @@ LABEL_MAP = {
     "live_save_time": "保存延时时间",
     "default_author": "默认作者名称",
     "record_create_time": "记录主题创建时间",
+    "theme_use_cute_name": "指针项目使用特别名称",
     "data_dir": "数据保存目录 (高级)",
 }
 

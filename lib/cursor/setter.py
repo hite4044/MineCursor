@@ -11,6 +11,7 @@ from win32con import OCR_NORMAL, OCR_APPSTARTING, OCR_WAIT, OCR_CROSS, OCR_IBEAM
     IDC_APPSTARTING, IDC_WAIT, IDC_CROSS, IDC_IBEAM, IDC_SIZENS, IDC_NO, IDC_HAND, IDC_UPARROW, IDC_SIZEWE, \
     IDC_SIZENESW, IDC_SIZEALL, SPI_SETCURSORS
 
+from lib.config import config
 from lib.log import logger
 
 OCR_HELP = 32651
@@ -59,6 +60,10 @@ class CursorKind(Enum):
 
     @property
     def kind_name(self):
+        return CURSOR_KIND_NAME_CUTE[self] if config.theme_use_cute_name else CURSOR_KIND_NAME_OFFICIAL[self]
+
+    @property
+    def off_name(self):
         return CURSOR_KIND_NAME_OFFICIAL[self]
 
 
@@ -71,10 +76,10 @@ CURSOR_KIND_NAME_OFFICIAL: dict[CursorKind, str] = {
     CursorKind.TEXT: "文本选择",
     CursorKind.PEN: "手写",
     CursorKind.NO: "不可用",
-    CursorKind.SIZE_SN: "垂直调整大小",
-    CursorKind.SIZE_WE: "水平调整大小",
-    CursorKind.SIZE_NW_SE: "沿对角线调整大小 1",
-    CursorKind.SIZE_NE_SW: "沿对角线调整大小 2",
+    CursorKind.SIZE_SN: "↕垂直调整大小",
+    CursorKind.SIZE_WE: "↔水平调整大小",
+    CursorKind.SIZE_NW_SE: "↖对角线调整 1",
+    CursorKind.SIZE_NE_SW: "↗对角线调整 2",
     CursorKind.SIZE_ALL: "移动",
     CursorKind.UP_ARROW: "候选",
     CursorKind.LINK: "链接选择",
@@ -86,15 +91,15 @@ CURSOR_KIND_NAME_CUTE: dict[CursorKind, str] = {
     CursorKind.HELP: "帮助",
     CursorKind.APP_STARTING: "悄悄运行",
     CursorKind.WAIT: "卡了",
-    CursorKind.CROSS_HAIR: "盯帧选择",
+    CursorKind.CROSS_HAIR: "对准选择",
     CursorKind.TEXT: "请输入文本",
-    CursorKind.PEN: "不用手的手写",
+    CursorKind.PEN: "写点什么",
     CursorKind.NO: "哒咩",
-    CursorKind.SIZE_SN: "变高",
-    CursorKind.SIZE_WE: "变长",
+    CursorKind.SIZE_SN: "↕变高",
+    CursorKind.SIZE_WE: "↔变长",
     CursorKind.SIZE_NW_SE: "↖向左变大变高",
     CursorKind.SIZE_NE_SW: "↗向右变大变高",
-    CursorKind.SIZE_ALL: "瞬移",
+    CursorKind.SIZE_ALL: "走位",
     CursorKind.UP_ARROW: "举起手来！",
     CursorKind.LINK: "戳一下",
     CursorKind.PIN: "在哪里?",

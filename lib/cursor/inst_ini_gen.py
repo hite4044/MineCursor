@@ -72,7 +72,7 @@ class PartInfo(INIPart):
         ])
         for project in theme.projects:
             sub_lines = [
-                f"- {CURSOR_KIND_NAME_OFFICIAL[project.kind]}",
+                f"- {project.kind.off_name}",
                 f"- - Name: {project.name}"
             ]
             if project.external_name:
@@ -150,7 +150,7 @@ class PartSchemeCur(INIPart):
     def get_text(file_map: dict[CursorKind, str]):
         return "\n".join([
             '[Scheme.Cur]',
-            *[f'"{filename}"     ; {CURSOR_KIND_NAME_OFFICIAL[kind]}' for kind, filename in file_map.items()]
+            *[f'"{filename}"     ; {kind.off_name}' for kind, filename in file_map.items()]
         ])
 
 
@@ -161,7 +161,7 @@ class PartString(INIPart):
             '[Strings]',
             rf'CUR_DIR = "Cursors\{theme.name}"',
             f"SCHEME_NAME = {theme.name}",
-            *[f'{VAR_NAME_MAP[kind]} = "{filename}"     ; {CURSOR_KIND_NAME_OFFICIAL[kind]}' for kind, filename in
+            *[f'{VAR_NAME_MAP[kind]} = "{filename}"     ; {kind.off_name}' for kind, filename in
               file_map.items()]
         ])
 

@@ -24,6 +24,7 @@ class Config:
     default_author: str = USER_NAME
     enabled_sources: list[str] = None
     record_create_time: bool = False
+    theme_use_cute_name: bool = True
 
     def __init__(self):
         self.load_config()

@@ -53,11 +53,6 @@ class AssetType(Enum):
     # tip: 子项目类型将不会使用源信息
 
 
-class SourceType(Enum):
-    INTERNAL = 0
-    USER = 1
-
-
 @dataclass_t
 class Position(DataClassStructMixin):
     x: int

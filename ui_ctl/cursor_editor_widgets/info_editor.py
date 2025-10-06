@@ -5,11 +5,11 @@ import wx
 from lib.data import CursorProject, CursorElement
 from lib.log import logger
 from ui.cursor_editor import InfoEditorUI, ElementInfoEditorUI, ProjectInfoEditorUI
-from ui_ctl.cursor_editor_widgets.rate_editor import RateEditor
-from ui_ctl.cursor_editor_widgets.step_editor import StepEditor
-from widget.data_entry import DataEntryEvent, DataEntry, EVT_DATA_UPDATE, BoolEntry
 from ui_ctl.cursor_editor_widgets.events import ProjectUpdatedEvent, FrameCounterChangeEvent, AnimationModeChangeEvent, \
     AnimationMode
+from ui_ctl.cursor_editor_widgets.rate_editor import RateEditor
+from ui_ctl.cursor_editor_widgets.step_editor import StepEditor
+from widget.data_entry import DataEntryEvent, DataEntry, EVT_DATA_UPDATE
 
 
 class InfoEditor(InfoEditorUI):
@@ -25,6 +25,15 @@ class InfoEditor(InfoEditorUI):
         else:
             self.switch_page(1)
             self.element_editor.set_element(element)
+
+
+def check_finish_edit(obj):
+    for name in dir(obj):
+        widget = getattr(obj, name)
+        if not isinstance(widget, DataEntry):
+            continue
+        if widget.entry.HasFocus():
+            widget.finish_edit()
 
 
 def create_cfg_bind(widget: DataEntry,
@@ -72,6 +81,12 @@ class ElementInfoEditor(ElementInfoEditorUI):
         self.mask_color.Bind(wx.EVT_COLOURPICKER_CHANGED, self.on_pick_mask_color)
         self.mask_color_reset_btn.Bind(wx.EVT_BUTTON, self.on_reset_mask_color)
 
+        def on_enter(event):
+            check_finish_edit(self)
+            event.Skip()
+
+        self.GetParent().GetParent().GetChildren()[0].Bind(wx.EVT_ENTER_WINDOW, on_enter)
+
     def send_update(self):
         event = ProjectUpdatedEvent()
         wx.PostEvent(self, event)
@@ -118,6 +133,7 @@ class ElementInfoEditor(ElementInfoEditorUI):
             def update_ani_data(event: DataEntryEvent):
                 event.Skip()
                 element.update_ani_data_by_key_data()
+
             create_cfg_bind(self.frame_start, element, "animation_key_data.frame_start", cbk=update_ani_data)
             create_cfg_bind(self.frame_inv, element, "animation_key_data.frame_inv", cbk=update_ani_data)
             create_cfg_bind(self.frame_length, element, "animation_key_data.frame_length", cbk=update_ani_data)

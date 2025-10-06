@@ -31,6 +31,7 @@ def render_project_gen(project: CursorProject):
 def render_project_frame(project: CursorProject, frame: int) -> Image.Image:
     timer = Counter(create_start=True)
     canvas = Image.new("RGBA", project.raw_canvas_size, (255, 255, 255, 0))
+    cnt = 0
     for element in project.elements[::-1]:
         # 提取元素帧
         if element.sub_project:
@@ -120,6 +121,9 @@ def render_project_frame(project: CursorProject, frame: int) -> Image.Image:
             if element.mask and element.mask.size == item.size:
                 item.putalpha(element.mask)
             canvas.alpha_composite(item, (element.position[0] - x_off, element.position[1] - y_off))
+        cnt += 1
     scaled_canvas = canvas.resize(project.canvas_size, project.resample)
+    if cnt == 0:
+        scaled_canvas.putalpha(1)
     logger.debug(f"渲染第{str(frame).zfill(2)}帧耗时: {timer.endT()}")
     return scaled_canvas

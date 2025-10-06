@@ -20,6 +20,7 @@ https://www.minecraft.net/usage-guidelines
 class CursorTheme:
     name: str
     base_size: int = 32
+    version: str = "1.0.0"
     author: str = "Unknow"
     description: str = "None"
     type: ThemeType = ThemeType.NORMAL
@@ -46,6 +47,7 @@ class CursorTheme:
             "type": self.type.value,
             "id": self.id,
             "base_size": self.base_size,
+            "version": self.version,
             "author": self.author,
             "description": self.description,
             "projects": [project.to_dict() for project in self.projects],
@@ -64,6 +66,7 @@ class CursorTheme:
             type=ThemeType(data.get("type", ThemeType.NORMAL)),
             id=data["id"],
             base_size=data["base_size"],
+            version=data.get("version", "1.0.0"),
             author=data["author"],
             description=data["description"],
             projects=[CursorProject.from_dict(project) for project in data["projects"]],

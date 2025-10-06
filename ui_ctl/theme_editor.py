@@ -2,14 +2,12 @@ import json
 import os
 import re
 from enum import Enum
-from io import BytesIO
 from os import makedirs
-from os.path import join, isfile, expandvars, dirname, isdir, split
+from os.path import join
 from os.path import join as path_join
-from shutil import rmtree, copytree
+from shutil import rmtree
 from threading import Thread
 from typing import cast
-from zipfile import ZipFile
 
 import wx
 
@@ -19,8 +17,7 @@ from lib.cursor.setter import CURSOR_KIND_NAME_OFFICIAL, CursorKind, CursorsInfo
     CR_INFO_FIELD_MAP, CursorData
 from lib.cursor.writer import write_cursor_progress
 from lib.data import CursorTheme, path_theme_cursors, path_theme_data, INVALID_FILENAME_CHAR, ThemeType, source_manager
-from lib.datas.base_struct import AssetType, generate_id
-from lib.datas.data_dir import path_user_sources
+from lib.datas.base_struct import AssetType
 from lib.datas.project import CursorProject
 from lib.datas.source import AssetSource, SourceNotFoundError
 from lib.log import logger
@@ -65,39 +62,6 @@ def find_project_sources(project: CursorProject) -> list[str]:
     return sources
 
 
-def import_theme_sources(zip_io: BytesIO) -> list[AssetSource]:
-    work_dir = join(expandvars("%TEMP%"), f"MineCursor Source Extract {generate_id()}")
-    makedirs(work_dir, exist_ok=True)
-    with ZipFile(zip_io) as zip_file:
-        zip_file.extractall(work_dir)
-
-    sources_dir = join(work_dir, "sources")
-    if not isdir(sources_dir):
-        return []
-
-    _, dirs, files = next(os.walk(sources_dir))
-    sources = []
-    for dir_name in dirs:
-        logger.debug(f"导入主题包内置的素材源: {dir_name}")
-        dir_path = join(sources_dir, dir_name)
-        source_json = join(dir_path, "source.json")
-        if isfile(source_json):
-            sources.append(AssetSource.from_file(source_json))
-
-    for source in sources:
-        if source_manager.get_source_by_id(source.id, False) is None:
-            new_dir = join(str(path_user_sources), split(source.source_dir)[1])
-            copytree(source.source_dir, new_dir)
-            rmtree(source.source_dir)
-            source.source_dir = new_dir
-            sources.append(source)
-            source_manager.user_sources.append(source)
-    source_manager.save_source()
-
-    rmtree(work_dir)
-
-    return sources
-
 class ThemeApplyDialog(DataDialog):
     def __init__(self, parent: wx.Window | None, theme: CursorTheme):
         super().__init__(parent, f"应用主题 {theme.name}",
@@ -121,10 +85,11 @@ class ThemeApplyDialog(DataDialog):
 class ThemeDataDialog(DataDialog):
     def __init__(self, parent: wx.Window | None, is_create: bool, theme: CursorTheme | None = None):
         if theme is None:
-            theme = CursorTheme("新指针主题", 32, config.default_author)
+            theme = CursorTheme("新指针主题", 32, author=config.default_author)
         params = [
             DataLineParam("name", "主题名称", DataLineType.STRING, theme.name),
             DataLineParam("base_size", "基础尺寸", DataLineType.INT, theme.base_size),
+            DataLineParam("version", "版本", DataLineType.STRING, theme.version),
             DataLineParam("author", "作者", DataLineType.STRING, theme.author),
             DataLineParam("description", "描述", DataLineType.STRING, theme.description),
             DataLineParam("type", "主题类型", DataLineType.CHOICE, theme.type,
@@ -162,6 +127,7 @@ class ThemeDataDialog(DataDialog):
         theme.name = name
         theme.base_size = datas["base_size"]
         theme.author = datas["author"]
+        theme.version = datas["version"]
         theme.description = datas["description"]
         theme.type = ThemeType(datas["type"])
         if not self.is_create:
@@ -235,6 +201,19 @@ class ThemeSelector(PublicThemeSelector):
         target = ThemeFileDropTarget()
         target.on_drop_theme = self.on_drop_theme
         self.SetDropTarget(target)
+
+        if config.first_launch:
+            wx.CallLater(3000, self.on_first_launch)
+
+    def on_first_launch(self):
+        dialog = AboutDialog(self)
+        dialog.Show()
+        ret = wx.MessageBox("初次见面, 是否导入默认主题包?\n稍后可在设置导入", "这里是Mine Cursor！",
+                            wx.YES_NO | wx.ICON_QUESTION, dialog)
+        if ret == wx.YES:
+            SettingsDialog.import_default_themes()
+        config.first_launch = False
+        config.save_config()
 
     def on_key_down(self, event: wx.KeyEvent):
         if event.GetKeyCode() == ord("Z") and event.GetModifiers() == wx.MOD_CONTROL:
@@ -432,16 +411,9 @@ class ThemeSelector(PublicThemeSelector):
         sources = []
         for file_path in filenames:
             try:
-                theme, theme_load_info = theme_manager.load_theme_file(file_path)
-                if theme_load_info.file_type == ThemeFileType.ZIP_FILE:
-                    sources.extend(import_theme_sources(theme_load_info.zip_io))
-                    theme = CursorTheme.from_dict(theme)
-
-                assert isinstance(theme, CursorTheme)
-
-                theme.refresh_id()
-                logger.info(f"已加载主题: {theme}")
-                theme_manager.add_theme(theme)
+                load_info = theme_manager.load_theme(file_path, refresh_id=True, file_mapping=False)
+                if load_info.extra_sources:
+                    sources.extend(load_info.extra_sources)
             except (KeyError, json.JSONDecodeError, SourceNotFoundError):
                 error_paths.append(file_path)
         if error_paths:

@@ -1,15 +1,18 @@
 import os
 import sys
 import winreg
-from os.path import abspath
+from os.path import abspath, isdir, join, exists
 
 import wx
 
 from lib.config import config
-from lib.data import AssetSource
+from lib.datas.data_dir import path_theme_data
+from lib.datas.source import SourceNotFoundError
+from lib.datas.theme import CursorTheme
 from lib.info import IS_PACKAGE_ENV
+from lib.log import logger
+from lib.resources import theme_manager
 from ui_ctl.sources_editor import SourcesEditor
-from widget.data_dialog import DataDialog
 from widget.data_entry import DataEntry
 from widget.win_icon import set_multi_size_icon
 
@@ -40,14 +43,16 @@ class SettingsDialog(wx.Dialog):
         self.set_filetype_btn = wx.Button(self, label="设置文件类型信息")
         self.delete_filetype_btn = wx.Button(self, label="删除文件类型信息")
         self.open_sources_editor_btn = wx.Button(self, label="打开源编辑器")
+        self.import_default_themes_btn = wx.Button(self, label="导入默认主题")
 
         sizer = wx.BoxSizer(wx.VERTICAL)
-        entries_sizer = wx.FlexGridSizer(len(self.entries) + 3, 2, 5, 5)
+        entries_sizer = wx.FlexGridSizer(len(self.entries) + 4, 2, 5, 5)
         entries_sizer.AddGrowableCol(1, 1)
         for entry in list(self.entries.values()) + [
             self.set_filetype_btn,
             self.delete_filetype_btn,
-            self.open_sources_editor_btn
+            self.open_sources_editor_btn,
+            self.import_default_themes_btn
         ]:
             if isinstance(entry, DataEntry):
                 entries_sizer.Add(entry.label, 0, wx.EXPAND)
@@ -70,6 +75,7 @@ class SettingsDialog(wx.Dialog):
         self.set_filetype_btn.Bind(wx.EVT_BUTTON, self.on_set_filetype_info)
         self.delete_filetype_btn.Bind(wx.EVT_BUTTON, self.on_delete_filetype_info)
         self.open_sources_editor_btn.Bind(wx.EVT_BUTTON, self.on_open_sources_editor)
+        self.import_default_themes_btn.Bind(wx.EVT_BUTTON, lambda _: self.import_default_themes())
 
     def on_ok(self, _):
         for config_name, entry in self.entries.items():
@@ -129,3 +135,40 @@ class SettingsDialog(wx.Dialog):
             args[i] = f'"{part}"'
         args.append('"%1"')
         return " ".join(args)
+
+    @staticmethod
+    def import_default_themes(first_import: bool = False):
+        overwrite = first_import or wx.YES == \
+                    wx.MessageBox("导入默认主题时, 覆盖(是)/跳过(否) 已存在的同ID主题?", "提示",
+                                  wx.YES_NO | wx.ICON_QUESTION)
+
+        default_themes_dir = abspath("assets/default_themes")
+        if not isdir(default_themes_dir):
+            wx.MessageBox("未找到默认主题目录\nassets/default_themes", "错误", wx.OK | wx.ICON_ERROR)
+            return
+
+        for theme_file in os.listdir(default_themes_dir):
+            if not theme_file.endswith(".mctheme"):
+                continue
+            theme_path = join(default_themes_dir, theme_file)
+            new_path = join(path_theme_data, theme_file)
+            if exists(new_path):
+                if not overwrite:
+                    continue
+                os.remove(new_path)
+                if new_path in theme_manager.theme_file_mapping:
+                    theme = theme_manager.theme_file_mapping.pop(new_path)
+                    theme_manager.themes.remove(theme)
+
+            try:
+                theme, info = theme_manager.load_theme_file(theme_path)
+            except SourceNotFoundError as e:
+                logger.warning(f"主题 [{theme_file}] 中ID为 [{e.source_id}] 的源不存在")
+                continue
+            logger.info(f"已加载主题: {theme}")
+
+            if orig_theme := theme_manager.find_theme(theme.id):
+                if not overwrite:
+                    continue
+                theme_manager.themes.remove(orig_theme)
+            theme_manager.add_theme(theme)

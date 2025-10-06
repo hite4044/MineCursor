@@ -8,7 +8,8 @@ from dataclasses import dataclass
 from enum import Enum
 from io import BytesIO
 from os import rename
-from os.path import join, basename, isfile, dirname, split
+from os.path import join, basename, isfile, dirname, split, isdir, expandvars
+from shutil import copytree, rmtree
 from threading import Event, Thread
 from typing import Callable, Any
 from zipfile import ZipFile, ZIP_DEFLATED, ZipInfo
@@ -16,7 +17,9 @@ from zipfile import ZipFile, ZIP_DEFLATED, ZipInfo
 from lib.config import config
 from lib.data import CursorTheme, path_theme_data, CursorElement, \
     AssetSourceInfo, AssetType, path_deleted_theme_data
-from lib.datas.source import SourceNotFoundError, AssetSource
+from lib.datas.base_struct import generate_id
+from lib.datas.data_dir import path_user_sources
+from lib.datas.source import SourceNotFoundError, AssetSource, source_manager
 from lib.log import logger
 from lib.perf import Counter
 from lib.render import render_project_frame
@@ -57,7 +60,38 @@ def full_dir_into_zip(file: ZipFile, source_dir: str, source_arc_path: str):
         file_path = join(root, file_name)
         arc_file_path = join(source_arc_path, split(file_path)[1])
         file.write(file_path, arc_file_path)
+def import_theme_sources(zip_io: BytesIO) -> list[AssetSource]:
+    work_dir = join(expandvars("%TEMP%"), f"MineCursor Source Extract {generate_id()}")
+    os.makedirs(work_dir, exist_ok=True)
+    with ZipFile(zip_io) as zip_file:
+        zip_file.extractall(work_dir)
 
+    sources_dir = join(work_dir, "sources")
+    if not isdir(sources_dir):
+        return []
+
+    _, dirs, files = next(os.walk(sources_dir))
+    sources = []
+    for dir_name in dirs:
+        logger.debug(f"导入主题包内置的素材源: {dir_name}")
+        dir_path = join(sources_dir, dir_name)
+        source_json = join(dir_path, "source.json")
+        if isfile(source_json):
+            sources.append(AssetSource.from_file(source_json))
+
+    for source in sources:
+        if source_manager.get_source_by_id(source.id, False) is None:
+            new_dir = join(str(path_user_sources), split(source.source_dir)[1])
+            copytree(source.source_dir, new_dir)
+            rmtree(source.source_dir)
+            source.source_dir = new_dir
+            sources.append(source)
+            source_manager.user_sources.append(source)
+    source_manager.save_source()
+
+    rmtree(work_dir)
+
+    return sources
 
 class ThemeFileType(Enum):
     RAW_JSON = 0
@@ -70,6 +104,7 @@ class ThemeLoadInfo:
     file_type: ThemeFileType = None
     theme_data: str = None
     zip_io: BytesIO = None
+    extra_sources: list[AssetSource] = None
 
 
 class ThemeManager:
@@ -131,15 +166,20 @@ class ThemeManager:
             self.theme_file_mapping[theme] = file_path
             self.save_theme_file(file_path, theme)
 
-    def load_theme(self, file_path: str):
+    def load_theme(self, file_path: str, refresh_id: bool = False, file_mapping: bool = True) -> ThemeLoadInfo | None:
         try:
-            theme, _ = self.load_theme_file(file_path)
+            theme, info = self.load_theme_file(file_path)
         except SourceNotFoundError as e:
             logger.warning(f"主题 [{file_path}] 中ID为 [{e.source_id}] 的源不存在")
-            return
+            return None
         logger.info(f"已加载主题: {theme}")
+        if refresh_id:
+            theme.refresh_id()
+
         self.add_theme(theme)
-        self.theme_file_mapping[theme] = file_path
+        if file_mapping:
+            self.theme_file_mapping[theme] = file_path
+        return info
 
     @staticmethod
     def load_theme_file(file_path: str) -> tuple[CursorTheme | dict, ThemeLoadInfo]:
@@ -163,7 +203,7 @@ class ThemeManager:
                         theme_data = zip_file.read("theme.json").decode("utf-8")
                     zip_io.seek(0)
                     info.zip_io = zip_io
-                    return json.loads(theme_data), info
+                    info.extra_sources = import_theme_sources(zip_io)
                 else:
                     raise RuntimeError(f"无法加载主题: {file_path}, 未知的主题类型")
             else:

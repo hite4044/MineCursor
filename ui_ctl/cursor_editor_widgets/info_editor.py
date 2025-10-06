@@ -2,6 +2,7 @@ from typing import Callable
 
 import wx
 
+from lib.config import config
 from lib.data import CursorProject, CursorElement
 from lib.log import logger
 from ui.cursor_editor import InfoEditorUI, ElementInfoEditorUI, ProjectInfoEditorUI
@@ -20,6 +21,12 @@ class InfoEditor(InfoEditorUI):
         super().__init__(parent, project)
 
     def set_element(self, element: CursorElement | None):
+        if element and config.auto_change_to_frame and not element.loop_animation:
+            event = FrameCounterChangeEvent(element.animation_start_offset)
+            self.proj_editor.on_frame_counter_change(event)
+            event = AnimationModeChangeEvent(AnimationMode.MANUAL, element.animation_start_offset)
+            wx.PostEvent(self.proj_editor, event)
+
         if element is None:
             self.switch_page(0)
         else:

@@ -25,6 +25,7 @@ class Config:
     enabled_sources: list[str] = None
     record_create_time: bool = False
     theme_use_cute_name: bool = True
+    auto_change_to_frame: bool = True
 
     def __init__(self):
         self.load_config()

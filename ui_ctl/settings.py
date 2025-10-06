@@ -21,6 +21,7 @@ LABEL_MAP = {
     "default_author": "默认作者名称",
     "record_create_time": "记录主题创建时间",
     "theme_use_cute_name": "指针项目使用特别名称",
+    "auto_change_to_frame": "选中单帧元素时自动切换帧",
     "data_dir": "数据保存目录 (高级)",
 }
 

@@ -245,6 +245,7 @@ class ElementInfoEditorUI(wx.ScrolledWindow):
 
         self.resample_map = RESAMPLE_MAP
 
+        self.allow_mask_scale = BoolEntry(self, "允许遮罩缩放", use_sizer=True)
         self.mask_color = wx.ColourPickerCtrl(self)
         self.mask_color_reset_btn = wx.Button(self, label="R")
         self.mask_color_reset_btn.SetMaxSize((int(str(self.mask_color_reset_btn.GetTextExtent("R")[0])) + 9, -1))
@@ -253,6 +254,9 @@ class ElementInfoEditorUI(wx.ScrolledWindow):
         sub_sizer.Add(CenteredText(self, label="遮罩颜色"), 0, wx.EXPAND)
         sub_sizer.Add(self.mask_color_reset_btn, 0, wx.EXPAND)
         sub_sizer.Add(self.mask_color, 1, wx.EXPAND)
+        sizer.Add(sub_sizer, 0, wx.EXPAND | wx.ALL, 5)
+        sub_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sub_sizer.Add(self.allow_mask_scale, 0, wx.EXPAND)
         sizer.Add(sub_sizer, 0, wx.EXPAND | wx.ALL, 5)
 
         self.open_step_editor_btn = wx.Button(self, label="编辑渲染步骤")
@@ -264,6 +268,8 @@ class ElementInfoEditorUI(wx.ScrolledWindow):
 
         self.Bind(wx.EVT_COLLAPSIBLEPANE_CHANGED, self.on_collapse)
         self.Bind(wx.EVT_SIZE, self.on_size)
+
+        self.allow_mask_scale.label.SetHelpText("遮罩大小可以跟随元素的最终大小缩放, 而不是检测到大小不对就禁用遮罩")
 
     def on_collapse(self, event: wx.CollapsiblePaneEvent):
         self.on_size(None)

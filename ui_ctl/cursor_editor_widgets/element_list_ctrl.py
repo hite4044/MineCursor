@@ -210,7 +210,11 @@ class ElementListCtrl(ElementListCtrlUI):
         element = self.get_element_by_index(index)
         background = element.final_image
         if element.mask:
-            mask = element.mask.resize(background.size, Image.Resampling.NEAREST)
+            if element.allow_mask_scale:
+                background = background.resize(element.mask.size, element.scale_resample)
+                mask = element.mask.copy()
+            else:
+                mask = element.mask.resize(background.size, element.scale_resample)
         else:
             mask = background.getchannel("A")
         dialog = MaskEditor(self, mask, background)

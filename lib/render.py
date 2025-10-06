@@ -74,9 +74,11 @@ def render_project_frame(project: CursorProject, frame: int) -> Image.Image:
         # 按顺序进行操作
         left_step = copy(list(element.proc_step))
         x_off = y_off = 0
+        oper_cnt = 0
         while len(left_step) != 0:
             step = left_step.pop(0)
             if step == ProcessStep.TRANSPOSE and (element.reverse_x or element.reverse_y):
+                oper_cnt += 1
                 if element.reverse_way == ReverseWay.BOTH and element.reverse_x and element.reverse_y:
                     item = item.transpose(Transpose.TRANSPOSE)
                     continue
@@ -90,15 +92,18 @@ def render_project_frame(project: CursorProject, frame: int) -> Image.Image:
                         item = item.transpose(Transpose.FLIP_LEFT_RIGHT)
 
             elif step == ProcessStep.CROP and element.crop_margins != NONE_MARGINS:
+                oper_cnt += 1
                 mrg = element.crop_margins
                 item = item.crop((0 + mrg.left, 0 + mrg.up, item.width - mrg.right, item.height - mrg.down))
 
             elif step == ProcessStep.SCALE and element.scale != NONE_SCALE:
+                oper_cnt += 1
                 item = item.resize((int(item.width * element.scale[0]),
                                     int(item.height * element.scale[1])),
                                    element.scale_resample)
 
             elif step == ProcessStep.ROTATE and element.rotation != 0:
+                oper_cnt += 1
                 size = item.size
                 rotate_resample = element.resample
                 if rotate_resample not in (Resampling.NEAREST, Resampling.BILINEAR, Resampling.BICUBIC):
@@ -111,15 +116,21 @@ def render_project_frame(project: CursorProject, frame: int) -> Image.Image:
 
         element.final_rect = (element.position[0] - x_off, element.position[1] - y_off, item.width, item.height)
         element.final_image = item
+        if oper_cnt == 0:
+            item = item.copy()
+        if element.mask is not None and element.mask.size != item.size and element.allow_mask_scale:
+            mask = element.mask.resize(item.size, element.scale_resample)
+        else:
+            mask = element.mask
         if element.sub_project:
-            if element.mask is not None and element.mask.size == item.size:
-                mask = item.getchannel("A")
-                mask.paste(element.mask, mask)
+            if mask is not None and mask.size == item.size:
+                own_mask = item.getchannel("A")
+                mask.paste(element.mask, own_mask)
                 item.putalpha(mask)
             canvas.alpha_composite(item, (element.position[0] - x_off, element.position[1] - y_off))
         else:
-            if element.mask and element.mask.size == item.size:
-                item.putalpha(element.mask)
+            if mask and mask.size == item.size:
+                item.putalpha(mask)
             canvas.alpha_composite(item, (element.position[0] - x_off, element.position[1] - y_off))
         cnt += 1
     scaled_canvas = canvas.resize(project.canvas_size, project.resample)

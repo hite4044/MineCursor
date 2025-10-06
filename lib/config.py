@@ -23,6 +23,7 @@ class Config:
     theme_kind_order: list[ThemeType] = [ThemeType.NORMAL, ThemeType.PRE_DEFINE, ThemeType.TEMPLATE]
     default_author: str = USER_NAME
     enabled_sources: list[str] = None
+    record_create_time: bool = False
 
     def __init__(self):
         self.load_config()

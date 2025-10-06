@@ -1,6 +1,7 @@
 from dataclasses import field, dataclass
 from datetime import datetime
 
+from lib.config import config
 from lib.datas.base_struct import *
 from lib.datas.project import CursorProject
 from lib.t_struct import ThemeType
@@ -30,7 +31,7 @@ class CursorTheme:
 
     note: str = DEFAULT_NOTE
     license_info: str = DEFAULT_LICENSE_INFO
-    create_time: str = datetime.now().strftime("%Y-%m-%d %H:%M")
+    create_time: str = datetime.now().strftime("%Y-%m-%d %H:%M") if config.record_create_time else "Unknow"
 
     def __hash__(self):
         return hash(self.id)

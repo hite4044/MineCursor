@@ -8,7 +8,6 @@ import wx
 from lib.config import config
 from lib.datas.data_dir import path_theme_data
 from lib.datas.source import SourceNotFoundError
-from lib.datas.theme import CursorTheme
 from lib.info import IS_PACKAGE_ENV
 from lib.log import logger
 from lib.resources import theme_manager
@@ -20,7 +19,8 @@ LABEL_MAP = {
     "show_hidden_themes": "显示隐藏主题",
     "live_save_time": "保存延时时间",
     "default_author": "默认作者名称",
-    "data_dir": "数据保存目录 (高级)"
+    "record_create_time": "记录主题创建时间",
+    "data_dir": "数据保存目录 (高级)",
 }
 
 

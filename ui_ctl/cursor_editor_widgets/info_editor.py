@@ -174,7 +174,7 @@ class ElementInfoEditor(ElementInfoEditorUI):
         else:
             self.animation_panel.Hide()
 
-        create_cfg_bind(self.allow_mask_scale, element, "allow_alpha_scale")
+        create_cfg_bind(self.allow_mask_scale, element, "allow_mask_scale")
         self.allow_mask_scale.set_value(element.allow_mask_scale)
         if element.mask_color is None:
             pick_btn: wx.BitmapButton = self.mask_color.GetPickerCtrl()

@@ -1,5 +1,6 @@
 from base64 import b64encode, b64decode
 from datetime import datetime
+from io import BytesIO
 from typing import cast
 
 from PIL import Image
@@ -62,6 +63,7 @@ class CursorElement:
         self.animation_data: list[AnimationFrameData] = [AnimationFrameData() for _ in range(len(frames))]
         self.animation_data_index: list[int] = []
         self.proc_step = DEFAULT_PROC_ORDER
+        self.allow_alpha_scale = None
         self.final_rect = (0, 0, 16, 16)
         self.final_image = Image.new("RGBA", (16, 16))
         self.sub_project: CursorProject | None = None
@@ -127,8 +129,12 @@ class CursorElement:
             "animation_data": [data.save() for data in self.animation_data],
             "proc_step": [step.value for step in self.proc_step],
         }
+        if self.allow_alpha_scale:
+            data["allow_alpha_scale"] = self.allow_alpha_scale
         if self.mask:
-            data["mask"] = (self.mask.size, b64encode(self.mask.tobytes()).decode("utf-8"))
+            mask_io = BytesIO()
+            self.mask.save(mask_io, format="PNG")
+            data["mask"] = (self.mask.size, b64encode(mask_io.getbuffer()).decode("utf-8"))
         if self.mask_color:
             data["mask_color"] = list(self.mask_color)
         if self.sub_project:
@@ -154,7 +160,13 @@ class CursorElement:
             if isinstance(data["mask"][1], bytes):
                 element.mask = Image.frombytes("L", data["mask"][0], data["mask"][1])
             else:
-                element.mask = Image.frombytes("L", data["mask"][0], b64decode(data["mask"][1]))
+                mask_io = BytesIO(b64decode(data["mask"][1]))
+                if mask_io.read(8) == b"\x89\x50\x4E\x47\x0D\x0A\x1A\x0A":
+                    mask_io.seek(0)
+                    element.mask = Image.open(mask_io)
+                else:
+                    mask_io.seek(0)
+                    element.mask = Image.frombytes("L", data["mask"][0], mask_io.getvalue())
         element.mask_color = tuple(data.get("mask_color")) if data.get("mask_color") else None
         element.animation_start_offset = data.get("animation_start_offset", element.animation_start_offset)
         element.loop_animation = data.get("loop_animation", element.loop_animation)
@@ -163,6 +175,7 @@ class CursorElement:
         element.animation_data = [AnimationFrameData.load(data) for data in data["animation_data"]]
         element.proc_step = [ProcessStep(step) for step in data["proc_step"]]
         element.reverse_way = ReverseWay(data.get("reverse_way", ReverseWay.BOTH.value))
+        element.allow_alpha_scale = data.get("allow_alpha_scale", False)
         if data.get("sub_project"):
             element.sub_project = CursorProject.from_dict(data["sub_project"])
 

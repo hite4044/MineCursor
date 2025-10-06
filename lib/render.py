@@ -125,8 +125,8 @@ def render_project_frame(project: CursorProject, frame: int) -> Image.Image:
         if element.sub_project:
             if mask is not None and mask.size == item.size:
                 own_mask = item.getchannel("A")
-                mask.paste(element.mask, own_mask)
-                item.putalpha(mask)
+                own_mask.paste(mask, own_mask)
+                item.putalpha(own_mask)
             canvas.alpha_composite(item, (element.position[0] - x_off, element.position[1] - y_off))
         else:
             if mask and mask.size == item.size:

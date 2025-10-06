@@ -127,7 +127,7 @@ class AssetSourceManager:
         for source_dir in dirs:
             source_cfg_fp = join(root, source_dir, "source.json")
             if isfile(source_cfg_fp):
-                logger.info(f"已加载素材源: {source_dir}")
+                logger.info(f"加载素材源: {source_dir}")
                 source = AssetSource.from_file(source_cfg_fp)
                 sources.append(source)
 

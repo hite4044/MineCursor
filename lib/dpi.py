@@ -36,10 +36,12 @@ def translate_size(size: tuple[int, int]):
         -1 if size[1] == -1 else round(size[1] * Y_SCALE)
     )
 
+
 def TS(*size: int):
     if len(size) == 1:
-        return round(size[0] * SCALE)
+        return -1 if size[0] == -1 else round(size[0] * SCALE)
     return translate_size(typing.cast(tuple[int, int], size))
+
 
 X_SCALE, Y_SCALE = get_screen_scale()
 SCALE = X_SCALE

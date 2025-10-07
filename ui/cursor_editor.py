@@ -24,16 +24,19 @@ ID_SCALE = 5
 
 class CursorEditorUI(wx.Frame):
     def __init__(self, parent: wx.Window, project: CursorProject):
-        super().__init__(parent, size=TS(1220, 720),
+        super().__init__(parent, size=TS(1120, 720),
                          title=f"光标项目编辑器 - {project.name if project.name else project.kind.kind_name}")
         self.SetFont(ft(11))
 
-        self.elements_lc = ui_class(ElementListCtrlUI)(self, project)
-        self.canvas = ui_class(ElementCanvasUI)(self, project)
-        self.info_editor = ui_class(InfoEditorUI)(self, project)
+        self.splitter1 = wx.SplitterWindow(self)
+        self.elements_lc = ui_class(ElementListCtrlUI)(self.splitter1, project)
+        self.cvs_panel = wx.Panel(self.splitter1)
+        self.canvas = ui_class(ElementCanvasUI)(self.cvs_panel, project)
+        self.info_editor = ui_class(InfoEditorUI)(self.cvs_panel, project)
+
         self.bar = wx.StatusBar(self)
         self.bar.SetFieldsCount(6)
-        self.bar.SetStatusWidths([100, 100, 120, 150, -1, 110])
+        self.bar.SetStatusWidths([TS(i) for i in [100, 100, 120, 150, -1, 110]])
         self.bar.SetStatusText("位置: ", ID_POS)
         self.bar.SetStatusText("大小: ", ID_RECT)
         self.bar.SetStatusText("画布: -1 x -1", ID_CANVAS)
@@ -48,17 +51,18 @@ class CursorEditorUI(wx.Frame):
         self._scale: float | None = None
 
         sizer = wx.BoxSizer(wx.VERTICAL)
+        self.splitter1.SplitVertically(self.elements_lc, self.cvs_panel)
+        self.splitter1.SetSashGravity(0.22)
         hor_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        hor_sizer.AddMany([
-            (self.elements_lc, 0, wx.EXPAND),
-            (self.canvas, 2, wx.EXPAND),
-            (self.info_editor, 0, wx.EXPAND)
-        ])
+        hor_sizer.Add(self.canvas, 1, wx.EXPAND)
+        hor_sizer.Add(self.info_editor, 0, wx.EXPAND)
+        self.cvs_panel.SetSizer(hor_sizer)
         sizer.AddMany([
-            (hor_sizer, 1, wx.EXPAND),
+            (self.splitter1, 1, wx.EXPAND),
             (self.bar, 0, wx.EXPAND)
         ])
         self.SetSizer(sizer)
+        wx.CallLater(500, self.splitter1.SetMinimumPaneSize, 100)
 
     @property
     def b_cursor_pos(self):
@@ -121,7 +125,7 @@ class ElementListCtrlUI(wx.ListCtrl):
         self.project = project
         self.image_list = wx.ImageList(16, 16)
         self.AppendColumn("", wx.LIST_FORMAT_CENTER, width=28)
-        self.AppendColumn("名称", width=200)
+        self.AppendColumn("名称", width=TS(200))
         self.AssignImageList(self.image_list, wx.IMAGE_LIST_SMALL)
 
 

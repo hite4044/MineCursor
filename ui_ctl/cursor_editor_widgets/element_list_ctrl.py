@@ -244,7 +244,7 @@ class ElementListCtrl(ElementListCtrlUI):
         render_text = get_text("渲染中")
         progress_dialog = wx.ProgressDialog("导出进度", render_text.format(0))
         frames = []
-        generator = render_project_gen(project)
+        generator = render_project_gen(project, for_export=True)
         progress_dialog.SetRange(project.frame_count)
         for i, frame in enumerate(generator):
             progress_dialog.Update(i, render_text.format(i))

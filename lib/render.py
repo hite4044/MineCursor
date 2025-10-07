@@ -11,24 +11,24 @@ NONE_MARGINS = Margins(0, 0, 0, 0)
 NONE_SCALE = Scale2D(1.0, 1.0)
 
 
-def render_project(project: CursorProject) -> list[Image.Image]:
+def render_project(project: CursorProject, for_export=False) -> list[Image.Image]:
     if not project.is_ani_cursor:
-        return [render_project_frame(project, 0)]
+        return [render_project_frame(project, 0, for_export)]
     frames = []
     for frame in range(project.frame_count):
-        frames.append(render_project_frame(project, frame))
+        frames.append(render_project_frame(project, frame, for_export))
     return frames
 
 
-def render_project_gen(project: CursorProject):
+def render_project_gen(project: CursorProject, for_export=False):
     if not project.is_ani_cursor:
-        yield render_project_frame(project, 0)
+        yield render_project_frame(project, 0, for_export)
         return
     for frame in range(project.frame_count):
-        yield render_project_frame(project, frame)
+        yield render_project_frame(project, frame, for_export)
 
 
-def render_project_frame(project: CursorProject, frame: int) -> Image.Image:
+def render_project_frame(project: CursorProject, frame: int, for_export=False) -> Image.Image:
     timer = Counter(create_start=True)
     canvas = Image.new("RGBA", project.raw_canvas_size, (255, 255, 255, 0))
     cnt = 0
@@ -57,7 +57,7 @@ def render_project_frame(project: CursorProject, frame: int) -> Image.Image:
                     frame_index %= element.sub_project.frame_count
                 if element.reverse_animation:
                     frame_index = element_frames - frame_index - 1
-                item = render_project_frame(sub_project, frame_index)
+                item = render_project_frame(sub_project, frame_index, False)
             else:
                 temp_index = element.get_frame_index(frame)
                 frame_index = temp_index % element_frames
@@ -134,7 +134,7 @@ def render_project_frame(project: CursorProject, frame: int) -> Image.Image:
             canvas.alpha_composite(item, (element.position[0] - x_off, element.position[1] - y_off))
         cnt += 1
     scaled_canvas = canvas.resize(project.canvas_size, project.resample)
-    if cnt == 0:
+    if cnt == 0 and for_export:
         scaled_canvas.putalpha(1)
     logger.debug(f"渲染第{str(frame).zfill(2)}帧耗时: {timer.endT()}")
     return scaled_canvas

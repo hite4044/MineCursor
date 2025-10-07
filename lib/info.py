@@ -1,11 +1,13 @@
-IS_PACKAGE_ENV = False
+from os.path import abspath, isfile
+
+IS_PACKAGE_ENV = isfile(abspath("../MineCursor.exe"))
 
 VERSION = "v1.3"
 PROJ_INFO = """\
-https://github.com/hite4044/MineCurso
+https://github.com/hite4044/MineCursor
 
 项目贡献者: hite4044
-我为这个项目投入了数百小时的时间, 有条件的话请Star吧！
+我为这个项目投入了成百小时的时间, 有条件的话请Star吧！
 
 项目开源协议: MPL-2.0
 

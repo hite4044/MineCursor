@@ -3,6 +3,7 @@ import sys
 import winreg
 from os.path import abspath, isdir, join, exists
 
+import pylnk3
 import wx
 
 from lib.config import config
@@ -46,15 +47,17 @@ class SettingsDialog(wx.Dialog):
         self.delete_filetype_btn = wx.Button(self, label="删除文件类型信息")
         self.open_sources_editor_btn = wx.Button(self, label="打开源编辑器")
         self.import_default_themes_btn = wx.Button(self, label="导入默认主题")
+        self.create_desktop_shortcut_btn = wx.Button(self, label="创建桌面快捷方式")
 
         sizer = wx.BoxSizer(wx.VERTICAL)
-        entries_sizer = wx.FlexGridSizer(len(self.entries) + 4, 2, 5, 5)
+        entries_sizer = wx.FlexGridSizer(len(self.entries) + 5, 2, 5, 5)
         entries_sizer.AddGrowableCol(1, 1)
         for entry in list(self.entries.values()) + [
             self.set_filetype_btn,
             self.delete_filetype_btn,
             self.open_sources_editor_btn,
-            self.import_default_themes_btn
+            self.import_default_themes_btn,
+            self.create_desktop_shortcut_btn
         ]:
             if isinstance(entry, DataEntry):
                 entries_sizer.Add(entry.label, 0, wx.EXPAND)
@@ -78,6 +81,7 @@ class SettingsDialog(wx.Dialog):
         self.delete_filetype_btn.Bind(wx.EVT_BUTTON, self.on_delete_filetype_info)
         self.open_sources_editor_btn.Bind(wx.EVT_BUTTON, self.on_open_sources_editor)
         self.import_default_themes_btn.Bind(wx.EVT_BUTTON, lambda _: self.import_default_themes())
+        self.create_desktop_shortcut_btn.Bind(wx.EVT_BUTTON, self.create_desktop_shortcut)
 
     def on_ok(self, _):
         for config_name, entry in self.entries.items():
@@ -174,3 +178,19 @@ class SettingsDialog(wx.Dialog):
                     continue
                 theme_manager.themes.remove(orig_theme)
             theme_manager.add_theme(theme)
+
+    @staticmethod
+    def create_desktop_shortcut(*args):
+        if IS_PACKAGE_ENV:
+            lnk = pylnk3.for_file(abspath("..\MineCursor.exe"), work_dir=abspath("."))
+        else:
+            lnk = pylnk3.for_file(abspath(sys.executable.replace("python.exe", "pythonw.exe")),
+                                  arguments=abspath("main.py"),
+                                  icon_file=abspath("assets/icon.ico"), work_dir=abspath("."))
+
+        import winreg
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
+                             r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders")
+        desktop_path = winreg.QueryValueEx(key, "Desktop")[0]
+        winreg.CloseKey(key)
+        lnk.save(join(desktop_path, "Mine Cursor.lnk"))

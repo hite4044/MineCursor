@@ -161,6 +161,20 @@ class ThemeEditor(ThemeEditorUI):
         self.Bind(EVT_THEME_SELECTED, lambda e: self.cursor_list.load_theme(e.theme))
         self.Bind(wx.EVT_CLOSE, self.on_close)
 
+        if config.first_launch:
+            wx.CallLater(3000, self.on_first_launch)
+
+    def on_first_launch(self):
+        dialog = AboutDialog(self)
+        dialog.Show()
+        ret = wx.MessageBox("初次见面, 是否导入默认主题包并创建桌面快捷方式?\n稍后可在设置导入", "这里是Mine Cursor！",
+                            wx.YES_NO | wx.ICON_QUESTION, dialog)
+        if ret == wx.YES:
+            SettingsDialog.create_desktop_shortcut()
+            SettingsDialog.import_default_themes()
+        config.first_launch = False
+        config.save_config()
+
     @staticmethod
     def on_close(event: wx.CloseEvent):
         """程序关闭前的动作"""
@@ -201,19 +215,6 @@ class ThemeSelector(PublicThemeSelector):
         target = ThemeFileDropTarget()
         target.on_drop_theme = self.on_drop_theme
         self.SetDropTarget(target)
-
-        if config.first_launch:
-            wx.CallLater(3000, self.on_first_launch)
-
-    def on_first_launch(self):
-        dialog = AboutDialog(self)
-        dialog.Show()
-        ret = wx.MessageBox("初次见面, 是否导入默认主题包?\n稍后可在设置导入", "这里是Mine Cursor！",
-                            wx.YES_NO | wx.ICON_QUESTION, dialog)
-        if ret == wx.YES:
-            SettingsDialog.import_default_themes()
-        config.first_launch = False
-        config.save_config()
 
     def on_key_down(self, event: wx.KeyEvent):
         if event.GetKeyCode() == ord("Z") and event.GetModifiers() == wx.MOD_CONTROL:

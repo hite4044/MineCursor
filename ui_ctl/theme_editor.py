@@ -4,7 +4,7 @@ import re
 import sys
 from enum import Enum
 from os import makedirs
-from os.path import join, isfile
+from os.path import join, isfile, expandvars, isdir
 from os.path import join as path_join
 from shutil import rmtree
 from threading import Thread
@@ -236,6 +236,25 @@ class ThemeSelector(PublicThemeSelector):
         target = ThemeFileDropTarget()
         target.on_drop_theme = self.on_drop_theme
         self.SetDropTarget(target)
+
+        self.drop_data = None
+        self.drop_source = wx.DropSource(self)
+        self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.OnDragInit)
+
+    def OnDragInit(self, _):
+        themes = [self.line_theme_mapping[index] for index in self.get_select_items()]
+        temp_dir = expandvars("%TEMP%/MineCursorDragTheme")
+        if isdir(temp_dir):
+            rmtree(temp_dir)
+        makedirs(temp_dir)
+
+        self.drop_data = wx.FileDataObject()
+        for theme in themes:
+            theme_path = join(temp_dir, f"{theme.name}.mctheme")
+            theme_manager.save_theme_file(theme_path, theme)
+            self.drop_data.AddFile(theme_path)
+        self.drop_source.SetData(self.drop_data)
+        self.drop_source.DoDragDrop(True)
 
     def on_key_down(self, event: wx.KeyEvent):
         if event.GetKeyCode() == ord("Z") and event.GetModifiers() == wx.MOD_CONTROL:

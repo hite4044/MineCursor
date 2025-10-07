@@ -119,16 +119,25 @@ def draw_project_frame(project: CursorProject, image: Image.Image, position: tup
         return
 
     if project.ani_rates:
-        project_frame_count = 0
         rates = project.real_ani_rates
-        for i, frame_time in enumerate(cycle(rates)):
-            if project_frame_count / 60 >= frame_count / FPS:
-                break
-            project_frame_count += frame_time
-    else:
-        project_frame_count = int(frame_count / project.ani_rate * FRAME_DIV) % project.frame_count
+        target_time = frame_count / FPS
+        loop_time = sum(rates) / 60
 
-    frame = render_project_frame(project, project_frame_count)
+        loop_times = int(target_time // loop_time)
+        target_time -= loop_times * loop_time
+        total_rate = 0
+        frame_index = -1
+        for i, frame_rate in enumerate(cycle(rates)):
+            if total_rate / 60 >= target_time:
+                break
+            total_rate += frame_rate
+            frame_index += 1
+        if frame_index == -1:
+            frame_index = 0
+    else:
+        frame_index = int(frame_count / project.ani_rate * FRAME_DIV) % project.frame_count
+
+    frame = render_project_frame(project, frame_index)
     frame = frame.resize((PROJECT_SIZE, PROJECT_SIZE), resample=Resampling.NEAREST)
     image.alpha_composite(frame, position)
 

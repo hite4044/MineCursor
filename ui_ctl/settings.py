@@ -1,10 +1,12 @@
 import os
 import sys
-import winreg
-from os.path import abspath, isdir, join, exists
+from os.path import abspath, isdir, join, exists, expandvars
 
 import pylnk3
+import pywintypes
 import wx
+from win32.lib.win32con import SW_SHOWNORMAL
+from win32comext.shell.shell import ShellExecuteEx
 
 from lib.config import config
 from lib.datas.data_dir import path_theme_data
@@ -77,8 +79,8 @@ class SettingsDialog(wx.Dialog):
 
         self.ok.Bind(wx.EVT_BUTTON, self.on_ok)
         self.cancel.Bind(wx.EVT_BUTTON, self.on_cancel)
-        self.set_filetype_btn.Bind(wx.EVT_BUTTON, self.on_set_filetype_info)
-        self.delete_filetype_btn.Bind(wx.EVT_BUTTON, self.on_delete_filetype_info)
+        self.set_filetype_btn.Bind(wx.EVT_BUTTON, self.set_filetype_info)
+        self.delete_filetype_btn.Bind(wx.EVT_BUTTON, self.delete_filetype_info)
         self.open_sources_editor_btn.Bind(wx.EVT_BUTTON, self.on_open_sources_editor)
         self.import_default_themes_btn.Bind(wx.EVT_BUTTON, lambda _: self.import_default_themes())
         self.create_desktop_shortcut_btn.Bind(wx.EVT_BUTTON, self.create_desktop_shortcut)
@@ -98,36 +100,28 @@ class SettingsDialog(wx.Dialog):
         editor = SourcesEditor(self)
         editor.ShowModal()
 
-    def on_set_filetype_info(self, _):
-        self.set_filetype_info(winreg.OpenKey(winreg.HKEY_CURRENT_USER, "SOFTWARE\Classes"))
+    def delete_filetype_info(self, *_):
+        with open("assets/file_type_remove.reg", encoding="utf-16le") as f:
+            context = f.read()
+        self.runas_reg(context)
 
-    def on_delete_filetype_info(self, _):
-        self.delete_filetype_info(winreg.OpenKey(winreg.HKEY_CURRENT_USER, "SOFTWARE\Classes"))
+    def set_filetype_info(self, *_):
+        icon = abspath("assets/icons/file_icons/ThemeFile.ico")
+        open_cmd = self.get_shell_cmd()
+        with open("assets/file_type_add.reg", encoding="utf-16le") as f:
+            context = f.read()
+        context = context.format(icon, open_cmd.replace('"', '\\"'))
+        self.runas_reg(context)
 
     @staticmethod
-    def delete_filetype_info(parent_key: int | winreg.HKEYType):
-        names = [".mctheme", ".rmctheme"]
-        for name in names:
-            winreg.DeleteKey(parent_key, name)
-        winreg.DeleteKey(parent_key, "MineCursor.ThemeFile")
-
-    def set_filetype_info(self, parent_key: int | winreg.HKEYType, write_cls: bool = True):
-        names = [".mctheme", ".rmctheme"]
-        for name in names:
-            cls_root = winreg.CreateKeyEx(parent_key, name, 0, winreg.KEY_WRITE)
-            winreg.SetValueEx(cls_root, None, 0, winreg.REG_SZ, "MineCursor.ThemeFile")
-
-        if not write_cls:
-            return
-        cls_root = winreg.CreateKeyEx(parent_key, f"MineCursor.ThemeFile", access=winreg.KEY_WRITE)
-        winreg.SetValueEx(cls_root, None, 0, winreg.REG_SZ, "MineCursor 主题文件")
-        default_icon = winreg.CreateKeyEx(cls_root, "DefaultIcon", access=winreg.KEY_WRITE)
-        winreg.SetValueEx(default_icon, None, 0, winreg.REG_SZ, abspath("assets/icons/file_icons/ThemeFile.ico"))
-        shell = winreg.CreateKeyEx(cls_root, "shell", access=winreg.KEY_WRITE)
-        open_key = winreg.CreateKeyEx(shell, "open", access=winreg.KEY_WRITE)
-        winreg.SetValueEx(open_key, "FriendlyAppName", 0, winreg.REG_SZ, "MineCursor")
-        command_key = winreg.CreateKeyEx(open_key, "command", access=winreg.KEY_WRITE)
-        winreg.SetValueEx(command_key, None, 0, winreg.REG_SZ, self.get_shell_cmd())
+    def runas_reg(context: str):
+        temp_file = expandvars("%TEMP%\\MineCursor-file-type.reg")
+        with open(temp_file, "w", encoding="utf-16-le") as f:
+            f.write(context)
+        try:
+            ShellExecuteEx(lpVerb="runas", lpFile="regedit.exe", lpParameters=temp_file, nShow=SW_SHOWNORMAL)
+        except pywintypes.error:
+            wx.MessageBox("需要授予管理员权限以进行注册表更改", "错误", wx.OK | wx.ICON_INFORMATION)
 
     @staticmethod
     def get_shell_cmd():

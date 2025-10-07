@@ -2,7 +2,7 @@
 
 # _MineCursor_
 
-### 使用MC游戏素材自定义你的鼠标指针！
+### 使用 MC _&_ Mod 贴图制作鼠标指针！
 
 ---
 [编程指导.md](program.md)
@@ -16,7 +16,7 @@
 
 ## 如何运行项目
 
-#### [下载最新构建版本](https://github.com/hite4044/MineCursor/releases/latest)
+### [下载最新构建版本](https://github.com/hite4044/MineCursor/releases/latest)
 
 ### 从源代码运行
 
@@ -52,5 +52,17 @@ Python 3.10.9
 
 ## 画廊
 
-![Main GUI](readme_assets/Main%20GUI.png)
-![Project Editor](readme_assets/Project%20Editor.png)
+### 主界面
+![主界面](readme_assets/主界面.png)
+
+### 项目编辑器
+![项目编辑器](readme_assets/指针编辑器.png)
+
+### 新增元素
+![新增元素](readme_assets/新增元素.png)
+
+### 遮罩编辑器
+![遮罩编辑器](readme_assets/遮罩编辑器.png)
+
+### 关于
+![关于](readme_assets/关于.png)

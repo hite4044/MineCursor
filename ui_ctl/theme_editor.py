@@ -1,9 +1,10 @@
 import json
 import os
 import re
+import sys
 from enum import Enum
 from os import makedirs
-from os.path import join
+from os.path import join, isfile
 from os.path import join as path_join
 from shutil import rmtree
 from threading import Thread
@@ -163,6 +164,26 @@ class ThemeEditor(ThemeEditorUI):
 
         if config.first_launch:
             wx.CallLater(3000, self.on_first_launch)
+
+        if len(sys.argv) > 1 and isfile(sys.argv[1]):
+            wx.CallLater(1000, self.on_import_argv_file)
+
+    def on_import_argv_file(self):
+        ret = wx.MessageBox("是否导入打开的主题文件?", "提示", wx.YES_NO | wx.ICON_QUESTION)
+        if ret != wx.YES:
+            return
+
+        try:
+            info = theme_manager.load_theme(sys.argv[1])
+        except Exception as e:
+            wx.MessageBox(f"导入主题文件时出错: {e.__qualname__}: {e}", "错误", wx.OK | wx.ICON_ERROR)
+            return
+
+        self.theme_selector.reload_themes()
+        res_map = {v: k for k,v in self.theme_selector.line_theme_mapping.items()}
+        if info.theme in res_map:
+            line = res_map[info.theme]
+            self.theme_selector.Select(line, True)
 
     def on_first_launch(self):
         dialog = AboutDialog(self)

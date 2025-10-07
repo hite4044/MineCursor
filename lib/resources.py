@@ -105,6 +105,7 @@ class ThemeLoadInfo:
     theme_data: str = None
     zip_io: BytesIO = None
     extra_sources: list[AssetSource] = None
+    theme: CursorTheme = None
 
 
 class ThemeManager:
@@ -179,6 +180,7 @@ class ThemeManager:
         self.add_theme(theme)
         if file_mapping:
             self.theme_file_mapping[theme] = file_path
+        info.theme = theme
         return info
 
     @staticmethod

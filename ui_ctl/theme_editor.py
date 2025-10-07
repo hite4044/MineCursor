@@ -392,8 +392,16 @@ class ThemeSelector(PublicThemeSelector):
                 list(write_cursor_progress(fp, frames, project))
                 file_map[project.kind] = file_name
             ini = CursorInstINIGenerator.generate(theme, file_map)
-            with open(path_join(dir_path, "~右键安装.inf"), "w", encoding="gbk") as f:
-                f.write(ini)
+            try:
+                with open(path_join(dir_path, "~右键安装.inf"), "w", encoding="gbk") as f:
+                    f.write(ini)
+            except UnicodeEncodeError:
+                with open(path_join(dir_path, "~右键安装-utf-8.txt"), "w", encoding="utf-8") as f:
+                    f.write(ini)
+                wx.MessageBox("以gbk编码保存自动安装INI时发生编码错误\n"
+                              "请检查文字有没有特殊Unicode符号\n"
+                              "相关安装脚本已保存到 [~右键安装-utf-8.txt]",
+                              "错误", wx.OK | wx.ICON_ERROR)
 
     def on_import_theme_prop(self):
         dialog = wx.FileDialog(self, "导入主题",

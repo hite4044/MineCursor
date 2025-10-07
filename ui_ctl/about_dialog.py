@@ -22,11 +22,12 @@ class AboutDialog(wx.Dialog):
             self.SetFont(parent.GetFont())
 
         self.icon = wx.StaticBitmap(self, bitmap=PilImg2WxImg(Image.open(r"assets\icon.png").resize((128, 128))))
-        self.title = CenteredText(self, label=f"MineCursor {VERSION}", x_center=True, y_center=False)
+        self.title = CenteredText(self, label=f"       MineCursor {VERSION}       ", x_center=True, y_center=False)
         self.open_project_github = wx.Button(self, label="项目Github主页")
         self.info = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_READONLY)
         self.title.SetFont(ft(36))
         self.open_project_github.SetFont(ft(18))
+        self.info.SetFont(ft(10))
         self.info.SetValue(PROJ_INFO)
         self.info.SetMinSize((-1, 400))
 

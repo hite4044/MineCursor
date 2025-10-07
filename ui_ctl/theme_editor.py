@@ -11,6 +11,7 @@ from threading import Thread
 from typing import cast
 
 import wx
+from PIL.Image import Resampling
 
 from lib.config import config
 from lib.cursor.inst_ini_gen import CursorInstINIGenerator
@@ -22,6 +23,7 @@ from lib.datas.base_struct import AssetType
 from lib.datas.project import CursorProject
 from lib.datas.source import AssetSource, SourceNotFoundError
 from lib.log import logger
+from lib.perf import Counter
 from lib.render import render_project
 from lib.resources import theme_manager, ThemeAction, deleted_theme_manager, ThemeFileType
 from ui.select import select_all
@@ -158,7 +160,7 @@ class ThemeEditor(ThemeEditorUI):
 
     def __init__(self, parent: wx.Window | None):
         super().__init__(parent)
-        set_multi_size_icon(self, r"assets\icon.png")
+        self.SetIcons(wx.IconBundle("assets/icon.ico"))
         self.Bind(EVT_THEME_SELECTED, lambda e: self.cursor_list.load_theme(e.theme))
         self.Bind(wx.EVT_CLOSE, self.on_close)
 

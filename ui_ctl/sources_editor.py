@@ -10,6 +10,7 @@ from lib.config import config
 from lib.data import source_manager, AssetSource
 from lib.datas.base_struct import generate_id
 from lib.datas.data_dir import path_user_sources
+from lib.dpi import TS
 from lib.image_pil2wx import PilImg2WxImg
 from lib.source_cvt import load_jar2source, load_zip2source
 from widget.data_dialog import DataDialog, DataLineParam, DataLineType
@@ -51,7 +52,7 @@ class SourcesEditor(wx.Dialog):
     ICON_SIZE = 128
 
     def __init__(self, parent: wx.Window):
-        super().__init__(parent, title="素材源编辑器", size=(700, 700), style=wx.DEFAULT_FRAME_STYLE)
+        super().__init__(parent, title="素材源编辑器", size=TS(700, 700), style=wx.DEFAULT_FRAME_STYLE)
         set_multi_size_icon(self, "assets/icons/source/source.png")
         self.on_loading_source = False
 

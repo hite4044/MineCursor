@@ -2,6 +2,7 @@ from typing import cast
 
 import wx
 
+from lib.dpi import TS
 from lib.ui_interface import ui_class
 from ui.theme_editor import PublicThemeSelectorUI
 from ui_ctl.public_list_ctl import PublicThemeCursorList
@@ -11,7 +12,7 @@ from widget.widget_pad import PadDir, pad
 
 class ThemeCreatorUI(wx.Dialog):
     def __init__(self, parent: wx.Window):
-        super().__init__(parent, size=(1120, 715), title="合成主题", style=wx.DEFAULT_FRAME_STYLE)
+        super().__init__(parent, size=TS(1120, 715), title="合成主题", style=wx.DEFAULT_FRAME_STYLE)
         self.SetFont(parent.GetFont())
 
         self.ok_btn = wx.Button(self, label="确定")

@@ -1,5 +1,6 @@
 import wx
 
+from lib.dpi import TS, SCALE
 from lib.ui_interface import ui_class
 from ui.public_list_ctl import PublicThemeCursorListUI, PublicThemeSelectorUI
 from widget.font import ft
@@ -8,7 +9,7 @@ from widget.font import ft
 
 class ThemeEditorUI(wx.Frame):
     def __init__(self, parent: wx.Window | None):
-        super().__init__(parent, title="Mine Cursor", size=(1183, 625))
+        super().__init__(parent, title="Mine Cursor", size=TS(1183, 625))
         self.SetFont(ft(11))
 
         self.splitter = wx.SplitterWindow(self)
@@ -21,7 +22,7 @@ class ThemeEditorUI(wx.Frame):
         self.cursor_list_outbox.SetSizer(list_sizer)
 
         self.splitter.SplitVertically(self.theme_selector, self.cursor_list_outbox)
-        self.splitter.SetSashPosition(450)
+        self.splitter.SetSashPosition(int(450 * SCALE))
         wx.CallLater(500, self.splitter.SetMinimumPaneSize, 50)
 
 

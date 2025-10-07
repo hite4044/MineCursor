@@ -41,7 +41,7 @@ class DataLineParam:
 
 class DataDialog(wx.Dialog):
     def __init__(self, parent: wx.Window | None, title: str, *params: DataLineParam):
-        super().__init__(parent, title=title, size=(500, 500), style=wx.DEFAULT_FRAME_STYLE)
+        super().__init__(parent, title=title, style=wx.DEFAULT_FRAME_STYLE)
         if parent:
             self.SetFont(parent.GetFont())
         self.datas: dict[str, DataType] = {}

@@ -2,6 +2,7 @@ import wx
 
 from lib.cursor.setter import CursorKind
 from lib.data import CursorElement, AssetType, source_manager, AssetSourceInfo
+from lib.dpi import TS
 from lib.image_pil2wx import PilImg2WxImg
 from ui_ctl.element_add_dialog import ElementAddDialog, ElementSelectList, RectElementSource, ImageElementSource
 from widget.ect_menu import EtcMenu
@@ -15,7 +16,7 @@ class C_ElementSelectList(ElementSelectList):
 
 class SourceInfoEditDialog(wx.Dialog):
     def __init__(self, parent: wx.Window, element: CursorElement, proj_kind: CursorKind):
-        super().__init__(parent, title="编辑元素源信息", size=(1196, 795), style=wx.DEFAULT_FRAME_STYLE)
+        super().__init__(parent, title="编辑元素源信息", size=TS(1196, 795), style=wx.DEFAULT_FRAME_STYLE)
         self.SetFont(parent.GetFont())
         set_multi_size_icon(self, "assets/icons/element/edit_info.png")
         self.element = element

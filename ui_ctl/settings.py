@@ -53,6 +53,7 @@ class SettingsDialog(wx.Dialog):
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         entries_sizer = wx.FlexGridSizer(len(self.entries) + 5, 2, 5, 5)
+        entries_sizer.SetFlexibleDirection(wx.HORIZONTAL)
         entries_sizer.AddGrowableCol(1, 1)
         for entry in list(self.entries.values()) + [
             self.set_filetype_btn,

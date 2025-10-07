@@ -6,6 +6,7 @@ from wx.core import EVT_SLIDER
 
 from lib.cursor.setter import CURSOR_KIND_NAME_OFFICIAL
 from lib.data import CursorProject, ReverseWay
+from lib.dpi import TS
 from lib.ui_interface import ui_class
 from ui_ctl.cursor_editor_widgets.events import AnimationModeChangeEvent, AnimationMode
 from widget.center_text import CenteredText
@@ -23,7 +24,7 @@ ID_SCALE = 5
 
 class CursorEditorUI(wx.Frame):
     def __init__(self, parent: wx.Window, project: CursorProject):
-        super().__init__(parent, size=(1220, 720),
+        super().__init__(parent, size=TS(1220, 720),
                          title=f"光标项目编辑器 - {project.name if project.name else project.kind.kind_name}")
         self.SetFont(ft(11))
 
@@ -161,6 +162,7 @@ def load_group_raw(defines: GroupData, sizer: wx.Sizer, parent: wx.Window) -> li
     panel.Collapse(is_collapse)
     sizer_out = wx.BoxSizer(wx.HORIZONTAL)
     collapse_sizer = wx.FlexGridSizer(len(defines[1]), 2, 5, 5)
+    collapse_sizer.SetFlexibleDirection(wx.HORIZONTAL)
     collapse_sizer.AddGrowableCol(1, 1)
     entries = []
     for index in range(len(defines[1])):
@@ -340,6 +342,7 @@ class ProjectInfoEditorUI(wx.Panel):
 
         grid_sizer = wx.FlexGridSizer(10, 2, 5, 5)
         grid_sizer.AddGrowableCol(1, 1)
+        grid_sizer.SetFlexibleDirection(wx.HORIZONTAL)
         widget_list = [
             self.name,
             self.external_name,

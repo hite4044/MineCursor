@@ -1,5 +1,6 @@
 import wx
 
+from lib.dpi import TS
 from widget.editable_listctrl import EditableListCtrl
 
 
@@ -31,9 +32,9 @@ class PublicThemeSelectorUI(EditableListCtrl):
     def __init__(self, parent: wx.Window):
         super().__init__(parent, style=wx.LC_REPORT | wx.NO_BORDER)
 
-        self.InsertColumn(1, "主题", width=180)
-        self.AppendColumn("大小", width=50, format=wx.LIST_FORMAT_CENTER)
-        self.AppendColumn("作者", width=100)
-        self.AppendColumn("描述", width=300)
+        self.InsertColumn(1, "主题", width=TS(180))
+        self.AppendColumn("大小", width=TS(50), format=wx.LIST_FORMAT_CENTER)
+        self.AppendColumn("作者", width=TS(100))
+        self.AppendColumn("描述", width=TS(300))
 
         self.EnableColumnEdit(0)

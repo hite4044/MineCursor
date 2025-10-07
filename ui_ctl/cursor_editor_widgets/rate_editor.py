@@ -1,13 +1,14 @@
 import wx
 
 from lib.data import CursorProject
+from lib.dpi import TS
 from widget.editable_listctrl import EditableListCtrl
 from widget.win_icon import set_multi_size_icon
 
 
 class RateEditor(wx.Frame):
     def __init__(self, parent: wx.Window, project: CursorProject):
-        super().__init__(parent, title="帧率编辑", size=(320, 670), style=wx.DEFAULT_FRAME_STYLE)
+        super().__init__(parent, title="帧率编辑", size=TS(320, 670), style=wx.DEFAULT_FRAME_STYLE)
         assert project.frame_count is not None
         self.SetFont(parent.GetFont())
         set_multi_size_icon(self, "assets/icons/project/rate_editor.png")

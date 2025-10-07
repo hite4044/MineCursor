@@ -10,6 +10,7 @@ from lib.clipboard import ClipBoard
 from lib.config import config
 from lib.cursor.setter import CURSOR_KIND_NAME_CUTE, CURSOR_KIND_NAME_OFFICIAL, CursorKind
 from lib.data import CursorTheme, CursorProject, INVALID_FILENAME_CHAR, ThemeType
+from lib.dpi import BL_SIZE
 from lib.image_pil2wx import PilImg2WxImg
 from lib.log import logger
 from lib.render import render_project_frame
@@ -237,7 +238,7 @@ def mk_end(li: list):
 
 
 class PublicThemeCursorList(PublicThemeCursorListUI):
-    ICON_SIZE = 96
+    ICON_SIZE = BL_SIZE
 
     def __init__(self, parent: wx.Window):
         super().__init__(parent)

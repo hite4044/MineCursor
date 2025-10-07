@@ -68,7 +68,9 @@ class MineCursorLauncher:
     @staticmethod
     def program_prepare():
         faulthandler.enable()
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("MineCursor")
+        import lib.dpi
+        lib.dpi.Y_SCALE = lib.dpi.Y_SCALE  # 保持引用
+        ctypes.WinDLL('shell32').SetCurrentProcessExplicitAppUserModelID("MineCursor")
 
     @staticmethod
     def run_app():

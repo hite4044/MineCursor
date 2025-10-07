@@ -7,6 +7,7 @@ from PIL import ImageDraw
 from PIL.Image import Resampling, Transpose
 
 from lib.clipboard import PUBLIC_MASK_CLIPBOARD
+from lib.dpi import TS
 from lib.image_pil2wx import PilImg2WxImg
 from widget.center_text import CenteredText
 from widget.data_dialog import DataDialog, DataLineParam, DataLineType
@@ -145,7 +146,7 @@ ID_SCALE = 3
 
 class MaskEditor(wx.Dialog):
     def __init__(self, parent: wx.Window, mask: Image.Image, background: Image.Image | None = None):
-        super().__init__(parent, title="编辑遮罩", size=(870, 720), style=wx.DEFAULT_FRAME_STYLE)
+        super().__init__(parent, title="编辑遮罩", size=TS(870, 720), style=wx.DEFAULT_FRAME_STYLE)
         if parent:
             self.SetFont(parent.GetFont())
         set_multi_size_icon(self, "assets/icons/element/edit_mask.png")

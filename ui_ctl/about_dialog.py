@@ -16,7 +16,7 @@ def open_github(_):
 
 class AboutDialog(wx.Dialog):
     def __init__(self, parent: wx.Window):
-        super().__init__(parent, title=f"MineCursor {VERSION} - 关于", size=(420, 520),
+        super().__init__(parent, title=f"MineCursor {VERSION} - 关于",
                          style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
         if parent:
             self.SetFont(parent.GetFont())

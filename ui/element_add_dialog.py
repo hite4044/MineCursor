@@ -4,6 +4,7 @@ from PIL.Image import Resampling
 
 from lib.cursor.setter import CursorKind
 from lib.data import AssetSource
+from lib.dpi import TS
 from widget.center_text import CenteredText
 from widget.data_entry import StringEntry, IntEntry, EnumEntry
 from widget.font import ft
@@ -12,7 +13,7 @@ from widget.no_tab_notebook import NoTabNotebook
 
 class ElementAddDialogUI(wx.Dialog):
     def __init__(self, parent: wx.Window):
-        super().__init__(parent, size=(1200, 800), title="添加素材", style=wx.DEFAULT_FRAME_STYLE)
+        super().__init__(parent, size=TS(1200, 800), title="添加素材", style=wx.DEFAULT_FRAME_STYLE)
         self.SetFont(parent.GetFont())
         self.sources_notebook = wx.Notebook(self)
         self.ok = wx.Button(self, label="确定")

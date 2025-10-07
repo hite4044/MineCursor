@@ -85,7 +85,7 @@ class DataEntry(wx.Panel):
             self.SetSizer(self.sizer)
 
         # self.label.SetMinSize((-1, 28))
-        self.entry.SetMinSize((-1, 28))
+        # self.entry.SetMinSize((-1, 28))
 
     def after_task_func(self):
         for task in self.after_tasks:

@@ -115,7 +115,7 @@ def render_project_frame(project: CursorProject, frame: int, for_export=False) -
                     x_off, y_off = (item.width - size[0]) // 2, (item.height - size[1]) // 2
 
         element.final_rect = (element.position[0] - x_off, element.position[1] - y_off, item.width, item.height)
-        element.final_image = item
+        element.final_image = item.copy()
         if oper_cnt == 0:
             item = item.copy()
         if element.mask is not None and element.mask.size != item.size and element.allow_mask_scale:

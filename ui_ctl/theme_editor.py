@@ -36,6 +36,7 @@ from ui_ctl.theme_creator import ThemeCreator
 from widget.adv_progress_dialog import AdvancedProgressDialog
 from widget.data_dialog import DataDialog, DataLineParam, DataLineType
 from widget.ect_menu import EtcMenu
+from widget.font import ft
 from widget.win_icon import set_multi_size_icon
 
 
@@ -110,6 +111,9 @@ class ThemeDataDialog(DataDialog):
             params.append(DataLineParam("license_info", "协议信息", DataLineType.STRING,
                                         theme.license_info, multilined=True))
         super().__init__(parent, "创建主题" if is_create else "编辑主题", *params)
+        if not is_create:
+            self.entries[-2].entry.SetFont(ft(10))
+            self.entries[-1].entry.SetFont(ft(10))
         self.is_create = is_create
         if is_create:
             self.set_icon("theme/add.png")

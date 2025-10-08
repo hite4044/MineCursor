@@ -50,7 +50,7 @@ class ElementAddDialog(ElementAddDialogUI):
         source: AssetSource
         for source in source_manager.sources:
             if not source.id in config.enabled_sources:
-                return
+                continue
             selector = ui_class(ElementSelectListUI)(self.sources_notebook, source, cursor_kind)
             self.sources_notebook.AddPage(selector, source.name, select=(source == source_manager.DEFAULT))
         self.rect_element_source = RectElementSource(self.sources_notebook)

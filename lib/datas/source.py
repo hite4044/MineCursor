@@ -107,6 +107,8 @@ class AssetSourceManager:
 
         if config.enabled_sources is None:
             config.enabled_sources = [source.id for source in self.sources]
+        else:
+            config.enabled_sources = list(set(config.enabled_sources))
 
     def load_zip(self, source_id: str):
         """加载素材源的资源压缩包, 缓存避免重复打开"""

@@ -70,6 +70,7 @@ class SourcesEditor(wx.Dialog):
         self.ctrl.Bind(wx.EVT_RIGHT_DOWN, self.on_menu)
         self.ctrl.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_menu)
         self.ctrl.Bind(wx.EVT_LIST_ITEM_CHECKED, self.on_item_check)
+        self.ctrl.Bind(wx.EVT_LIST_ITEM_UNCHECKED, self.on_item_check)
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu)
         self.Bind(wx.EVT_CLOSE, self.on_close)
 
@@ -115,15 +116,18 @@ class SourcesEditor(wx.Dialog):
         self.PopupMenu(menu)
 
     def on_item_check(self, event: wx.ListEvent):
+        event.Skip()
         if self.on_loading_source:
             return
         item = event.GetIndex()
         source = self.line_to_source[item]
 
-        if self.ctrl.IsItemChecked(item) and source.id not in config.enabled_sources:
-            config.enabled_sources.append(source.id)
-        elif source.id in config.enabled_sources:
-            config.enabled_sources.remove(source.id)
+        if self.ctrl.IsItemChecked(item):
+            if source.id not in config.enabled_sources:
+                config.enabled_sources.append(source.id)
+        else:
+            while source.id in config.enabled_sources:
+                config.enabled_sources.remove(source.id)
 
         self.load_sources()
 

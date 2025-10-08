@@ -142,7 +142,7 @@ class SettingsDialog(wx.Dialog):
         open_cmd = self.get_shell_cmd()
         with open("assets/file_type_add.reg", encoding="utf-16le") as f:
             context = f.read()
-        context = context.format(icon, open_cmd.replace('"', '\\"').replace('\\', '\\\\'))
+        context = context.format(icon, open_cmd.replace('\\', '\\\\')).replace('"', '\\"')
         self.runas_reg(context)
 
     @staticmethod

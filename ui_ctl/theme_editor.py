@@ -182,7 +182,7 @@ class ThemeEditor(ThemeEditorUI):
         try:
             info = theme_manager.load_theme(sys.argv[1])
         except Exception as e:
-            wx.MessageBox(f"导入主题文件时出错: {e.__qualname__}: {e}", "错误", wx.OK | wx.ICON_ERROR)
+            wx.MessageBox(f"导入主题文件时出错: {e.__class__.__qualname__}: {e}", "错误", wx.OK | wx.ICON_ERROR)
             return
 
         self.theme_selector.reload_themes()

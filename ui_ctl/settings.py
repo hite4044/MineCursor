@@ -1,12 +1,12 @@
+import ctypes
 import os
 import sys
+from ctypes import wintypes
 from os.path import abspath, isdir, join, exists, expandvars
 
 import pylnk3
-import pywintypes
 import wx
-from win32.lib.win32con import SW_SHOWNORMAL
-from win32comext.shell.shell import ShellExecuteEx
+from win32con import SW_SHOWNORMAL
 
 from lib.config import config
 from lib.datas.data_dir import path_theme_data
@@ -17,6 +17,32 @@ from lib.resources import theme_manager
 from ui_ctl.sources_editor import SourcesEditor
 from widget.data_entry import DataEntry
 from widget.win_icon import set_multi_size_icon
+
+
+class SHELL_EXEC_INFO_W(ctypes.Structure):
+        _fields_ = [
+            ("cbSize", ctypes.c_uint32),
+            ("fMask", ctypes.c_ulong),
+            ("hwnd", ctypes.c_void_p),
+            ("lpVerb", ctypes.c_wchar_p),
+            ("lpFile", ctypes.c_wchar_p),
+            ("lpParameters", ctypes.c_wchar_p),
+            ("lpDirectory", ctypes.c_wchar_p),
+            ("nShow", ctypes.c_int),
+            ("hInstApp", ctypes.c_void_p),
+            ("lpIDList", ctypes.c_void_p),
+            ("lpClass", ctypes.c_wchar_p),
+            ("hkeyClass", ctypes.c_void_p),
+            ("dwHotKey", ctypes.c_uint32),
+            ("DUMMYUNIONNAME", ctypes.c_void_p),
+            ("hProcess", ctypes.c_void_p),
+        ]
+
+ShellExecuteExW = ctypes.WinDLL("shell32").ShellExecuteExW
+ShellExecuteExW.argtypes = (
+    ctypes.POINTER(SHELL_EXEC_INFO_W),
+)
+ShellExecuteExW.restype = wintypes.BOOL
 
 LABEL_MAP = {
     "show_hidden_themes": "显示隐藏主题",
@@ -120,9 +146,19 @@ class SettingsDialog(wx.Dialog):
         with open(temp_file, "w", encoding="utf-16-le") as f:
             f.write(context)
         try:
-            ShellExecuteEx(lpVerb="runas", lpFile="regedit.exe", lpParameters=temp_file, nShow=SW_SHOWNORMAL)
-        except pywintypes.error:
-            wx.MessageBox("需要授予管理员权限以进行注册表更改", "错误", wx.OK | wx.ICON_INFORMATION)
+            SEE_MASK_NOCLOSEPROCESS = 64
+            sei = SHELL_EXEC_INFO_W()
+            sei.cbSize = ctypes.sizeof(sei)
+            sei.lpVerb="runas"
+            sei.lpFile="regedit.exe"
+            sei.lpParameters=temp_file
+            sei.nShow=SW_SHOWNORMAL
+            sei.fMask=SEE_MASK_NOCLOSEPROCESS
+            if not ShellExecuteExW(ctypes.byref(sei)):
+                raise ctypes.WinError()
+        except OSError as e:
+            wx.MessageBox(f"需要授予管理员权限以进行注册表更改\n{e.__class__.__qualname__}: {e}",
+                          "错误", wx.OK | wx.ICON_INFORMATION)
 
     @staticmethod
     def get_shell_cmd():
@@ -175,7 +211,7 @@ class SettingsDialog(wx.Dialog):
             theme_manager.add_theme(theme)
 
     @staticmethod
-    def create_desktop_shortcut(*args):
+    def create_desktop_shortcut(*_):
         if IS_PACKAGE_ENV:
             lnk = pylnk3.for_file(abspath("..\MineCursor.exe"), work_dir=abspath("."))
         else:

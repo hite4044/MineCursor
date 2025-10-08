@@ -73,7 +73,8 @@ class DataEntry(wx.Panel):
             else:
                 self.entry.Bind(wx.EVT_SET_FOCUS, self.on_start_edit)
                 self.entry.Bind(wx.EVT_KILL_FOCUS, self.on_focus_lost)
-                self.entry.Bind(wx.EVT_TEXT_ENTER, self.on_enter_press)
+                if not multilined:
+                    self.entry.Bind(wx.EVT_TEXT_ENTER, self.on_enter_press)
             if data_type in [int, float]:
                 self.entry.Bind(wx.EVT_MOUSEWHEEL, self.on_mouse_wheel)
 

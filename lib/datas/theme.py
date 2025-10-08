@@ -9,9 +9,6 @@ from lib.t_struct import ThemeType
 DEFAULT_NOTE = """这个人或许不想写备注"""
 
 DEFAULT_LICENSE_INFO = """\
-主题提供协议 - CC BY-NC-SA 4.0:
-https://creativecommons.org/licenses/by-nc-sa/4.0/
-
 此主题使用的部分游戏资源, 遵循此条款:
 https://www.minecraft.net/usage-guidelines
 """

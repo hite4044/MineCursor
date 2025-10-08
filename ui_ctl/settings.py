@@ -2,18 +2,20 @@ import ctypes
 import os
 import sys
 from ctypes import wintypes
-from os.path import abspath, isdir, join, exists, expandvars
+from os import makedirs
+from os.path import abspath, isdir, join, exists, expandvars, isfile
+from shutil import rmtree
 
 import pylnk3
 import wx
 from win32con import SW_SHOWNORMAL
 
 from lib.config import config
-from lib.datas.data_dir import path_theme_data
+from lib.datas.data_dir import path_theme_data, path_deleted_theme_data
 from lib.datas.source import SourceNotFoundError
 from lib.info import IS_PACKAGE_ENV
 from lib.log import logger
-from lib.resources import theme_manager
+from lib.resources import theme_manager, deleted_theme_manager
 from ui_ctl.sources_editor import SourcesEditor
 from widget.data_entry import DataEntry
 from widget.win_icon import set_multi_size_icon
@@ -76,9 +78,10 @@ class SettingsDialog(wx.Dialog):
         self.open_sources_editor_btn = wx.Button(self, label="打开源编辑器")
         self.import_default_themes_btn = wx.Button(self, label="导入默认主题")
         self.create_desktop_shortcut_btn = wx.Button(self, label="创建桌面快捷方式")
+        self.clear_deleted_themes_btn = wx.Button(self, label="清空已删除主题")
 
         sizer = wx.BoxSizer(wx.VERTICAL)
-        entries_sizer = wx.FlexGridSizer(len(self.entries) + 5, 2, 5, 5)
+        entries_sizer = wx.FlexGridSizer(len(self.entries) + 6, 2, 5, 5)
         entries_sizer.SetFlexibleDirection(wx.HORIZONTAL)
         entries_sizer.AddGrowableCol(1, 1)
         for entry in list(self.entries.values()) + [
@@ -86,7 +89,8 @@ class SettingsDialog(wx.Dialog):
             self.delete_filetype_btn,
             self.open_sources_editor_btn,
             self.import_default_themes_btn,
-            self.create_desktop_shortcut_btn
+            self.create_desktop_shortcut_btn,
+            self.clear_deleted_themes_btn,
         ]:
             if isinstance(entry, DataEntry):
                 entries_sizer.Add(entry.label, 0, wx.EXPAND)
@@ -111,6 +115,7 @@ class SettingsDialog(wx.Dialog):
         self.open_sources_editor_btn.Bind(wx.EVT_BUTTON, self.on_open_sources_editor)
         self.import_default_themes_btn.Bind(wx.EVT_BUTTON, lambda _: self.import_default_themes())
         self.create_desktop_shortcut_btn.Bind(wx.EVT_BUTTON, self.create_desktop_shortcut)
+        self.clear_deleted_themes_btn.Bind(wx.EVT_BUTTON, self.clear_deleted_themes)
 
     def on_ok(self, _):
         for config_name, entry in self.entries.items():
@@ -225,3 +230,15 @@ class SettingsDialog(wx.Dialog):
         desktop_path = winreg.QueryValueEx(key, "Desktop")[0]
         winreg.CloseKey(key)
         lnk.save(join(desktop_path, "Mine Cursor.lnk"))
+
+    @staticmethod
+    def clear_deleted_themes(*_):
+        ret = wx.MessageBox("此操作将删除所有已删除的主题\n%APPDATA%\..\Mine Cursor\Deleted Theme Backup, 是否继续?", "提示", wx.YES_NO | wx.ICON_QUESTION)
+        if ret != wx.YES:
+            return
+        deleted_theme_manager.themes.clear()
+        deleted_theme_manager.theme_file_mapping.clear()
+        for file in os.listdir(path_deleted_theme_data):
+            fp = join(path_deleted_theme_data, file)
+            if file.endswith(".mctheme") and isfile(fp):
+                os.remove(fp)

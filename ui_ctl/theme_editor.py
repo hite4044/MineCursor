@@ -275,7 +275,11 @@ class ThemeSelector(PublicThemeSelector):
             return
         stacks = self.themes_has_deleted.pop(-1)
         for index, theme in stacks[::-1]:
-            deleted_theme_manager.remove_theme(theme)
+            try:
+                deleted_theme_manager.remove_theme(theme)
+            except ValueError:
+                self.themes_has_deleted.clear()
+                return
             if theme in theme_manager.themes:
                 theme.refresh_id()
             theme_manager.themes.insert(index, theme)

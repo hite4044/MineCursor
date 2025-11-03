@@ -247,6 +247,10 @@ class ThemeSelector(PublicThemeSelector):
         self.drop_source = wx.DropSource(self)
         self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.OnDragInit)
 
+    def on_copy_theme(self):
+        if theme_id := self.clip_on_get_copy_data():
+            self.clip_on_set_copy_data(theme_id)
+
     def OnDragInit(self, _):
         themes = [self.line_theme_mapping[index] for index in self.get_select_items()]
         temp_dir = expandvars("%TEMP%/MineCursorDragTheme")
@@ -300,6 +304,8 @@ class ThemeSelector(PublicThemeSelector):
         menu.Append("添加 (&A)", self.on_add_theme, icon="theme/add.png")
         menu.Append("合成主题 (&M)", self.on_create_theme, icon="theme/merge.png")
         if len(themes) == 1:
+            menu.AppendSeparator()
+            menu.Append("复制主题 (&C)", self.on_copy_theme, icon="theme/add.png")
             menu.AppendSeparator()
             menu.Append("编辑主题信息 (&E)", self.on_edit_theme, theme, icon="theme/edit_info.png")
         menu.AppendSeparator()

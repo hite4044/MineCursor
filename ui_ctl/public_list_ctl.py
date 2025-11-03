@@ -66,7 +66,7 @@ class PublicThemeSelector(PublicThemeSelectorUI):
 
     def clip_on_get_copy_data(self):
         item = self.GetFirstSelected()
-        return None if item == -1 else theme_manager.themes[item].id
+        return None if item == -1 else self.line_theme_mapping[item].id
 
     def clip_on_set_copy_data(self, theme_id: str):
         if theme := theme_manager.find_theme(theme_id):

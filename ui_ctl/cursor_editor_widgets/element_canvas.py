@@ -96,11 +96,13 @@ EC_SCALE_LEVEL = [
 
 
 class ElementCanvas(ElementCanvasUI):
+    DEFAULT_SCALES = {32.0: 16.0, 64.0: 8.0, 128.0: 4.0}
     def __init__(self, parent: wx.Window, project: CursorProject):
         super().__init__(parent, project)
         self.active_element: CursorElement | None = None
         self.animation_mode = AnimationMode.NORMAL
-        self.scale = {1.0: 16.0, 2.0: 8.0}.get(project.scale, 10.0)
+        sz = project.canvas_size[0]
+        self.scale = self.DEFAULT_SCALES[float(sz)] if float(sz) in self.DEFAULT_SCALES else 10.0
         self.scale_index: int = EC_SCALE_LEVEL.index(self.scale)
         self.x_offset: float = 0.5
         self.y_offset: float = 0.5

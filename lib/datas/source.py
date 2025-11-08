@@ -243,7 +243,11 @@ class AssetSourceInfo:
             try:
                 if self.source_path == "item/chain.png":
                     self.source_path = "item/copper_chain.png"
-                return Image.open(zip_file.open(self.source_path)).convert("RGBA")
+                raw_image = Image.open(zip_file.open(self.source_path))
+                result = raw_image.convert("RGBA")
+                if raw_image.mode == "L":
+                    result.raw_image = raw_image
+                return result
             except KeyError:
                 raise SourceFileMissingError(self.source_id, self.source_path)
         elif self.type == AssetType.RECT:

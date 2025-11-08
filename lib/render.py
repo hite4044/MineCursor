@@ -67,7 +67,10 @@ def render_project_frame(project: CursorProject, frame: int, for_export=False) -
 
         # 按需填色
         if element.mask_color is not None:
-            item_mask = item.convert("L")
+            if hasattr(item, "raw_image"):
+                item_mask = item.raw_image
+            else:
+                item_mask = item.convert("L")
             item = Image.new("RGBA", item.size, element.mask_color + (0,))
             item.putalpha(item_mask)
 
@@ -124,9 +127,10 @@ def render_project_frame(project: CursorProject, frame: int, for_export=False) -
             mask = element.mask
         if element.sub_project:
             if mask is not None and mask.size == item.size:
-                own_mask = item.getchannel("A")
-                own_mask.paste(mask, own_mask)
-                item.putalpha(own_mask)
+                orig_mask = item.getchannel("A")
+                new_mask = Image.new("L", orig_mask.size, 0)
+                new_mask.paste(orig_mask, mask)
+                item.putalpha(new_mask)
             canvas.alpha_composite(item, (element.position[0] - x_off, element.position[1] - y_off))
         else:
             if mask and mask.size == item.size:

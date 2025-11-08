@@ -19,7 +19,7 @@ from lib.data import CursorTheme, path_theme_data, CursorElement, \
     AssetSourceInfo, AssetType, path_deleted_theme_data
 from lib.datas.base_struct import generate_id
 from lib.datas.data_dir import path_user_sources
-from lib.datas.source import SourceNotFoundError, AssetSource, source_manager
+from lib.datas.source import SourceNotFoundError, AssetSource, source_manager, SourceFileMissingError
 from lib.log import logger
 from lib.perf import Counter
 from lib.render import render_project_frame
@@ -172,6 +172,9 @@ class ThemeManager:
             theme, info = self.load_theme_file(file_path)
         except SourceNotFoundError as e:
             logger.warning(f"主题 [{file_path}] 中ID为 [{e.source_id}] 的源不存在")
+            return None
+        except SourceFileMissingError as e:
+            logger.warning(f"主题 [{file_path}] 中ID为 [{e.source_id}] 的源缺少 [{e.file_path}] 文件")
             return None
         logger.info(f"已加载主题: {theme}")
         if refresh_id:

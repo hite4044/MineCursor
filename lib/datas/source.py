@@ -19,8 +19,16 @@ class SourceNotFoundError(Exception):
         self.source_id = source_id
 
 
+class SourceFileMissingError(Exception):
+    def __init__(self, source_id: str, file_path: str, *messages):
+        super().__init__(*messages)
+        self.source_id = source_id
+        self.file_path = file_path
+
+
 class AssetSource:
     """某个目录下的素材源"""
+
     def __init__(self,
                  name: str,
                  id: str,
@@ -93,8 +101,9 @@ class AssetSource:
 class AssetSourceManager:
     """素材源管理器"""
     MINECRAFT_25W32A = AssetSource.from_file("assets/sources/25w32a/source.json")
+    MINECRAFT_25W45A = AssetSource.from_file("assets/sources/25w45a/source.json")
     FARMERS_DELIGHT_1_2_8 = AssetSource.from_file("assets/sources/Farmer's Delight-1.20.1-1.2.8-x32e586b/source.json")
-    DEFAULT = MINECRAFT_25W32A
+    DEFAULT = MINECRAFT_25W45A
 
     def __init__(self):
         super().__init__()
@@ -169,6 +178,7 @@ class AssetSourceManager:
 
 class AssetSourceInfo:
     """特定类型的素材源信息"""
+
     def __init__(self, type_: AssetType,
                  source_id: str | None = None,
                  source_path: str | None = None,
@@ -230,7 +240,12 @@ class AssetSourceInfo:
         """将本素材源加载成帧"""
         if self.type == AssetType.ZIP_FILE:
             zip_file = source_manager.load_zip(self.source_id)
-            return Image.open(zip_file.open(self.source_path)).convert("RGBA")
+            try:
+                if self.source_path == "item/chain.png":
+                    self.source_path = "item/copper_chain.png"
+                return Image.open(zip_file.open(self.source_path)).convert("RGBA")
+            except KeyError:
+                raise SourceFileMissingError(self.source_id, self.source_path)
         elif self.type == AssetType.RECT:
             if len(self.color) == 3:
                 return Image.new("RGBA", self.size, (*self.color, 255))

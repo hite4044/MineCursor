@@ -477,6 +477,8 @@ class ThemeSelector(PublicThemeSelector):
         for file_path in filenames:
             try:
                 load_info = theme_manager.load_theme(file_path, refresh_id=True, file_mapping=False)
+                if load_info is None:
+                    error_paths.append(file_path)
                 if load_info.extra_sources:
                     sources.extend(load_info.extra_sources)
             except (KeyError, json.JSONDecodeError, SourceNotFoundError):

@@ -65,7 +65,8 @@ class ElementAddDialog(ElementAddDialogUI):
         self.sources_notebook.AddPage(self.project_source, "子项目")
 
         self.ok.Bind(wx.EVT_BUTTON, self.on_ok)
-        self.cancel.Bind(wx.EVT_BUTTON, self.on_close)
+        self.cancel.Bind(wx.EVT_BUTTON, self.on_cancel)
+        self.Bind(wx.EVT_CLOSE, self.on_close)
         set_multi_size_icon(self, "assets/icons/element/add.png")
         logger.info(f"元素选择器初始化用时: {timer.endT()}")
 
@@ -121,9 +122,13 @@ class ElementAddDialog(ElementAddDialogUI):
             self.element.animation_length = len(frames)
         return True
 
-    def on_close(self, _):
+    def on_cancel(self, _):
         self.EndModal(wx.ID_CANCEL)
         self.Destroy()
+    
+    def on_close(self, event: wx.CloseEvent):
+        self.Destroy()
+        event.Skip()
 
 
 if __name__ == "__main__":

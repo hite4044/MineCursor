@@ -95,7 +95,7 @@ class ElementAddDialog(ElementAddDialogUI):
             self.element = self.project_source.get_element()
         elif self.sources_notebook.GetCurrentPage() is self.template_source:
             if project := self.template_source.get_project():
-                element = CursorElement(project.name, [])
+                element = CursorElement(project.friendly_name, [])
                 element.sub_project = project
                 element.frames = SubProjectFrames(project)
                 self.element = element

@@ -270,6 +270,10 @@ class CursorProject:
     def add_element(self, element: CursorElement):
         self.elements.insert(0, element)
 
+    @property
+    def friendly_name(self) -> str:
+        return self.name if self.name else (self.external_name if self.external_name else self.kind.kind_name)
+
     def __str__(self):
         return f"<Project:[{self.name}{',' + self.external_name if self.external_name else ''}]>"
 

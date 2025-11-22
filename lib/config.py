@@ -20,6 +20,8 @@ class Config:
     data_dir: str = "%APPDATA%\..\Mine Cursor"
     show_hidden_themes: bool = False
     live_save_time: float = 7.0
+    default_project_scale: float = 1.0
+    default_project_size: int = 128
     theme_kind_order: list[ThemeType] = [ThemeType.NORMAL, ThemeType.PRE_DEFINE, ThemeType.TEMPLATE]
     default_author: str = USER_NAME
     enabled_sources: list[str] = None

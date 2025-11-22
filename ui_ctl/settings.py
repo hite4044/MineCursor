@@ -54,6 +54,8 @@ LABEL_MAP = {
     "theme_use_cute_name": "指针项目使用特别名称",
     "auto_change_to_frame": "选中单帧元素时自动切换帧",
     "data_dir": "数据保存目录 (高级)",
+    "default_project_scale": "默认项目缩放",
+    "default_project_size": "默认项目大小"
 }
 
 

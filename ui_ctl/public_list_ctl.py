@@ -8,7 +8,7 @@ from PIL.Image import Resampling
 
 from lib.clipboard import ClipBoard
 from lib.config import config
-from lib.cursor.setter import CURSOR_KIND_NAME_CUTE, CURSOR_KIND_NAME_OFFICIAL, CursorKind
+from lib.cursor.setter import CURSOR_KIND_NAME_OFFICIAL, CursorKind
 from lib.data import CursorTheme, CursorProject, INVALID_FILENAME_CHAR, ThemeType
 from lib.dpi import BL_SIZE
 from lib.image_pil2wx import PilImg2WxImg
@@ -119,9 +119,11 @@ class PublicThemeSelector(PublicThemeSelectorUI):
 
 
 class ProjectDataDialog(DataDialog):
-    def __init__(self, parent: wx.Window | None, is_create: bool = True, project: CursorProject | None = None, size: tuple[int, int] | None = None):
+    def __init__(self, parent: wx.Window | None, is_create: bool = True, project: CursorProject | None = None,
+                 size: tuple[int, int] | None = None):
         if project is None:
-            project = CursorProject("", (16, 16))
+            project = CursorProject("", (config.default_project_size,) * 2)
+            project.scale = config.default_project_scale
         self.is_create = is_create
         if size is None:
             size = project.raw_canvas_size
@@ -395,7 +397,7 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
     def menu_add_project(self):  # 新建一个项目
         if not self.check_active_theme():
             return
-        dialog = ProjectDataDialog(self, size=(self.active_theme.base_size, ) * 2)
+        dialog = ProjectDataDialog(self, size=(self.active_theme.base_size,) * 2)
         if dialog.ShowModal() == wx.ID_OK:
             project = dialog.as_project()
             self.active_theme.projects.append(project)

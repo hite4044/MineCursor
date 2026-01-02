@@ -11,6 +11,7 @@ from win32con import SW_SHOWNORMAL
 from lib.config import config
 from lib.datas.data_dir import path_theme_data, path_deleted_theme_data
 from lib.datas.source import SourceNotFoundError
+from lib.dpi import SCALE
 from lib.info import IS_PACKAGE_ENV
 from lib.log import logger
 from lib.resources import theme_manager, deleted_theme_manager
@@ -68,7 +69,7 @@ TIP_MAP = {
 
 class SettingsDialog(wx.Dialog):
     def __init__(self, parent: wx.Window):
-        super().__init__(parent, title="设置", size=(500, -1), style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+        super().__init__(parent, title="设置", style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
         self.SetFont(parent.GetFont())
         set_multi_size_icon(self, "assets/icons/action/settings.png")
 
@@ -118,7 +119,7 @@ class SettingsDialog(wx.Dialog):
         sizer.Add(btn_sizer, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 5)
         self.SetSizer(sizer)
         self.Fit()
-        self.SetSize(500, self.GetSize().GetHeight())
+        self.SetSize(int(500 * SCALE), self.GetSize().GetHeight())
 
         self.ok.Bind(wx.EVT_BUTTON, self.on_ok)
         self.cancel.Bind(wx.EVT_BUTTON, self.on_cancel)

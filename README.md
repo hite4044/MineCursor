@@ -49,6 +49,10 @@
 
 - [MPL2.0 许可证](https://www.mozilla.org/en-US/MPL/2.0/)
 
+附带主题 (由[hite404](https://github.com/hite4044)与[YOU MING 柚明](https://github.com/YOU-MING-6)共同制作):
+
+- [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+
 项目引用或使用内容:
 
 - 项目图标:

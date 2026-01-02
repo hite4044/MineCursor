@@ -186,7 +186,7 @@ class MutilProjectDataDialog(DataDialog):
             DataLineParam("edit_scale", "编辑缩放", DataLineType.BOOL, False),
             DataLineParam("scale", "缩放", DataLineType.FLOAT, scale),
             DataLineParam("edit_render_scale", "编辑渲染缩放", DataLineType.BOOL, False),
-            DataLineParam("render_scale", "渲染缩放", DataLineType.INT, render_scale, \
+            DataLineParam("render_scale", "渲染缩放", DataLineType.INT, render_scale,
                           tip="仅在输出cur/ani文件中使用的缩放\n对于复杂项目可能会有Bug, 请谨慎使用")
         ]
         super().__init__(parent, "编辑指针项目信息", *self.params)
@@ -430,7 +430,8 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
                 dialog.as_project(project)
                 self.reload_theme()
         else:
-            dialog = MutilProjectDataDialog(self, active_project.raw_canvas_size, active_project.scale)
+            dialog = MutilProjectDataDialog(self, active_project.raw_canvas_size, active_project.scale,
+                                            active_project.render_scale)
             if dialog.ShowModal() == wx.ID_OK:
                 (enable_size, size_w, size_h), (enable_scale, scale), (enable_render_scale,
                                                                        render_scale) = dialog.get_result()

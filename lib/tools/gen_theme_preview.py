@@ -15,7 +15,7 @@ from lib.resources import theme_manager
 PROJECT_SIZE = 128  # 单个项目的图片大小
 PROJECT_PAD = 64
 FRAME_DIV = 2
-FPS = 64 // FRAME_DIV
+FPS = 32
 
 VER_CNT = 3
 HOR_CNT = 5
@@ -34,18 +34,8 @@ def main():
     print()
 
     # 输入主题信息
-    index = int(input("请输入主题编号: "))
+    indexes = input("请输入主题编号: ")
     frames_count = int(input("请输入生成帧数: "))
-    current_theme = theme_manager.themes[index]
-
-    # 生成动画帧
-    image = Image.new("RGBA", (HOR_CNT * (PROJECT_SIZE + PROJECT_PAD) - PROJECT_PAD,
-                               VER_CNT * (PROJECT_SIZE + PROJECT_PAD) - PROJECT_PAD))
-    frames: list[Image.Image] = []
-    for current_frame in range(frames_count):
-        print(f"\r正在生成第{current_frame}帧...", end="")
-        frames.append(draw_frame(image, current_frame, current_theme))
-    print()
 
     # 确定保存参数
     print("0 -> 输出多个静态PNG帧")
@@ -56,42 +46,54 @@ def main():
     way = input("请输入保存方式: ")
     dir_path = input("输入保存文件夹的地址 (可自动创建): ")
 
-    # 保存帧
-    makedirs(dir_path, exist_ok=True)
-    print("正在保存文件...")
-    if way == "0":
-        for i, frame in enumerate(frames):
-            print(f"\r正在保存第{i}帧...", end="")
-            frame_path = join(dir_path, f"{current_theme.name}_{i}.png")
-            frame.save(frame_path, format="PNG")
-        print()
-    elif way == "1":
-        apng_path = join(dir_path, f"{current_theme.name}.apng")
-        first_frame = frames.pop(0)
-        first_frame.save(apng_path, format="PNG", append_images=frames, duration=int(1 / FPS * 1000))
-    elif way == "2":
-        apng_path = join(dir_path, f"{current_theme.name}.webp")
-        first_frame = frames.pop(0)
-        first_frame.save(apng_path, format="WEBP", append_images=frames, duration=int(1 / FPS * 1000))
-    elif way == "3":
-        paths = []
-        for i, frame in enumerate(frames):
-            print(f"\r正在保存第{i}帧...", end="")
-            frame_path = join(dir_path, f"{current_theme.name}_{i}.png")
-            frame.save(frame_path, format="PNG")
-            paths.append(frame_path)
-        print()
-        default_path = join(dir_path, f"{current_theme.name}_%d.png")
-        cmd = f"ffmpeg -framerate {FPS} -i {default_path}" \
-              f" -r {FPS} -c:v qtrle -y {join(dir_path, current_theme.name)}.mov"
-        print(f"即将执行: {cmd}")
-        print("执行ffmpeg转码指令中...")
-        print("=====================================")
-        subprocess.run(cmd, shell=True)
-        for path in paths:
-            os.remove(path)
+    for index in indexes.split(","):
+         current_theme = theme_manager.themes[int(index)]
+         # 生成动画帧
+         image = Image.new("RGBA", (HOR_CNT * (PROJECT_SIZE + PROJECT_PAD) - PROJECT_PAD,
+                                    VER_CNT * (PROJECT_SIZE + PROJECT_PAD) - PROJECT_PAD))
+         frames: list[Image.Image] = []
+         for current_frame in range(frames_count):
+             print(f"\r正在生成第{current_frame}帧...", end="")
+             frames.append(draw_frame(image, current_frame, current_theme))
+         print()
 
-    print("=====================================")
+         # 保存帧
+         makedirs(dir_path, exist_ok=True)
+         print("正在保存文件...")
+         if way == "0":
+             for i, frame in enumerate(frames):
+                 print(f"\r正在保存第{i}帧...", end="")
+                 frame_path = join(dir_path, f"{current_theme.name}_{i}.png")
+                 frame.save(frame_path, format="PNG")
+             print()
+         elif way == "1":
+             apng_path = join(dir_path, f"{current_theme.name}.apng")
+             first_frame = frames.pop(0)
+             first_frame.save(apng_path, format="PNG", append_images=frames, duration=int(1 / FPS * 1000))
+         elif way == "2":
+             apng_path = join(dir_path, f"{current_theme.name}.webp")
+             first_frame = frames.pop(0)
+             first_frame.save(apng_path, format="WEBP", append_images=frames, duration=int(1 / FPS * 1000))
+         elif way == "3":
+             paths = []
+             for i, frame in enumerate(frames):
+                 print(f"\r正在保存第{i}帧...", end="")
+                 frame_path = join(dir_path, f"{current_theme.name}_{i}.png")
+                 frame.save(frame_path, format="PNG")
+                 paths.append(frame_path)
+             print()
+             default_path = join(dir_path, f"{current_theme.name}_%d.png")
+             cmd = f"ffmpeg -framerate {FPS} -i \"{default_path}\"" \
+                   f" -r {FPS} -c:v qtrle -y \"{join(dir_path, current_theme.name)}.mov\""
+             print(f"即将执行: {cmd}")
+             print("执行ffmpeg转码指令中...")
+             print("=====================================")
+             subprocess.run(cmd, shell=True)
+             for path in paths:
+                 os.remove(path)
+             print("=====================================")
+
+    print()
     print("图片已全部生成完毕")
     print("感谢使用!")
     print("Tool by hite404")

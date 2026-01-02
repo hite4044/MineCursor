@@ -13,11 +13,17 @@ class ClipBoard:
 
     def on_key(self, event: wx.KeyEvent):
         if event.GetKeyCode() == ord("C") and event.GetModifiers() == wx.MOD_CONTROL:
-            self.set(self.get_data_func())
+            self.copy()
         elif event.GetKeyCode() == ord("V") and event.GetModifiers() == wx.MOD_CONTROL:
-            if self.content is not None:
-                self.set_data_func(self.get())
+            self.paste()
         event.Skip()
+
+    def copy(self):
+        self.set(self.get_data_func())
+
+    def paste(self):
+        if self.content is not None:
+            self.set_data_func(self.get())
 
     def get(self):
         return self.content

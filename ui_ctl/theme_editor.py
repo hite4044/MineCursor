@@ -301,13 +301,11 @@ class ThemeSelector(PublicThemeSelector):
         theme = self.line_theme_mapping[event.GetIndex()]
         themes = [self.line_theme_mapping[index] for index in self.get_select_items()]
         menu = EtcMenu()
-        menu.Append("添加 (&A)", self.on_add_theme, icon="theme/add.png")
+        menu.Append("新建 (&W)", self.on_add_theme, icon="theme/add.png")
         menu.Append("合成主题 (&M)", self.on_create_theme, icon="theme/merge.png")
         if len(themes) == 1:
             menu.AppendSeparator()
-            menu.Append("复制主题 (&C)", self.on_copy_theme, icon="theme/add.png")
-            menu.AppendSeparator()
-            menu.Append("编辑主题信息 (&E)", self.on_edit_theme, theme, icon="theme/edit_info.png")
+            menu.Append("创建副本 (&C)", self.on_copy_theme, icon="theme/add.png")
         menu.AppendSeparator()
         menu.Append("导入主题 (&I)", self.on_import_theme_prop, icon="theme/import.png")
         menu.Append("导出主题 (&O)" + mk_end(themes), self.on_export_theme, themes, icon="theme/export.png")
@@ -316,10 +314,13 @@ class ThemeSelector(PublicThemeSelector):
             menu.Append("导出指针 (&C)", self.on_export_theme_cursors, theme, icon="theme/export_cursor.png")
         if len(self.themes_has_deleted) != 0:
             menu.AppendSeparator()
-            menu.Append("撤销 (&Z)", self.undo, icon="action/undo.png")
+            menu.Append("撤销 删除 (&Z)", self.undo, icon="action/undo.png")
         if len(themes) == 1:
             menu.AppendSeparator()
             menu.Append("删除 (&D)", self.on_delete_theme, theme, icon="action/delete.png")
+            menu.AppendSeparator()
+            menu.Append("属性 (&R)", self.on_edit_theme, theme, icon="theme/edit_info.png")
+
         self.PopupMenu(menu)
 
     def on_menu(self, event: wx.MouseEvent):
@@ -329,8 +330,8 @@ class ThemeSelector(PublicThemeSelector):
             return
 
         menu = EtcMenu()
-        menu.Append("添加 (&A)", self.on_add_theme, icon="theme/add.png")
-        menu.Append("合成主题 (&M)", self.on_create_theme, icon="theme/merge.png")
+        menu.Append("新建 (&W)", self.on_add_theme, icon="theme/add.png")
+        menu.Append("合成 (&M)", self.on_create_theme, icon="theme/merge.png")
         menu.AppendSeparator()
         menu.Append("导入主题 (&I)", self.on_import_theme_prop, icon="theme/import.png")
         if len(self.themes_has_deleted) != 0:

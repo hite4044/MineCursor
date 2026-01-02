@@ -97,7 +97,7 @@ class PublicThemeSelector(PublicThemeSelectorUI):
     def reload_themes(self):
         self.load_all_theme()
 
-        theme_manager.live_save()  # 经过测试，这行代码会在执行完菜单项里所绑定的函数过后才会之心
+        theme_manager.live_save()  # 经过测试，这行代码会在执行完菜单项里所绑定的函数过后才会执行
 
     def append_theme(self, theme: CursorTheme):
         line = self.GetItemCount()
@@ -345,7 +345,7 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
             return
 
         menu = EtcMenu()
-        menu.Append("添加项目 (&A)", self.menu_add_project, icon="project/add.png")
+        menu.Append("新建 (&W)", self.menu_add_project, icon="project/add.png")
         menu.AppendSeparator()
         if len(self.cursors_has_deleted) != 0:
             menu.Append("撤销操作 (&Z)", self.undo_action, icon="action/undo.png")
@@ -357,11 +357,7 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
         active_project = self.active_theme.projects[event.GetIndex()]
         projects = [self.active_theme.projects[i] for i in self.get_select_items()]
         menu = EtcMenu()
-        menu.Append("添加项目 (&A)", self.menu_add_project, icon="project/add.png")
-        menu.AppendSeparator()
-        menu.Append("编辑项目 (&E)" + mk_end(projects), self.menu_edit_projects, projects, icon="project/edit.png")
-        menu.Append("编辑项目信息 (&I)" + mk_end(projects), self.menu_edit_project_info, projects, active_project,
-                    icon="project/edit_info.png")
+        menu.Append("编辑 (&E)" + mk_end(projects), self.menu_edit_projects, projects, icon="project/edit.png")
         if len(projects) == 1 and len(self.active_theme.projects) != 1:
             menu.AppendSeparator()
             if event.GetIndex() != 0:
@@ -370,19 +366,24 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
                 menu.Append("向下移动 (&S)", self.move_project, event.GetIndex(), 1, icon="action/down.png")
         if len(projects) == 1:
             menu.AppendSeparator()
-            menu.Append("复制项目 (&C)", self.menu_copy_project, active_project, icon="project/copy.png")
+            menu.Append("导出指针 (&O)", ElementListCtrl.output_file, active_project, icon="project/export.png")
         menu.AppendSeparator()
-        menu.Append("移动至其他主题 (&M)" + mk_end(projects), self.move_project_to_theme, projects,
-                    icon="project/move.png")
-        if len(self.cursors_has_deleted) != 0:
-            menu.Append("撤销操作 (&Z)", self.undo_action, icon="action/undo.png")
-        menu.AppendSeparator()
-        menu.Append("删除 (&D)" + mk_end(projects), self.menu_delete_projects, projects, icon="action/delete.png")
+        menu.Append("复制 (&C)", self.clip.copy)
+        if self.clip.content is not None:
+            menu.Append("粘贴 (&P)", self.clip.paste)
         if len(projects) == 1:
             menu.AppendSeparator()
-            menu.Append("导出指针 (&O)", ElementListCtrl.output_file, active_project, icon="project/export.png")
+            menu.Append("复制到特定类型 (&T)", self.menu_copy_project_type, active_project, icon="project/copy.png")
+        menu.Append("移动至其他主题 (&M)" + mk_end(projects), self.move_project_to_theme, projects,
+                    icon="project/move.png")
+        menu.AppendSeparator()
+        menu.Append("删除 (&D)" + mk_end(projects), self.menu_delete_projects, projects, icon="action/delete.png")
+        menu.AppendSeparator()
+        menu.Append("属性 (&I)" + mk_end(projects), self.menu_edit_project_info, projects, active_project,
+                    icon="project/edit_info.png")
 
         self.PopupMenu(menu)
+
 
     def move_project_to_theme(self, projects: list[CursorProject]):
         if not self.check_active_theme():
@@ -446,7 +447,7 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
                         project.render_scale = render_scale
                 self.reload_theme()
 
-    def menu_copy_project(self, project: CursorProject):  # 复制列表中的一个项目
+    def menu_copy_project_type(self, project: CursorProject):  # 复制列表中的一个项目
         if not self.check_active_theme():
             return
         dialog = ProjectCopyDialog(self, project)

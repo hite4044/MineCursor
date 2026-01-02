@@ -3,6 +3,7 @@ from copy import copy
 from PIL import Image
 from PIL.Image import Transpose, Resampling
 
+from lib.config import config
 from lib.data import CursorProject, ProcessStep, Margins, Scale2D, ReverseWay
 from lib.log import logger
 from lib.perf import Counter
@@ -30,8 +31,18 @@ def render_project_gen(project: CursorProject, for_export=False):
 
 def render_project_frame(project: CursorProject, frame: int, for_export=False) -> Image.Image:
     timer = Counter(create_start=True)
-    canvas = Image.new("RGBA", project.raw_canvas_size, (255, 255, 255, 0))
     cnt = 0
+    flag_rs = False  # 指示是否直接缩放输出结果
+    if not for_export:
+        rs = 1 # 渲染缩放倍数
+    else:
+        if not project.is_ani_cursor or config.scaled_directly:
+            flag_rs = True
+            rs = 1
+        else:
+            rs = project.render_scale
+    p_size = (project.raw_canvas_size[0] * rs, project.raw_canvas_size[1] * rs)
+    canvas = Image.new("RGBA", p_size, (255, 255, 255, 0))
     for element in project.elements[::-1]:
         # 提取元素帧
         if element.sub_project:
@@ -97,12 +108,13 @@ def render_project_frame(project: CursorProject, frame: int, for_export=False) -
             elif step == ProcessStep.CROP and element.crop_margins != NONE_MARGINS:
                 oper_cnt += 1
                 mrg = element.crop_margins
-                item = item.crop((0 + mrg.left, 0 + mrg.up, item.width - mrg.right, item.height - mrg.down))
+                item = item.crop(
+                    (mrg.left * rs, mrg.up * rs, (item.width - mrg.right) * rs, (item.height - mrg.down) * rs))
 
-            elif step == ProcessStep.SCALE and element.scale != NONE_SCALE:
+            elif step == ProcessStep.SCALE and (element.scale != NONE_SCALE or rs != 1):
                 oper_cnt += 1
-                item = item.resize((int(item.width * element.scale[0]),
-                                    int(item.height * element.scale[1])),
+                item = item.resize((int(item.width * element.scale[0]) * rs,
+                                    int(item.height * element.scale[1]) * rs),
                                    element.scale_resample)
 
             elif step == ProcessStep.ROTATE and element.rotation != 0:
@@ -111,13 +123,15 @@ def render_project_frame(project: CursorProject, frame: int, for_export=False) -
                 rotate_resample = element.resample
                 if rotate_resample not in (Resampling.NEAREST, Resampling.BILINEAR, Resampling.BICUBIC):
                     rotate_resample = Resampling.NEAREST
-                item = item.rotate(element.rotation, rotate_resample, expand=True, center=(size[0] // 2, size[1] // 2))
+                item = item.rotate(element.rotation, rotate_resample, expand=True,
+                                   center=(size[0] // 2 * rs, size[1] // 2 * rs))
                 if element.rotation % 90 == 0:
                     x_off = y_off = 0
                 else:
                     x_off, y_off = (item.width - size[0]) // 2, (item.height - size[1]) // 2
 
-        element.final_rect = (element.position[0] - x_off, element.position[1] - y_off, item.width, item.height)
+        element.final_rect = ((element.position[0] * rs - x_off) // rs, (element.position[1] * rs - y_off) // rs,
+                              item.width // rs, item.height // rs)
         element.final_image = item.copy()
         if oper_cnt == 0:
             item = item.copy()
@@ -125,19 +139,25 @@ def render_project_frame(project: CursorProject, frame: int, for_export=False) -
             mask = element.mask.resize(item.size, element.scale_resample)
         else:
             mask = element.mask
+            if mask is not None and rs != 1:
+                mask = mask.resize((mask.width * rs, mask.height * rs), element.scale_resample)
         if element.sub_project:
             if mask is not None and mask.size == item.size:
                 orig_mask = item.getchannel("A")
                 new_mask = Image.new("L", orig_mask.size, 0)
                 new_mask.paste(orig_mask, mask)
                 item.putalpha(new_mask)
-            canvas.alpha_composite(item, (element.position[0] - x_off, element.position[1] - y_off))
+            canvas.alpha_composite(item, (element.position[0] * rs - x_off, element.position[1] * rs - y_off))
         else:
             if mask and mask.size == item.size:
                 item.putalpha(mask)
-            canvas.alpha_composite(item, (element.position[0] - x_off, element.position[1] - y_off))
+            canvas.alpha_composite(item, (element.position[0] * rs - x_off, element.position[1] * rs - y_off))
         cnt += 1
-    scaled_canvas = canvas.resize(project.canvas_size, project.resample)
+    scaled_canvas = canvas.resize((int(canvas.width * project.scale), int(canvas.height * project.scale)),
+                                  project.resample)
+    if flag_rs:
+        scaled_canvas = scaled_canvas.resize((scaled_canvas.width * project.render_scale, scaled_canvas.height * project.render_scale),
+                                             Image.Resampling.NEAREST)
     if cnt == 0 and for_export:
         scaled_canvas.putalpha(1)
     logger.debug(f"渲染第{str(frame).zfill(2)}帧耗时: {timer.endT()}")

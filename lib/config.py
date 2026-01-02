@@ -21,13 +21,15 @@ class Config:
     show_hidden_themes: bool = False
     live_save_time: float = 7.0
     default_project_scale: float = 1.0
-    default_project_size: int = 128
+    default_project_render_scale: int = 4
+    default_project_size: int = 32
     theme_kind_order: list[ThemeType] = [ThemeType.NORMAL, ThemeType.PRE_DEFINE, ThemeType.TEMPLATE]
     default_author: str = USER_NAME
     enabled_sources: list[str] = None
     record_create_time: bool = False
     theme_use_cute_name: bool = True
     auto_change_to_frame: bool = True
+    scaled_directly: bool = True
 
     def __init__(self):
         self.load_config()

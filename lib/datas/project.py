@@ -232,7 +232,8 @@ class CursorProject:
         self.kind: CursorKind = CursorKind.ARROW
         self.elements: list[CursorElement] = []
         self.center_pos = Position(0, 0)
-        self.scale = 2.0
+        self.render_scale: int = 1
+        self.scale: float = 2.0
         self.resample: Image.Resampling = Image.Resampling.NEAREST
         self.is_ani_cursor = False
         self.frame_count = 20
@@ -265,7 +266,8 @@ class CursorProject:
 
     @property
     def canvas_size(self) -> tuple[int, int]:
-        return int(self.raw_canvas_size[0] * self.scale), int(self.raw_canvas_size[1] * self.scale)
+        return (int(self.raw_canvas_size[0] * self.scale),
+                int(self.raw_canvas_size[1] * self.scale))
 
     def add_element(self, element: CursorElement):
         self.elements.insert(0, element)
@@ -298,6 +300,8 @@ class CursorProject:
             data["own_note"] = self.own_note
         if self.own_license_info:
             data["license_info"] = self.own_license_info
+        if self.render_scale != 1:
+            data["render_scale"] = self.render_scale
         return data
 
     @staticmethod
@@ -319,6 +323,7 @@ class CursorProject:
         project.make_time = data.get("make_time", 0)
         project.own_note = data.get("own_note")
         project.own_license_info = data.get("license_info")
+        project.render_scale = data.get("render_scale", 1)
         return project
 
     def copy(self) -> 'CursorProject':

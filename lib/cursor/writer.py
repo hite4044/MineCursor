@@ -23,7 +23,8 @@ def create_project_cache():
 
 def write_ani(path: str, frames: list[Image.Image], project: CursorProject):
     project_dir = create_project_cache()
-    hotspot = (int(project.center_pos[0] * project.scale), int(project.center_pos[1] * project.scale))
+    hotspot = (int(project.center_pos[0] * project.scale * project.render_scale),
+               int(project.center_pos[1] * project.scale * project.render_scale))
     rates = project.real_ani_rates
 
     files = []
@@ -51,9 +52,10 @@ def write_cur(frame: Image.Image, hotspot: tuple[int, int], path: str):
 
 
 def write_cursor_progress(path: str, frames: list[Image.Image], project: CursorProject):
-    hotspot = (int(project.center_pos[0] * project.scale), int(project.center_pos[1] * project.scale))
     if path.endswith(".cur"):
         yield "保存至cur文件", -1
+        hotspot = (int(project.center_pos[0] * project.scale * project.render_scale),
+                   int(project.center_pos[1] * project.scale * project.render_scale))
         write_cur(frames[0], hotspot, path)
     else:
         gen = write_ani(path, frames, project)

@@ -2,7 +2,7 @@ from os.path import abspath, isfile
 
 IS_PACKAGE_ENV = isfile(abspath("../MineCursor.exe"))
 
-VERSION = "v1.4"
+VERSION = "v1.4.1"
 PROJ_INFO = """\
 https://github.com/hite4044/MineCursor
 
@@ -36,4 +36,6 @@ v1.4
 新增两个主题：鳕鱼、钻石矛
 升级所有默认主题的贴图至25w45a版本, 旧的源不受影响
 对所有默认成套主题进行署名
+v1.4.1
+新增渲染缩放, 轻松应对高系统缩放的电脑
 """

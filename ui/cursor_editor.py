@@ -320,6 +320,10 @@ class ProjectInfoEditorUI(wx.Panel):
         self.scale: FloatEntry = FloatEntry(self, "缩放")
         self.scale.set_value(project.scale)
 
+        self.render_scale: IntEntry = IntEntry(self, "渲染缩放")
+        self.render_scale.label.SetToolTip("仅在输出cur/ani文件中使用的缩放\n对于复杂项目可能会有Bug, 请谨慎使用")
+        self.render_scale.set_value(project.render_scale)
+
         self.is_ani_cursor: BoolEntry = BoolEntry(self, "动画光标")
         self.is_ani_cursor.set_value(project.is_ani_cursor)
 
@@ -344,7 +348,7 @@ class ProjectInfoEditorUI(wx.Panel):
         cnt_sizer.Add(self.frame_counter_text, 1, wx.EXPAND)
         cnt_sizer.Add(self.ani_mode_reset_btn, 0)
 
-        grid_sizer = wx.FlexGridSizer(10, 2, 5, 5)
+        grid_sizer = wx.FlexGridSizer(11, 2, 5, 5)
         grid_sizer.AddGrowableCol(1, 1)
         grid_sizer.SetFlexibleDirection(wx.HORIZONTAL)
         widget_list = [
@@ -352,6 +356,7 @@ class ProjectInfoEditorUI(wx.Panel):
             self.external_name,
             self.kind,
             self.scale,
+            self.render_scale,
             self.is_ani_cursor,
             self.frame_count,
             self.ani_rate,

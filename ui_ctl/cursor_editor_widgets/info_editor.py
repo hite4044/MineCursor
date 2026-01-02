@@ -206,6 +206,7 @@ class ProjectInfoEditor(ProjectInfoEditorUI):
         create_cfg_bind(self.center_x, project, "center_pos.x")
         create_cfg_bind(self.center_y, project, "center_pos.y")
         create_cfg_bind(self.scale, project, "scale")
+        create_cfg_bind(self.render_scale, project, "render_scale")
         create_cfg_bind(self.is_ani_cursor, project, "is_ani_cursor")
         create_cfg_bind(self.frame_count, project, "frame_count")
         create_cfg_bind(self.ani_rate, project, "ani_rate", cbk=self.update_ani_rate_tooltip)

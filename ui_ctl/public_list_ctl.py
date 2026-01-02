@@ -124,6 +124,7 @@ class ProjectDataDialog(DataDialog):
         if project is None:
             project = CursorProject("", (config.default_project_size,) * 2)
             project.scale = config.default_project_scale
+            project.render_scale = config.default_project_render_scale
         self.is_create = is_create
         if size is None:
             size = project.raw_canvas_size
@@ -137,6 +138,8 @@ class ProjectDataDialog(DataDialog):
                 DataLineParam("size_height", "画布高", DataLineType.INT, size[1]),
             ]),
             DataLineParam("scale", "缩放", DataLineType.FLOAT, project.scale),
+            DataLineParam("render_scale", "渲染缩放", DataLineType.INT, project.render_scale,
+                          tip="仅在输出cur/ani文件中使用的缩放\n对于复杂项目可能会有Bug, 请谨慎使用"),
             DataLineParam("kind", "类型", DataLineType.CHOICE, project.kind, enum_names=CURSOR_KIND_NAME_OFFICIAL)
         ]
         if not is_create:
@@ -159,6 +162,7 @@ class ProjectDataDialog(DataDialog):
         project.name = datas["name"] if datas["name"] else None
         project.external_name = datas["external_name"] if datas["external_name"] else None
         project.scale = datas["scale"]
+        project.render_scale = datas["render_scale"]
         project.kind = CursorKind(datas["kind"])
         if datas.get("canvas_size"):
             project.raw_canvas_size = (datas["canvas_size"], datas["canvas_size"])
@@ -173,13 +177,17 @@ class ProjectDataDialog(DataDialog):
 class MutilProjectDataDialog(DataDialog):
     def __init__(self, parent: wx.Window | None,
                  size: int | tuple[int, int] = 32,
-                 scale: float = 1.0):
+                 scale: float = 1.0,
+                 render_scale: int = 1):
         self.params = [
             DataLineParam("edit_size", "编辑画布大小", DataLineType.BOOL, False),
             DataLineParam("size_width", "画布宽", DataLineType.INT, size[0]),
             DataLineParam("size_height", "画布高", DataLineType.INT, size[1]),
             DataLineParam("edit_scale", "编辑缩放", DataLineType.BOOL, False),
-            DataLineParam("scale", "缩放", DataLineType.FLOAT, scale)
+            DataLineParam("scale", "缩放", DataLineType.FLOAT, scale),
+            DataLineParam("edit_render_scale", "编辑渲染缩放", DataLineType.BOOL, False),
+            DataLineParam("render_scale", "渲染缩放", DataLineType.INT, render_scale, \
+                          tip="仅在输出cur/ani文件中使用的缩放\n对于复杂项目可能会有Bug, 请谨慎使用")
         ]
         super().__init__(parent, "编辑指针项目信息", *self.params)
         self.set_icon("project/add.png")
@@ -187,10 +195,12 @@ class MutilProjectDataDialog(DataDialog):
         self.entries[1].set_depend(self.entries[0])
         self.entries[2].set_depend(self.entries[0])
         self.entries[4].set_depend(self.entries[3])
+        self.entries[6].set_depend(self.entries[5])
 
-    def get_result(self) -> tuple[tuple[bool, int, int], tuple[bool, float]]:
+    def get_result(self) -> tuple[tuple[bool, int, int], tuple[bool, float], tuple[bool, int]]:
         datas = self.datas
-        return (datas["edit_size"], datas["size_width"], datas["size_height"]), (datas["edit_scale"], datas["scale"])
+        return (datas["edit_size"], datas["size_width"], datas["size_height"]), (datas["edit_scale"], datas["scale"]), (
+            datas["edit_render_scale"], datas["render_scale"])
 
 
 class ProjectCopyDialog(DataDialog):
@@ -422,13 +432,17 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
         else:
             dialog = MutilProjectDataDialog(self, active_project.raw_canvas_size, active_project.scale)
             if dialog.ShowModal() == wx.ID_OK:
-                (enable_size, size_w, size_h), (enable_scale, scale) = dialog.get_result()
+                (enable_size, size_w, size_h), (enable_scale, scale), (enable_render_scale,
+                                                                       render_scale) = dialog.get_result()
                 if enable_size:
                     for project in projects:
                         project.raw_canvas_size = (size_w, size_h)
                 if enable_scale:
                     for project in projects:
                         project.scale = scale
+                if enable_render_scale:
+                    for project in projects:
+                        project.render_scale = render_scale
                 self.reload_theme()
 
     def menu_copy_project(self, project: CursorProject):  # 复制列表中的一个项目

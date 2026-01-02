@@ -2,9 +2,7 @@ import ctypes
 import os
 import sys
 from ctypes import wintypes
-from os import makedirs
 from os.path import abspath, isdir, join, exists, expandvars, isfile
-from shutil import rmtree
 
 import pylnk3
 import wx
@@ -22,23 +20,24 @@ from widget.win_icon import set_multi_size_icon
 
 
 class SHELL_EXEC_INFO_W(ctypes.Structure):
-        _fields_ = [
-            ("cbSize", ctypes.c_uint32),
-            ("fMask", ctypes.c_ulong),
-            ("hwnd", ctypes.c_void_p),
-            ("lpVerb", ctypes.c_wchar_p),
-            ("lpFile", ctypes.c_wchar_p),
-            ("lpParameters", ctypes.c_wchar_p),
-            ("lpDirectory", ctypes.c_wchar_p),
-            ("nShow", ctypes.c_int),
-            ("hInstApp", ctypes.c_void_p),
-            ("lpIDList", ctypes.c_void_p),
-            ("lpClass", ctypes.c_wchar_p),
-            ("hkeyClass", ctypes.c_void_p),
-            ("dwHotKey", ctypes.c_uint32),
-            ("DUMMYUNIONNAME", ctypes.c_void_p),
-            ("hProcess", ctypes.c_void_p),
-        ]
+    _fields_ = [
+        ("cbSize", ctypes.c_uint32),
+        ("fMask", ctypes.c_ulong),
+        ("hwnd", ctypes.c_void_p),
+        ("lpVerb", ctypes.c_wchar_p),
+        ("lpFile", ctypes.c_wchar_p),
+        ("lpParameters", ctypes.c_wchar_p),
+        ("lpDirectory", ctypes.c_wchar_p),
+        ("nShow", ctypes.c_int),
+        ("hInstApp", ctypes.c_void_p),
+        ("lpIDList", ctypes.c_void_p),
+        ("lpClass", ctypes.c_wchar_p),
+        ("hkeyClass", ctypes.c_void_p),
+        ("dwHotKey", ctypes.c_uint32),
+        ("DUMMYUNIONNAME", ctypes.c_void_p),
+        ("hProcess", ctypes.c_void_p),
+    ]
+
 
 ShellExecuteExW = ctypes.WinDLL("shell32").ShellExecuteExW
 ShellExecuteExW.argtypes = (
@@ -55,13 +54,21 @@ LABEL_MAP = {
     "auto_change_to_frame": "选中单帧元素时自动切换帧",
     "data_dir": "数据保存目录 (高级)",
     "default_project_scale": "默认项目缩放",
-    "default_project_size": "默认项目大小"
+    "default_project_size": "默认项目画布大小",
+    "default_project_render_scale": "默认项目渲染缩放",
+    "scaled_directly": "直接缩放输出"
+}
+
+TIP_MAP = {
+    "default_project_scale": "决定项目任何时候(编辑时/应用时)的缩放",
+    "default_project_render_scale": "仅在应用主题时使用的缩放",
+    "scaled_directly": "渲染缩放不再具体到元素, 而是在结果上直接使用最临近缩放"
 }
 
 
 class SettingsDialog(wx.Dialog):
     def __init__(self, parent: wx.Window):
-        super().__init__(parent, title="设置", style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+        super().__init__(parent, title="设置", size=(500, -1), style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
         self.SetFont(parent.GetFont())
         set_multi_size_icon(self, "assets/icons/action/settings.png")
 
@@ -71,6 +78,8 @@ class SettingsDialog(wx.Dialog):
             if type(config_value) not in [str, int, float, bool]:
                 continue
             entry = DataEntry(self, LABEL_MAP.get(config_name, config_name), type(config_value))
+            if tip := TIP_MAP.get(config_name):
+                entry.label.SetToolTip(tip)
             entry.set_value(config_value)
             self.entries[config_name] = entry
         self.ok = wx.Button(self, label="确定")
@@ -109,6 +118,7 @@ class SettingsDialog(wx.Dialog):
         sizer.Add(btn_sizer, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 5)
         self.SetSizer(sizer)
         self.Fit()
+        self.SetSize(500, self.GetSize().GetHeight())
 
         self.ok.Bind(wx.EVT_BUTTON, self.on_ok)
         self.cancel.Bind(wx.EVT_BUTTON, self.on_cancel)
@@ -156,11 +166,11 @@ class SettingsDialog(wx.Dialog):
             SEE_MASK_NOCLOSEPROCESS = 64
             sei = SHELL_EXEC_INFO_W()
             sei.cbSize = ctypes.sizeof(sei)
-            sei.lpVerb="runas"
-            sei.lpFile="regedit.exe"
-            sei.lpParameters=temp_file
-            sei.nShow=SW_SHOWNORMAL
-            sei.fMask=SEE_MASK_NOCLOSEPROCESS
+            sei.lpVerb = "runas"
+            sei.lpFile = "regedit.exe"
+            sei.lpParameters = temp_file
+            sei.nShow = SW_SHOWNORMAL
+            sei.fMask = SEE_MASK_NOCLOSEPROCESS
             if not ShellExecuteExW(ctypes.byref(sei)):
                 raise ctypes.WinError()
         except OSError as e:
@@ -235,7 +245,8 @@ class SettingsDialog(wx.Dialog):
 
     @staticmethod
     def clear_deleted_themes(*_):
-        ret = wx.MessageBox("此操作将删除所有已删除的主题\n%APPDATA%\..\Mine Cursor\Deleted Theme Backup, 是否继续?", "提示", wx.YES_NO | wx.ICON_QUESTION)
+        ret = wx.MessageBox("此操作将删除所有已删除的主题\n%APPDATA%\..\Mine Cursor\Deleted Theme Backup, 是否继续?",
+                            "提示", wx.YES_NO | wx.ICON_QUESTION)
         if ret != wx.YES:
             return
         deleted_theme_manager.themes.clear()

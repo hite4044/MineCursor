@@ -13,7 +13,7 @@ STEP_NAME_MAP = {
 
 class StepEditor(wx.Dialog):
     def __init__(self, parent: wx.Window, element: CursorElement):
-        super().__init__(parent, title="步骤编辑")
+        super().__init__(parent, title="编辑渲染顺序")
         self.SetFont(parent.GetFont())
         self.parent = parent
         self.element = element

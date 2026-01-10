@@ -265,7 +265,7 @@ class ElementInfoEditorUI(wx.ScrolledWindow):
         sub_sizer.Add(self.allow_mask_scale, 0, wx.EXPAND)
         sizer.Add(sub_sizer, 0, wx.EXPAND | wx.ALL, 5)
 
-        self.open_step_editor_btn = wx.Button(self, label="编辑渲染步骤")
+        self.open_step_editor_btn = wx.Button(self, label="编辑渲染顺序")
         sizer.Add(self.open_step_editor_btn, 0, wx.EXPAND | wx.ALL, 5)
 
 

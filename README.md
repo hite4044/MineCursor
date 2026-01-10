@@ -1,4 +1,5 @@
-<img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/58f6895c-06f2-42aa-91cf-9aded55af074" />
+<img width="350" height="350" alt="image" src="https://github.com/user-attachments/assets/bd381032-d397-4cee-825b-4101045df7e3" />
+
 
 # _MineCursor_
 

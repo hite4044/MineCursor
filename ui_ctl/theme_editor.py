@@ -230,6 +230,7 @@ def mk_end(li: list):
 
 
 class ThemeSelector(PublicThemeSelector):
+    DRAG_TEMP_DIR = expandvars("%TEMP%/MineCursorDragTheme")
     def __init__(self, parent: wx.Window):
         super().__init__(parent)
 
@@ -253,7 +254,7 @@ class ThemeSelector(PublicThemeSelector):
 
     def OnDragInit(self, _):
         themes = [self.line_theme_mapping[index] for index in self.get_select_items()]
-        temp_dir = expandvars("%TEMP%/MineCursorDragTheme")
+        temp_dir = self.DRAG_TEMP_DIR
         if isdir(temp_dir):
             rmtree(temp_dir)
         makedirs(temp_dir)
@@ -403,8 +404,13 @@ class ThemeSelector(PublicThemeSelector):
         self.reload_themes()
 
     def on_drop_theme(self, _, __, filenames: list[str]):
-        self.import_themes(filenames)
-        self.reload_themes()
+        filtered = []
+        for name in filenames:
+            if not name.startswith(self.DRAG_TEMP_DIR):
+                filtered.append(name)
+        if filtered:
+            self.import_themes(filtered)
+            self.reload_themes()
 
     def on_export_theme(self, themes: list[CursorTheme]):
         dialog = wx.FileDialog(self, f"导出主题 ({len(themes)}个主题)",

@@ -368,7 +368,7 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
             menu.AppendSeparator()
             menu.Append("导出指针 (&O)", ElementListCtrl.output_file, active_project, icon="project/export.png")
         menu.AppendSeparator()
-        menu.Append("复制 (&C)", self.clip.copy)
+        menu.Append("复制 (&C)", self.clip.copy, icon="project/copy.png")
         if self.clip.content is not None:
             menu.Append("粘贴 (&P)", self.clip.paste)
         if len(projects) == 1:

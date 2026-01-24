@@ -3,6 +3,7 @@ import webbrowser
 import wx
 from PIL import Image
 
+from lib.dialog_fix import register_close
 from lib.image_pil2wx import PilImg2WxImg
 from lib.info import *
 from widget.center_text import CenteredText
@@ -41,6 +42,7 @@ class AboutDialog(wx.Dialog):
 
         self.open_project_github.Bind(wx.EVT_BUTTON, open_github)
         set_multi_size_icon(self, "assets/icons/action/about.png")
+        register_close(self)
 
 
 if __name__ == "__main__":

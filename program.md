@@ -29,6 +29,7 @@
     + [clipboard.py](lib/clipboard.py) 定义剪切板
     + [config.py](lib/config.py) 管理工具的配置及其文件
     + [data.py](lib/data.py) 导向[datas](lib/datas)文件夹里的各个脚本定义的结构
+    + [dialog_fix.py(lib/dialog.py)] 提供一个简易的函数使Dialog在关闭时自动销毁
     + [dpi.py](lib/dpi.py) 提供系统缩放检测与分辨率换算
     + [image_pil2wx.py](lib/image_pil2wx.py) 提供从`PIL.Image.Image`转化到`wx.Image`的函数
     + [info.py](lib/info.py) 定义项目信息（版本、更新日志）

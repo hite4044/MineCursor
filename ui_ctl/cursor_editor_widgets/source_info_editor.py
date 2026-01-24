@@ -2,6 +2,7 @@ import wx
 
 from lib.cursor.setter import CursorKind
 from lib.data import CursorElement, AssetType, source_manager, AssetSourceInfo
+from lib.dialog_fix import register_close
 from lib.dpi import TS
 from lib.image_pil2wx import PilImg2WxImg
 from ui_ctl.element_add_dialog import ElementAddDialog, ElementSelectList, RectElementSource, ImageElementSource
@@ -63,6 +64,7 @@ class SourceInfoEditDialog(wx.Dialog):
         self.Bind(wx.EVT_BUTTON, self.on_apply, self.apply_btn)
 
         wx.CallAfter(self.init_select)
+        register_close(self)
 
     def init_select(self):
         self.Layout()

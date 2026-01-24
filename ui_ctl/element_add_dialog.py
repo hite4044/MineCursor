@@ -6,6 +6,7 @@ import wx
 from lib.config import config
 from lib.cursor.setter import CursorKind
 from lib.data import CursorElement, source_manager, AssetSourceInfo, AssetType, SubProjectFrames
+from lib.dialog_fix import register_close
 from lib.log import logger
 from lib.perf import Counter
 from lib.ui_interface import ui_class
@@ -72,6 +73,7 @@ class ElementAddDialog(ElementAddDialogUI):
 
         self.last_click = perf_counter()
         self.work_timer = 0.0
+        register_close(self)
 
     def on_window_create(self, event: wx.WindowCreateEvent):
         event.Skip()

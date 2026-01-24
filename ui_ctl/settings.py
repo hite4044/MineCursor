@@ -11,6 +11,7 @@ from win32con import SW_SHOWNORMAL
 from lib.config import config
 from lib.datas.data_dir import path_theme_data, path_deleted_theme_data
 from lib.datas.source import SourceNotFoundError
+from lib.dialog_fix import register_close
 from lib.dpi import SCALE
 from lib.info import IS_PACKAGE_ENV
 from lib.log import logger
@@ -129,6 +130,7 @@ class SettingsDialog(wx.Dialog):
         self.import_default_themes_btn.Bind(wx.EVT_BUTTON, lambda _: self.import_default_themes())
         self.create_desktop_shortcut_btn.Bind(wx.EVT_BUTTON, self.create_desktop_shortcut)
         self.clear_deleted_themes_btn.Bind(wx.EVT_BUTTON, self.clear_deleted_themes)
+        register_close(self)
 
     def on_ok(self, _):
         for config_name, entry in self.entries.items():

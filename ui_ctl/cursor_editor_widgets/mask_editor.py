@@ -102,6 +102,7 @@ class MaskActionDialog(wx.Dialog):
         self.fill_color_btn.Bind(wx.EVT_BUTTON, self.on_fill)
         self.end_btn.Bind(wx.EVT_BUTTON, self.on_finish)
         self.cancel_btn.Bind(wx.EVT_BUTTON, self.on_cancel)
+        register_close(self)
 
     def on_finish(self, _):
         self.EndModal(wx.ID_OK)

@@ -1,6 +1,7 @@
 import wx
 
 from lib.data import CursorElement, ProcessStep
+from lib.dialog_fix import register_close
 from ui_ctl.cursor_editor_widgets.events import ProjectUpdatedEvent
 
 STEP_NAME_MAP = {
@@ -29,6 +30,7 @@ class StepEditor(wx.Dialog):
         self.SetSizer(sizer)
 
         self.list.Bind(wx.EVT_KEY_DOWN, self.on_key)
+        register_close(self)
 
     def exchange_item(self, index1: int, index2: int):
         self.element.proc_step[index1], self.element.proc_step[index2] = self.element.proc_step[index2], \

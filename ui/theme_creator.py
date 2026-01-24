@@ -2,6 +2,7 @@ from typing import cast
 
 import wx
 
+from lib.dialog_fix import register_close
 from lib.dpi import TS
 from lib.ui_interface import ui_class
 from ui.theme_editor import PublicThemeSelectorUI
@@ -24,6 +25,7 @@ class ThemeCreatorUI(wx.Dialog):
 
         size_cbk = pad(self.ok_btn, PadDir.LEFT_RIGHT)
         self.main_panel.new_cursors.Bind(wx.EVT_PAINT, size_cbk)
+        register_close(self)
 
 
 class CursorsSelectorUI(wx.SplitterWindow):

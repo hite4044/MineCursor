@@ -10,6 +10,7 @@ from lib.config import config
 from lib.data import source_manager, AssetSource
 from lib.datas.base_struct import generate_id
 from lib.datas.data_dir import path_user_sources
+from lib.dialog_fix import register_close
 from lib.dpi import TS
 from lib.image_pil2wx import PilImg2WxImg
 from lib.source_cvt import load_jar2source, load_zip2source
@@ -75,6 +76,7 @@ class SourcesEditor(wx.Dialog):
         self.Bind(wx.EVT_CLOSE, self.on_close)
 
         self.load_sources()
+        register_close(self)
 
     def on_close(self, event: wx.CloseEvent):
         event.Skip()

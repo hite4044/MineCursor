@@ -4,6 +4,7 @@ from typing import Union, Type
 
 import wx
 
+from lib.dialog_fix import register_close
 from widget.data_entry import DataEntry
 from widget.win_icon import set_multi_size_icon
 
@@ -96,6 +97,7 @@ class DataDialog(wx.Dialog):
 
         self.cancel_btn.Bind(wx.EVT_BUTTON, self.on_cancel)
         self.ok_btn.Bind(wx.EVT_BUTTON, self.on_ok)
+        register_close(self)
 
     def set_icon(self, path: str):
         path = "assets/icons/" + path

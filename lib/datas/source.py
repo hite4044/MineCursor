@@ -103,6 +103,7 @@ class AssetSourceManager:
     MINECRAFT_25W32A = AssetSource.from_file("assets/sources/25w32a/source.json")
     MINECRAFT_25W45A = AssetSource.from_file("assets/sources/25w45a/source.json")
     FARMERS_DELIGHT_1_2_8 = AssetSource.from_file("assets/sources/Farmer's Delight-1.20.1-1.2.8-x32e586b/source.json")
+    ICE_AND_FIRE_2_1_13_beta_5 = AssetSource.from_file("assets/sources/Ice and Fire-2.1.13-1.20.1-beta-5-a1f82d96/source.json")
     DEFAULT = MINECRAFT_25W45A
 
     def __init__(self):

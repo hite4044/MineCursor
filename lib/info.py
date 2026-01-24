@@ -2,12 +2,16 @@ from os.path import abspath, isfile
 
 IS_PACKAGE_ENV = isfile(abspath("../MineCursor.exe"))
 
-VERSION = "v1.4.1"
+VERSION = "v1.4.2"
 PROJ_INFO = """\
 https://github.com/hite4044/MineCursor
 
-项目贡献者: hite4044
+项目贡献者: hite4044、YOU-MING-柚明
 我为这个项目投入了成百小时的时间, 有条件的话请Star吧！
+YOU-MING-柚明 为此项目提供了图标设计
+
+hite404 - https://space.bilibili.com/277685481
+YOU-MING-柚明 - https://space.bilibili.com/1337092956
 
 项目开源协议: MPL-2.0
 
@@ -38,4 +42,6 @@ v1.4
 对所有默认成套主题进行署名
 v1.4.1
 新增渲染缩放, 轻松应对高系统缩放的电脑
+v1.4.2
+新增两个主题：龙炎骨血剑、铜剑（换皮）
 """

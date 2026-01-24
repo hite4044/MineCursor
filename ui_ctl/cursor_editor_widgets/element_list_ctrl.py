@@ -159,9 +159,13 @@ class ElementListCtrl(ElementListCtrlUI):
 
     def extract_sub_project(self, org_element: CursorElement):
         frame_offset_delta = org_element.animation_start_offset
+        pos_delta_x = org_element.position.x
+        pos_delta_y = org_element.position.y
         org_index = self.project.elements.index(org_element)
         for element in org_element.sub_project.elements[::-1]:
             element.animation_start_offset += frame_offset_delta
+            element.position.x += pos_delta_x
+            element.position.y += pos_delta_y
             self.project.elements.insert(org_index, element)
         self.project.elements.remove(org_element)
 

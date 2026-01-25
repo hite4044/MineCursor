@@ -96,20 +96,25 @@ Python 3.10.9
 
 ### 主界面
 
-![主界面](readme_assets/主界面.png)
+<img width="1169" height="618" alt="image" src="https://github.com/user-attachments/assets/2321b75f-a3c3-4132-883c-9767194c7cb9" />
+
 
 ### 项目编辑器
 
-![项目编辑器](readme_assets/指针编辑器.png)
+<img width="1206" height="713" alt="image" src="https://github.com/user-attachments/assets/723650d0-138e-4a9d-aed8-543a050bf538" />
+
 
 ### 新增元素
 
-![新增元素](readme_assets/新增元素.png)
+<img width="1186" height="793" alt="image" src="https://github.com/user-attachments/assets/c8432114-b610-4c38-8864-3e71e99dbe07" />
+
 
 ### 遮罩编辑器
 
-![遮罩编辑器](readme_assets/遮罩编辑器.png)
+<img width="856" height="713" alt="image" src="https://github.com/user-attachments/assets/b2efccdb-c455-4830-ab8f-ccc1222fecfc" />
+
 
 ### 关于
 
-![关于](readme_assets/关于.png)
+<img width="613" height="1026" alt="image" src="https://github.com/user-attachments/assets/cf9ebad7-75c4-478c-a3ec-82b7942a4988" />
+

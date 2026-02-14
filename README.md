@@ -91,22 +91,30 @@ Python 3.10.9
 
 ## 🎨画廊
 
+### 所有内置主题
+![内置主题](https://private-user-images.githubusercontent.com/129571243/540125768-71ccfec3-c0de-4a99-a8dc-18e807be5f83.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NjkzMTM3ODUsIm5iZiI6MTc2OTMxMzQ4NSwicGF0aCI6Ii8xMjk1NzEyNDMvNTQwMTI1NzY4LTcxY2NmZWMzLWMwZGUtNGE5OS1hOGRjLTE4ZTgwN2JlNWY4My5wbmc_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjYwMTI1JTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI2MDEyNVQwMzU4MDVaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT0wYmE5MWViMWQwMWExYTg0ZWQ4Y2Y2MDkxMTVmNGY2YTEyMzgwNDA2ZjdjNWM1YmY3Y2VkMDBjMTEwZDBlMTgzJlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCJ9.LuOo1bo30AeajuIm-cFBDNwn5czk6iWcqBm50iZNra8)
+
 ### 主界面
 
-![主界面](readme_assets/主界面.png)
+<img width="1169" height="618" alt="image" src="https://github.com/user-attachments/assets/2321b75f-a3c3-4132-883c-9767194c7cb9" />
+
 
 ### 项目编辑器
 
-![项目编辑器](readme_assets/指针编辑器.png)
+<img width="1206" height="713" alt="image" src="https://github.com/user-attachments/assets/723650d0-138e-4a9d-aed8-543a050bf538" />
+
 
 ### 新增元素
 
-![新增元素](readme_assets/新增元素.png)
+<img width="1186" height="793" alt="image" src="https://github.com/user-attachments/assets/c8432114-b610-4c38-8864-3e71e99dbe07" />
+
 
 ### 遮罩编辑器
 
-![遮罩编辑器](readme_assets/遮罩编辑器.png)
+<img width="856" height="713" alt="image" src="https://github.com/user-attachments/assets/b2efccdb-c455-4830-ab8f-ccc1222fecfc" />
+
 
 ### 关于
 
-![关于](readme_assets/关于.png)
+<img width="613" height="1026" alt="image" src="https://github.com/user-attachments/assets/cf9ebad7-75c4-478c-a3ec-82b7942a4988" />
+

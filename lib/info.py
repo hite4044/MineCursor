@@ -2,7 +2,7 @@ from os.path import abspath, isfile
 
 IS_PACKAGE_ENV = isfile(abspath("../MineCursor.exe"))
 
-VERSION = "v1.4.2"
+VERSION = "v1.5.0"
 PROJ_INFO = """\
 https://github.com/hite4044/MineCursor
 
@@ -46,4 +46,7 @@ v1.4.2
 新增两个主题：龙炎骨血剑、铜剑（换皮）
 v1.4.3
 我们修复了一些Bug，但只有我没有我们
+支持载入NeoForge、Fabric模组作为素材源
+v1.5.0
+改善优化了使用体验与细节
 """

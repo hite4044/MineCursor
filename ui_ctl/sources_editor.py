@@ -22,15 +22,15 @@ from widget.win_icon import set_multi_size_icon
 class SourceDialog(DataDialog):
     def __init__(self, parent: wx.Window, is_create: bool, source: AssetSource, is_edit: bool = True):
         params = [DataLineParam("name", "名称", DataLineType.STRING, source.name),
-                         DataLineParam("id", "ID", DataLineType.STRING, source.id, disabled=not is_create),
-                         DataLineParam("version", "版本", DataLineType.STRING, source.version),
-                         DataLineParam("authors", "作者", DataLineType.STRING, source.authors),
-                         DataLineParam("description", "描述", DataLineType.STRING, source.description),
-                         DataLineParam("note", "备注", DataLineType.STRING, source.note, multilined=True)]
+                  DataLineParam("id", "ID", DataLineType.STRING, source.id, disabled=not is_create),
+                  DataLineParam("version", "版本", DataLineType.STRING, source.version),
+                  DataLineParam("authors", "作者", DataLineType.STRING, source.authors),
+                  DataLineParam("description", "描述", DataLineType.STRING, source.description),
+                  DataLineParam("note", "备注", DataLineType.STRING, source.note, multilined=True)]
         if not is_edit:
             for param in params:
                 param.disabled = True
-        super().__init__(parent, "创建新素材源" if is_create else "编辑素材源",*params)
+        super().__init__(parent, "创建新素材源" if is_create else "编辑素材源", *params)
         if is_create:
             self.set_icon("source/add.png")
         else:
@@ -47,6 +47,16 @@ class SourceDialog(DataDialog):
         if self.is_create:
             self.source.id = self.datas["id"]
         return self.source
+
+
+class DropTarget(wx.FileDropTarget):
+    def __init__(self):
+        super().__init__()
+        self.func = lambda path: None
+
+    def OnDropFiles(self, x, y, filenames):
+        self.func(filenames[0])
+        return True
 
 
 class SourcesEditor(wx.Dialog):
@@ -73,16 +83,15 @@ class SourcesEditor(wx.Dialog):
         self.ctrl.Bind(wx.EVT_LIST_ITEM_CHECKED, self.on_item_check)
         self.ctrl.Bind(wx.EVT_LIST_ITEM_UNCHECKED, self.on_item_check)
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu)
-        self.Bind(wx.EVT_CLOSE, self.on_close)
+        self.drop_target = DropTarget()
+        self.ctrl.SetDropTarget(self.drop_target)
+        self.drop_target.func = self.on_drop
 
         self.load_sources()
         register_close(self)
 
-    def on_close(self, event: wx.CloseEvent):
-        event.Skip()
-        if event.CanVeto():
-            self.Destroy()
-            return
+    def on_drop(self, path: str):
+        wx.CallAfter(self.load_from_file, path)
 
     def load_sources(self):
         self.on_loading_source = True
@@ -151,7 +160,9 @@ class SourcesEditor(wx.Dialog):
             style=wx.FD_OPEN)
         if dialog.ShowModal() != wx.ID_OK:
             return
-        fp = dialog.GetPath()
+        self.load_from_file(dialog.GetPath())
+
+    def load_from_file(self, fp: str):
         source_dir = join(path_user_sources, f"SOURCE-EXTRACT-TEMP-{generate_id(4)}")
         makedirs(source_dir, exist_ok=True)
         if fp.endswith(".jar"):
@@ -162,10 +173,16 @@ class SourcesEditor(wx.Dialog):
             wx.MessageBox("只能.jar模组或.zip材质包, 因为要根据后缀名选择加载方法", "错误", wx.OK | wx.ICON_ERROR)
             return
         source.source_dir = join(path_user_sources, source.id)
-        rename(source_dir, source.source_dir)
+        try:
+            rename(source_dir, source.source_dir)
+        except FileExistsError:
+            wx.MessageBox("源已存在, 请尝试手动修改新素材源的ID", "错误", wx.OK | wx.ICON_ERROR)
+            rmtree(source_dir)
+            return
 
         dialog = SourceDialog(self, True, source)
         if dialog.ShowModal() != wx.ID_OK:
+            rmtree(source.source_dir)
             return
         source = dialog.get_result()
 

@@ -214,10 +214,11 @@ class ElementCanvas(ElementCanvasUI):
                 self.drag_offset: tuple[int, int] | None = None
                 wx.PostEvent(self.GetParent(), ProjectUpdatedEvent())
                 self.post_element_selected(self.active_element)
+                self.ReleaseMouse()
             if self.cvs_drag_offset:
                 logger.debug("画布拖动结束")
                 self.cvs_drag_offset = None
-            self.ReleaseMouse()
+                self.ReleaseMouse()
         if event.LeftDown():
             pos = self.translate_mouse_position(cast(tuple[int, int], event.GetPosition()))
             if pos is None:  # 启动画布的拖动

@@ -63,7 +63,7 @@ class ElementListCtrl(ElementListCtrlUI):
         self.send_project_updated()
 
     def on_key_down(self, event: wx.KeyEvent):
-        if event.GetKeyCode() == wx.WXK_DELETE:
+        if event.GetKeyCode() in [wx.WXK_DELETE, wx.WXK_BACK]:
             self.remove_elements(self.get_select_elements())
         elif event.GetKeyCode() == ord("Z") and event.GetModifiers() == wx.MOD_CONTROL:
             self.undo()

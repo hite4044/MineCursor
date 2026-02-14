@@ -283,7 +283,7 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
         self.reload_theme()
 
     def on_key_down(self, event: wx.KeyEvent):
-        if event.GetKeyCode() == wx.WXK_DELETE:
+        if event.GetKeyCode() in [wx.WXK_DELETE, wx.WXK_BACK]:
             self.menu_delete_projects(projects=[self.active_theme.projects[i] for i in self.get_select_items()])
         elif event.GetKeyCode() == ord("A") and event.GetModifiers() == wx.MOD_CONTROL:
             select_all(self)

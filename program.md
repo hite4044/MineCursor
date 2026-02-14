@@ -37,6 +37,7 @@
     + [perf.py](lib/perf.py) 提供性能分析类
     + [render.py](lib/render.py) 负责渲染鼠标指针项目
     + [resources.py](lib/resources.py) 主题管理器+带素材库的主题包的导入支持
+    + [round_corner.py](lib/round_corner.py) PIL的圆角处理
     + [source_cvt.py](lib/source_cvt.py) 从(zip/jar/文件夹)转成统一的素材库格式
     + [t_struct.py](lib/t_struct.py) 重定向至[datas/base_struct.py](lib/datas/base_struct.py)
     + [ui_interface.py](lib/ui_interface.py) 提供UI类与功能类的初始化重定向

@@ -78,3 +78,10 @@ class Counter:
         return "\n".join(
             f"{n}: {v * 1000:.3f} ms" for n, v in {**self.results, "##Local##": self.local_timer}.items()
         )
+
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        print(self.endT())

@@ -13,6 +13,8 @@ from lib.datas.data_dir import path_user_sources
 from lib.dialog_fix import register_close
 from lib.dpi import TS
 from lib.image_pil2wx import PilImg2WxImg
+from lib.perf import Counter
+from lib.round_corner import add_rounded_corners
 from lib.source_cvt import load_jar2source, load_zip2source
 from widget.data_dialog import DataDialog, DataLineParam, DataLineType
 from widget.ect_menu import EtcMenu
@@ -60,7 +62,7 @@ class DropTarget(wx.FileDropTarget):
 
 
 class SourcesEditor(wx.Dialog):
-    ICON_SIZE = 128
+    ICON_SIZE = 92
 
     def __init__(self, parent: wx.Window):
         super().__init__(parent, title="管理素材库", size=TS(700, 700), style=wx.DEFAULT_FRAME_STYLE)
@@ -68,7 +70,7 @@ class SourcesEditor(wx.Dialog):
         self.on_loading_source = False
 
         self.SetFont(parent.GetFont())
-        self.ctrl = wx.ListCtrl(self, style=wx.LC_SMALL_ICON)
+        self.ctrl = wx.ListCtrl(self, style=wx.LC_SMALL_ICON | wx.NO_BORDER)
         self.image_list = wx.ImageList(self.ICON_SIZE, self.ICON_SIZE)
         self.ctrl.EnableCheckBoxes()
         self.ctrl.AssignImageList(self.image_list, wx.IMAGE_LIST_SMALL)
@@ -103,6 +105,8 @@ class SourcesEditor(wx.Dialog):
                 image.thumbnail((self.ICON_SIZE, self.ICON_SIZE))
                 x, y = ((self.ICON_SIZE - image.size[0]) // 2, (self.ICON_SIZE - image.size[1]) // 2)
                 image = ImageOps.expand(image, (x, y, x, y), fill=(0, 0, 0, 0))
+                with Counter():
+                    image = add_rounded_corners(image, 12)
                 icon = self.image_list.Add(PilImg2WxImg(image).ConvertToBitmap())
             else:
                 icon = -1

@@ -7,6 +7,7 @@ from PIL import ImageDraw
 from PIL.Image import Resampling, Transpose
 
 from lib.clipboard import PUBLIC_MASK_CLIPBOARD
+from lib.dialog_fix import register_close
 from lib.dpi import TS
 from lib.image_pil2wx import PilImg2WxImg
 from widget.center_text import CenteredText

@@ -119,6 +119,7 @@ if __name__ == "__main__":
     app = wx.App()
     frame = DataDialog(None, "测试",
                        DataLineParam("name", "名字", DataLineType.STRING, "测试名字"),
+                       DataLineParam("n", "我的天", DataLineType.STRING, "Labirhin豪庭，STOP - Labirhin的歌词我做的"),
                        DataLineParam("age", "年龄", DataLineType.INT, 18, "测试年龄"),
                        DataLineParam("sex", "性别", DataLineType.BOOL, False, "测试性别"),
                        DataLineParam("height", "身高", DataLineType.FLOAT, 1.8, "测试身高"),

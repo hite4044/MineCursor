@@ -116,17 +116,33 @@ class SourcesEditor(wx.Dialog):
             self.line_to_source[item] = source
         self.on_loading_source = False
 
+    def get_select_sources(self) -> list[AssetSource]:
+        first = self.ctrl.GetFirstSelected()
+        selections = []
+        while first != -1:
+            selections.append(self.line_to_source[first])
+            first = self.ctrl.GetNextSelected(first)
+        return selections
+
     def on_item_menu(self, event: wx.ListEvent):
         item = event.GetIndex()
         source = self.line_to_source[item]
+        sources = self.get_select_sources()
+
+        def mk_end(li: list):
+            if len(li) > 1:
+                return f" ({len(li)})"
+            return ""
+
         menu = EtcMenu()
-        menu.Append("从文件添加 (&A)", self.on_add_from_file, icon="source/add.png")
-        menu.Append("从文件夹添加 (&F)", self.on_add_from_dir, icon="source/add.png")
-        menu.AppendSeparator()
-        menu.Append("编辑 (&E)", self.on_edit_source, source, icon="source/edit_info.png")
-        menu.Append("打开源文件夹 (&Z)", wx.LaunchDefaultApplication, source.source_dir, icon="source/open_dir.png")
-        menu.AppendSeparator()
-        menu.Append("删除 (&D)", self.on_delete_source, source, icon="action/delete.png")
+        if len(sources) == 1:
+            menu.Append("从文件添加 (&A)", self.on_add_from_file, icon="source/add.png")
+            menu.Append("从文件夹添加 (&F)", self.on_add_from_dir, icon="source/add.png")
+            menu.AppendSeparator()
+            menu.Append("编辑 (&E)", self.on_edit_source, source, icon="source/edit_info.png")
+            menu.Append("打开源文件夹 (&Z)", wx.LaunchDefaultApplication, source.source_dir, icon="source/open_dir.png")
+            menu.AppendSeparator()
+        menu.Append("删除 (&D)" + mk_end(sources), self.on_delete_sources, sources, icon="action/delete.png")
 
         self.PopupMenu(menu)
 
@@ -227,15 +243,24 @@ class SourcesEditor(wx.Dialog):
         source.save()
         source_manager.save_source()
 
-    def on_delete_source(self, source: AssetSource):
-        if source.internal_source:
-            wx.MessageBox("内置素材库不能删除", "错误")
-            return
-        ret = wx.MessageBox("是否删除素材库?", "确认", wx.ICON_WARNING | wx.YES_NO)
-        if ret == wx.YES:
+    def on_delete_sources(self, sources: list[AssetSource]):
+        have_alert = False
+        have_asked = False
+        for source in sources:
+            if source.internal_source:
+                if not have_alert:
+                    wx.MessageBox(f"内置素材库[{source.name}]不能删除", "错误")
+                have_alert = True
+                continue
+            if not have_asked:
+                ret = wx.MessageBox("是否删除这些素材库?" if len(sources) > 1 else f"是否删除素材库[{source.name}]?",
+                                    "确认", wx.ICON_WARNING | wx.YES_NO)
+                if ret != wx.YES:
+                    return
+                have_asked = True
             rmtree(source.source_dir)
             source_manager.user_sources.remove(source)
-            source_manager.save_source()
             while source.id in config.enabled_sources:
                 config.enabled_sources.remove(source.id)
-            self.load_sources()
+        source_manager.save_source()
+        self.load_sources()

@@ -217,6 +217,7 @@ class ElementCanvas(ElementCanvasUI):
             if self.cvs_drag_offset:
                 logger.debug("画布拖动结束")
                 self.cvs_drag_offset = None
+            self.ReleaseMouse()
         if event.LeftDown():
             pos = self.translate_mouse_position(cast(tuple[int, int], event.GetPosition()))
             if pos is None:  # 启动画布的拖动
@@ -226,6 +227,7 @@ class ElementCanvas(ElementCanvasUI):
                 y_offset = event.GetY() - cvs_y - canvas_size[1] // 2
                 self.cvs_drag_offset = x_offset, y_offset
                 logger.debug(f"画布拖动开始")
+                self.CaptureMouse()
         if event.Dragging():
             pos = self.translate_mouse_position(cast(tuple[int, int], event.GetPosition()), check_border=False)
             if self.drag_offset:  # 元素的拖动
@@ -253,6 +255,7 @@ class ElementCanvas(ElementCanvasUI):
                 ele_pos = self.active_element.position
                 self.drag_offset: tuple[int, int] | None = (pos[0] - ele_pos.x, pos[1] - ele_pos.y)
                 logger.debug(f"元素拖动开始 -> {self.active_element}")
+                self.CaptureMouse()
             else:
                 return
             self.Refresh()

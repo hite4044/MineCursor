@@ -49,7 +49,7 @@ def get_item_children(tree_view, item: wx.TreeItemId) -> list[wx.TreeItemId]:
 class SourceSwitchDataDialog(DataDialog):
     def __init__(self, parent: wx.Window, now_source: AssetSource):
         SourceEnum = Enum("SourceEnum", tuple(source.id for source in source_manager.sources))
-        super().__init__(parent, "切换素材源", DataLineParam("source_id", "素材源", DataLineType.CHOICE,
+        super().__init__(parent, "切换素材库", DataLineParam("source_id", "素材库", DataLineType.CHOICE,
                                                              getattr(SourceEnum, now_source.id),
                                                              enum_names={
                                                                  getattr(SourceEnum, source.id): source.name \
@@ -93,8 +93,8 @@ class ElementSelectList(ElementSelectListUI):
     def on_menu(self, event: wx.MouseEvent):
         event.Skip()
         menu = EtcMenu()
-        menu.Append(f"当前素材源: {self.source.name}").Enable(False)
-        menu.Append("切换素材源", self.on_switch_source)
+        menu.Append(f"当前素材库: {self.source.name}").Enable(False)
+        menu.Append("切换素材库", self.on_switch_source)
         self.PopupMenu(menu)
 
     def on_switch_source(self):

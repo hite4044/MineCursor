@@ -30,7 +30,7 @@ class SourceDialog(DataDialog):
         if not is_edit:
             for param in params:
                 param.disabled = True
-        super().__init__(parent, "创建新素材源" if is_create else "编辑素材源", *params)
+        super().__init__(parent, "创建新素材库" if is_create else "编辑素材库", *params)
         if is_create:
             self.set_icon("source/add.png")
         else:
@@ -63,7 +63,7 @@ class SourcesEditor(wx.Dialog):
     ICON_SIZE = 128
 
     def __init__(self, parent: wx.Window):
-        super().__init__(parent, title="素材源编辑器", size=TS(700, 700), style=wx.DEFAULT_FRAME_STYLE)
+        super().__init__(parent, title="管理素材库", size=TS(700, 700), style=wx.DEFAULT_FRAME_STYLE)
         set_multi_size_icon(self, "assets/icons/source/source.png")
         self.on_loading_source = False
 
@@ -155,7 +155,7 @@ class SourcesEditor(wx.Dialog):
 
     def on_add_from_file(self):
         dialog = wx.FileDialog(
-            self, "新增素材源 (模组Jar/材质包)",
+            self, "新增素材库 (模组Jar/材质包)",
             wildcard="模组Jar/材质包 (*.jar;*.zip)|*.jar;*.zip",
             style=wx.FD_OPEN)
         if dialog.ShowModal() != wx.ID_OK:
@@ -176,7 +176,7 @@ class SourcesEditor(wx.Dialog):
         try:
             rename(source_dir, source.source_dir)
         except FileExistsError:
-            wx.MessageBox("源已存在, 请尝试手动修改新素材源的ID", "错误", wx.OK | wx.ICON_ERROR)
+            wx.MessageBox("源已存在, 请尝试手动修改新素材库的ID", "错误", wx.OK | wx.ICON_ERROR)
             rmtree(source_dir)
             return
 
@@ -192,7 +192,7 @@ class SourcesEditor(wx.Dialog):
         self.load_sources()
 
     def on_add_from_dir(self):
-        dialog = wx.DirDialog(self, "新增素材源 (从源文件夹)", style=wx.DD_DIR_MUST_EXIST)
+        dialog = wx.DirDialog(self, "新增素材库 (从程序生成的素材库文件夹)", style=wx.DD_DIR_MUST_EXIST)
         if dialog.ShowModal() != wx.ID_OK:
             return
         dir_path = dialog.GetPath()
@@ -225,9 +225,9 @@ class SourcesEditor(wx.Dialog):
 
     def on_delete_source(self, source: AssetSource):
         if source.internal_source:
-            wx.MessageBox("内置素材源不能删除", "错误")
+            wx.MessageBox("内置素材库不能删除", "错误")
             return
-        ret = wx.MessageBox("是否删除素材源?", "确认", wx.ICON_WARNING | wx.YES_NO)
+        ret = wx.MessageBox("是否删除素材库?", "确认", wx.ICON_WARNING | wx.YES_NO)
         if ret == wx.YES:
             rmtree(source.source_dir)
             source_manager.user_sources.remove(source)

@@ -73,7 +73,7 @@ def import_theme_sources(zip_io: BytesIO) -> list[AssetSource]:
     _, dirs, files = next(os.walk(sources_dir))
     sources = []
     for dir_name in dirs:
-        logger.debug(f"导入主题包内置的素材源: {dir_name}")
+        logger.debug(f"导入主题包内置的素材库: {dir_name}")
         dir_path = join(sources_dir, dir_name)
         source_json = join(dir_path, "source.json")
         if isfile(source_json):

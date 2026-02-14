@@ -5,7 +5,7 @@
 + [assets](assets)
     + [default_themes](assets/default_themes) 内置的指针主题
     + [icons](assets/icons) 对话框、菜单图标
-    + [sources](assets/sources) 默认素材源
+    + [sources](assets/sources) 默认素材库
     + [file_type_add.reg](assets/file_type_add.reg) 注册指针主题文件类型
     + [file_type_remove.reg](assets/file_type_remove.reg) 移除指针主题文件类型
     + [icon.ico](assets/icon.ico) MineCursor图标 - ICO位图
@@ -21,11 +21,11 @@
         + [base_struct.py](lib/datas/base_struct.py) 定义公用数据结构
         + [data_dir.py](lib/datas/data_dir.py) 管理数据存储文件夹的创建
         + [project.py](lib/datas/project.py) 定义数据结构 - 指针项目及其元素
-        + [source.py](lib/datas/source.py) 定义素材源指示结构、管理素材源
+        + [source.py](lib/datas/source.py) 定义素材库指示结构、管理素材库
         + [theme.py](lib/datas/theme.py) 定义数据结构 - 指针项目及其元素
     + [tools](lib/tools)
         + [gen_theme_preview.py](lib/tools/gen_theme_preview.py) 快速生成主题的动态透明预览视频
-        + [replace_source.py](lib/tools/replace_source.py) 快速迁移旧的素材源到新的素材源
+        + [replace_source.py](lib/tools/replace_source.py) 快速迁移旧的素材库到新的素材库
     + [clipboard.py](lib/clipboard.py) 定义剪切板
     + [config.py](lib/config.py) 管理工具的配置及其文件
     + [data.py](lib/data.py) 导向[datas](lib/datas)文件夹里的各个脚本定义的结构
@@ -36,8 +36,8 @@
     + [log.py](lib/log.py) 日志库
     + [perf.py](lib/perf.py) 提供性能分析类
     + [render.py](lib/render.py) 负责渲染鼠标指针项目
-    + [resources.py](lib/resources.py) 主题管理器+带素材源的主题包的导入支持
-    + [source_cvt.py](lib/source_cvt.py) 从(zip/jar/文件夹)转成统一的素材源格式
+    + [resources.py](lib/resources.py) 主题管理器+带素材库的主题包的导入支持
+    + [source_cvt.py](lib/source_cvt.py) 从(zip/jar/文件夹)转成统一的素材库格式
     + [t_struct.py](lib/t_struct.py) 重定向至[datas/base_struct.py](lib/datas/base_struct.py)
     + [ui_interface.py](lib/ui_interface.py) 提供UI类与功能类的初始化重定向
 + [readme_assets](readme_assets) README.md里用到的资源
@@ -63,14 +63,14 @@
         + [image_source.py](ui_ctl/element_sources/image_source.py) 位图
         + [project_source.py](ui_ctl/element_sources/project_source.py) 子项目
         + [rect.py](ui_ctl/element_sources/rect_source.py) 矩形
-        + [source_assets_manager.py](ui_ctl/element_sources/source_assets_manager.py) 负责加载MC素材源的树状结构
+        + [source_assets_manager.py](ui_ctl/element_sources/source_assets_manager.py) 负责加载MC素材库的树状结构
         + [temp_source.py](ui_ctl/element_sources/temp_source.py) 模板(子项目)
     + [about_dialog.py](ui_ctl/about_dialog.py) 关于对话框
     + [cursor_editor.py](ui_ctl/cursor_editor.py) 项目编辑器
     + [element_add_dialog.py](ui_ctl/element_add_dialog.py) 元素添加对话框
     + [public_list_ctrl.py](ui_ctl/public_list_ctl.py) 公用列表框的逻辑(主题选择器\项目列表)
     + [settings.py](ui_ctl/settings.py) MineCursor的设置
-    + [source_editor.py](ui_ctl/sources_editor.py) 管理素材源
+    + [source_editor.py](ui_ctl/sources_editor.py) 管理素材库
     + [theme_creator.py](ui_ctl/theme_creator.py) 主题合成器
     + [theme_editor.py](ui_ctl/theme_editor.py) 主窗口
 + [widget](widget)

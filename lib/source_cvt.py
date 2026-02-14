@@ -54,7 +54,7 @@ class ModInfo:
 
     def load_as_forge(self, info: dict[str, Any], jar_version: str = None):
         mod = info["mods"][0]
-        self.name = mod.get("displayName", "新素材源")
+        self.name = mod.get("displayName", "新素材库")
         self.mod_id = mod.get("modId", "what, this mod has no modId")
         self.version = mod.get("version", "未知")
         if "${file.jarVersion}" in self.version and jar_version:
@@ -67,7 +67,7 @@ class ModInfo:
         self.uri = mod.get('displayURL')
 
     def load_as_fabric(self, info: dict[str, Any]):
-        self.name = info.get("name", "新素材源")
+        self.name = info.get("name", "新素材库")
         self.mod_id = info.get("id", "fabric-mod")
         self.version = info.get("version", "未知")
         self.authors = ", ".join(info.get("authors", ["未知"]))

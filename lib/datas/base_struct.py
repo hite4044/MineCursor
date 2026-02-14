@@ -47,7 +47,7 @@ class ThemeType(Enum):
 
 class AssetType(Enum):
     """源信息类型"""
-    ZIP_FILE = 0  # 素材源里的文件
+    ZIP_FILE = 0  # 素材库里的文件
     RECT = 1  # 矩形
     IMAGE = 2  # 图像
     # tip: 子项目类型将不会使用源信息

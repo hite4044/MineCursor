@@ -27,7 +27,7 @@ class SourceFileMissingError(Exception):
 
 
 class AssetSource:
-    """某个目录下的素材源"""
+    """某个目录下的素材库"""
 
     def __init__(self,
                  name: str,
@@ -99,7 +99,7 @@ class AssetSource:
 
 
 class AssetSourceManager:
-    """素材源管理器"""
+    """素材库管理器"""
     MINECRAFT_25W32A = AssetSource.from_file("assets/sources/25w32a/source.json")
     MINECRAFT_25W45A = AssetSource.from_file("assets/sources/25w45a/source.json")
     FARMERS_DELIGHT_1_2_8 = AssetSource.from_file("assets/sources/Farmer's Delight-1.20.1-1.2.8-x32e586b/source.json")
@@ -121,7 +121,7 @@ class AssetSourceManager:
             config.enabled_sources = list(set(config.enabled_sources))
 
     def load_zip(self, source_id: str):
-        """加载素材源的资源压缩包, 缓存避免重复打开"""
+        """加载素材库的资源压缩包, 缓存避免重复打开"""
         if source_id not in self.zips:
             source = source_manager.get_source_by_id(source_id)
             with open(source.fmt(source.textures_zip), "rb") as f:
@@ -132,22 +132,22 @@ class AssetSourceManager:
 
     @staticmethod
     def load_sources(root: str):
-        """从一个目录下加载所有有效的素材源, 并返回素材源列表"""
-        logger.info(f"加载用户素材源... (From: {root})")
+        """从一个目录下加载所有有效的素材库, 并返回素材库列表"""
+        logger.info(f"加载用户素材库... (From: {root})")
         _, dirs, files = next(walk(root))
         sources = []
 
         for source_dir in dirs:
             source_cfg_fp = join(root, source_dir, "source.json")
             if isfile(source_cfg_fp):
-                logger.info(f"加载素材源: {source_dir}")
+                logger.info(f"加载素材库: {source_dir}")
                 source = AssetSource.from_file(source_cfg_fp)
                 sources.append(source)
 
         return sources
 
     def save_source(self):
-        """保存所有用户素材源"""
+        """保存所有用户素材库"""
         for source in self.user_sources:
             source.save()
 
@@ -156,17 +156,17 @@ class AssetSourceManager:
         return self.internal_sources + self.user_sources
 
     def get_source_by_id(self, target_id: str, raise_error: bool = True) -> AssetSource | None:
-        """根据素材源ID查找对应素材源"""
+        """根据素材库ID查找对应素材库"""
         for source in self.sources:
             if target_id == source.id:
                 return source
         if raise_error:
-            raise SourceNotFoundError(target_id, f"未找到id为 [{target_id}] 的素材源")
+            raise SourceNotFoundError(target_id, f"未找到id为 [{target_id}] 的素材库")
         return None
 
     @classmethod
     def find_internal_sources(cls):
-        """查找写死在程序里的内置素材源"""
+        """查找写死在程序里的内置素材库"""
         sources = []
         for name, value in cls.__dict__.items():
             if name == "DEFAULT":
@@ -178,7 +178,7 @@ class AssetSourceManager:
 
 
 class AssetSourceInfo:
-    """特定类型的素材源信息"""
+    """特定类型的素材信息, 包含类型，来源，路径等"""
 
     def __init__(self, type_: AssetType,
                  source_id: str | None = None,
@@ -238,12 +238,10 @@ class AssetSourceInfo:
             )
 
     def load_frame(self) -> Image.Image:
-        """将本素材源加载成帧"""
+        """将本素材信息加载成位图帧"""
         if self.type == AssetType.ZIP_FILE:
             zip_file = source_manager.load_zip(self.source_id)
             try:
-                if self.source_path == "item/chain.png":
-                    self.source_path = "item/copper_chain.png"
                 raw_image = Image.open(zip_file.open(self.source_path))
                 result = raw_image.convert("RGBA")
                 if raw_image.mode == "L":

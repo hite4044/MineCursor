@@ -304,8 +304,12 @@ class ElementListCtrl(ElementListCtrlUI):
         return element
 
     def remove_elements(self, elements: list[CursorElement]):
-        indexes: list[int] = [{v: k for k, v in self.line_mapping.items()}[element.id] for element in elements]
-        self.elements_has_deleted.append([(line, element) for line, element in zip(indexes[::-1], elements[::-1])])
+        """移除指定的元素"""
+        ret = wx.MessageBox(f"确定要删除这{len(elements)}个元素吗？", "提示", wx.YES_NO | wx.ICON_QUESTION)
+        if ret != wx.YES:
+            return
+        indexes: list[int] = [{v: k for k, v in self.line_mapping.items()}[element.id] for element in elements]  # 获取元素对应的列表序号
+        self.elements_has_deleted.append([(line, element) for line, element in zip(indexes[::-1], elements[::-1])])  # 按照倒序添加到已删除元素列表
         for element in elements:
             self.project.elements.remove(element)
         self.rebuild_control()

@@ -250,6 +250,7 @@ def mk_end(li: list):
 
 
 class PublicThemeCursorList(PublicThemeCursorListUI):
+    """装载鼠标指针项目的列表"""
     ICON_SIZE = BL_SIZE
 
     def __init__(self, parent: wx.Window):
@@ -458,6 +459,9 @@ class PublicThemeCursorList(PublicThemeCursorListUI):
 
     def menu_delete_projects(self, projects: list[CursorProject]):  # 从列表中删除多个项目
         if not self.check_active_theme():
+            return
+        ret = wx.MessageBox(f"确定要删除这{len(projects)}个项目吗？", "提示", wx.YES_NO | wx.ICON_QUESTION)
+        if ret != wx.YES:
             return
         stacks = []
         for project in projects[::-1]:  # 倒序以便保存的操作索引正确

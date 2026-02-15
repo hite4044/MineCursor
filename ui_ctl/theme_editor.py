@@ -399,7 +399,7 @@ class ThemeSelector(PublicThemeSelector):
             self.reload_themes()
 
     def delete_themes(self, themes: list[CursorTheme]):
-        """删除提供的主题"""
+        """删除提供的主题，Backflip - Labirhin，03:42，哥们到这里我听嗨了我不管"""
         ret = wx.MessageBox(f"确定要删除这{len(themes)}个主题吗？", "提示", wx.YES_NO | wx.ICON_QUESTION)
         if ret != wx.YES:
             return

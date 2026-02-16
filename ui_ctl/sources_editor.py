@@ -105,8 +105,7 @@ class SourcesEditor(wx.Dialog):
                 image.thumbnail((self.ICON_SIZE, self.ICON_SIZE))
                 x, y = ((self.ICON_SIZE - image.size[0]) // 2, (self.ICON_SIZE - image.size[1]) // 2)
                 image = ImageOps.expand(image, (x, y, x, y), fill=(0, 0, 0, 0))
-                with Counter():
-                    image = add_rounded_corners(image, 12)
+                image = add_rounded_corners(image, 12)
                 icon = self.image_list.Add(PilImg2WxImg(image).ConvertToBitmap())
             else:
                 icon = -1

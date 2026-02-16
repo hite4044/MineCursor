@@ -1,4 +1,5 @@
 import re
+from os.path import isfile
 from time import perf_counter
 
 import wx
@@ -16,6 +17,7 @@ from ui_ctl.element_sources.image_source import ImageElementSource
 from ui_ctl.element_sources.project_source import ProjectSource
 from ui_ctl.element_sources.rect_source import RectElementSource
 from ui_ctl.element_sources.temp_source import TemplateSource
+from ui_ctl.sources_editor import SourceDialog, SourcesEditor
 from widget.win_icon import set_multi_size_icon
 
 ROOT_IMAGES = {
@@ -37,6 +39,19 @@ ROOT_TEXTS = {
     "painting": "画",
     "particle": "粒子"
 }
+
+
+class DragTarget(wx.FileDropTarget):
+    def __init__(self, parent: 'ElementAddDialog'):
+        super().__init__()
+        self.parent = parent
+
+    def OnDropFiles(self, x, y, filenames):
+        if isfile(filenames[0]):
+            dialog = SourcesEditor(self.parent)
+            wx.CallAfter(dialog.ShowModal)
+            wx.CallLater(200, dialog.load_from_file, filenames[0])
+        return True
 
 
 class ElementAddDialog(ElementAddDialogUI):
@@ -70,6 +85,9 @@ class ElementAddDialog(ElementAddDialogUI):
         self.Bind(wx.EVT_CLOSE, self.on_close)
         set_multi_size_icon(self, "assets/icons/element/add.png")
         logger.info(f"元素选择器初始化用时: {timer.endT()}")
+
+        self.drop_target = DragTarget(self)
+        self.SetDropTarget(self.drop_target)
 
         self.last_click = perf_counter()
         self.work_timer = 0.0
